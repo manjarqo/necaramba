@@ -33,6 +33,23 @@ final class ContextStateTests: XCTestCase {
     state.reconcileFocus { self.publish(state, focus: "first"); return state.publishedCurrent() }
     XCTAssertFalse(state.isSafe(before))
   }
+  func testRepeatedNoneditableFocusKeepsGestureEpochStable() throws {
+    let state = ContextState()
+    publish(state, focus: "noneditable", qualified: false)
+    let before = try XCTUnwrap(state.gestureContext())
+    for _ in 0..<3 {
+      state.reconcileFocus {
+        self.publish(state, focus: "noneditable", qualified: false)
+        return nil
+      }
+      XCTAssertEqual(state.gestureContext(), before)
+      XCTAssertNil(state.current())
+    }
+    publish(state, focus: "other", qualified: false)
+    XCTAssertNotEqual(state.gestureContext(), before)
+    publish(state, focus: "noneditable", qualified: false)
+    XCTAssertNotEqual(state.gestureContext(), before)
+  }
   func testKnownNoneditableFocusPreservesLayoutGestureContext() {
     let state = ContextState()
     state.reconcileFocus {

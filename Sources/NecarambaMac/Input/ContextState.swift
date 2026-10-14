@@ -18,7 +18,7 @@ public final class ContextState: ContextAccess, GestureContextReading {
     lock.lock()
     defer { lock.unlock() }
     if self.layout != layout { layoutEpoch &+= 1 }
-    if token?.pid != pid || token?.bundleID != bundleID || self.focusID != focusID {
+    if gestureToken?.pid != pid || gestureToken?.bundleID != bundleID || self.focusID != focusID {
       focusEpoch &+= 1
     }
     self.focusID = focusID

@@ -203,7 +203,15 @@ public final class ContextMonitor: ContextRefreshing {
     switch role {
     case nil: roleReason = "context.role.missing"
     case "AXWebArea": roleReason = "context.role.webarea"
-    case kAXTextFieldRole: roleReason = "context.role.textfield"
+    case kAXTextFieldRole:
+      roleReason = subrole == "AXSearchField" ? "context.role.searchfield" : "context.role.textfield"
+    case "AXComboBox": roleReason = "context.role.combobox"
+    case "AXSearchField": roleReason = "context.role.searchfield"
+    case "AXGroup": roleReason = "context.role.group"
+    case "AXWindow": roleReason = "context.role.window"
+    case "AXApplication": roleReason = "context.role.application"
+    case "AXScrollArea": roleReason = "context.role.scrollarea"
+    case "AXStaticText": roleReason = "context.role.statictext"
     case kAXTextAreaRole: roleReason = "context.role.textarea"
     default: roleReason = "context.role.other"
     }
