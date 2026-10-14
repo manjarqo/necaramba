@@ -45,3 +45,11 @@ Startup regression cleared on the local arm64 macOS27.0.1 host after commit `a46
 Integrated suite at `5d0061d`:100 Mac +63 Core tests PASS; Flutter36 tests PASS and analyzer clean. Subsequent unknown-login-status fix has its focused regression. Runner test host/module names were aligned to the actual Necaramba product; `xcodebuild test` then passed all3 bounded-drop tests on the local arm64 host. ReplayRunner passed exact ordered pass-through for100000 events and ownership replay for100000 events. Release CLI regression fixtures5 PASS; these synthetic reports are not release qualification evidence.
 
 These checks clear the observed startup trap and scoped integration findings. They do not qualify automatic corrections, real editor mutation, macOS12/Intel behavior, production signing, purchase services or release performance budgets.
+
+## Final reviewed integration
+
+Final scoped architecture review approved injected application ports (`b647b97`), normal+legacy exclusion publication (`506f06f`), ordered live entitlement snapshot/update revisions (`f217c4b`), real channel configurations and validated production-package staging (`e38a9e4`). No Important findings remain from those code reviews. Production package fixtures pass signature/hash/schema/key/development-marker/license rejection checks using temporary test keys; no production signing identity was created.
+
+Fresh whole native suite after these application changes:106 Mac +63 Core =169 tests PASS. Flutter remains36 tests PASS and analyzer clean (no Dart changes after that run); Runner3 tests PASS. Final `flutter build macos --release` PASS60.3MB. Main executable, embedded login helper, FlutterMacOS and App frameworks each verified arm64+x86_64 with minOS12.0 via lipo/vtool. The final app was launched with CUA and showed model1/current and permission-required status. No permission or login setting was changed.
+
+Fresh `Reports/review-v3-final-quality.json`:8459 cases, TP3147, FP0, FN493, layout recall0.808688387635756; quality gate FAIL and physical differential UNRUN. The draft release report still exits1. TIFF-only drag and repeated-engine accessibility acceptance remain open; see `docs/implementation/acceptance-status.md`. This is an internal prototype, not full functional parity or a qualified release.
