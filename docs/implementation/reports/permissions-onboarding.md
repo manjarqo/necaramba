@@ -9,3 +9,11 @@ Native status/menu now include missing Accessibility. Launch (including backgrou
 Verification: 177 Swift tests (114 Mac +63 Core) and43 Flutter tests PASS; Flutter analyzer clean. Regression RED evidence covers missing dialog, refresh action, grant/revoke ordering, missing AX status, stale runtime health, retired callbacks and the in-flight callback barrier. Scoped review approved both UI and native fixes. No TCC grants, login changes or physical typing tests were performed.
 
 Integrated Release build passed. Actual CUA launch automatically displayed «Разрешите доступ к клавиатуре» with all three denied states, explicit request buttons, Refresh and Later. OS request buttons were not pressed by the agent. Further manual dismissal testing was stopped when computer-use reported user interaction; automated dismissal/reopen tests passed.
+
+## Explicit Settings navigation follow-up
+
+The request buttons previously called only CGRequestListenEventAccess/CGRequestPostEventAccess/AXIsProcessTrustedWithOptions. They did not open System Settings, so repeated requests after denial could appear inert. SystemPermissionAPI now explicitly opens the correct privacy pane after each user request: Input Monitoring for listen and Accessibility for post/AX. macOS12 uses the legacy Security preference-pane identifier; macOS13+ uses PrivacySecurity.extension, with a base-pane fallback if opening fails. This matches the versioned routing in Chromium's primary implementation: https://chromium.googlesource.com/chromium/src/+/117.0.5938.132/base/mac/mac_util.mm .
+
+Nine focused permission tests PASS, including repeated clicks, all three permissions on versions12/13/27 and fallback. Disabling navigation reproduced10 assertion failures in the new two tests; restoring navigation passed both. Settings opening and OS requests are injected in tests, so no test changes TCC. Scoped review found no Important issue.
+
+Actual rebuilt app verified through CUA: listen request opened «Мониторинг ввода»; post request opened the Privacy_Accessibility destination, titled «Управление устройством и доступ к данным» on this macOS27 host, with Necaramba listed and disabled. No permission switch was changed. The initial stale-state computer-use warning was followed by a fresh AX snapshot before retry. macOS12 navigation is covered by URL-routing tests, not a physical macOS12 run.
