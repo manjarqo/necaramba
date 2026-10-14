@@ -15,23 +15,42 @@ public struct AXTextSnapshot {
 }
 public protocol AXSelectionReading: AnyObject {
   func read(in token: ContextToken) -> AXTextSnapshot?
+  func read(in token: ContextToken, deadline: TimeInterval) -> AXTextSnapshot?
+}
+extension AXSelectionReading {
+  public func read(in token: ContextToken, deadline: TimeInterval) -> AXTextSnapshot? {
+    read(in: token)
+  }
 }
 /// Direct system proof. This reader performs no mutations and is called only outside the tap.
 public final class SystemAXSelectionReader: AXSelectionReading {
   private let context: ContextAccess
   private let qualifies: (String, String) -> Bool
+  private let allowMissingMarkedTextRange: () -> Bool
   private var retained: (id: UUID, element: AXUIElement)?
-  public init(context: ContextAccess, qualifies: @escaping (String, String) -> Bool) {
+  public init(
+    context: ContextAccess, qualifies: @escaping (String, String) -> Bool,
+    allowMissingMarkedTextRange: @escaping () -> Bool = { false }
+  ) {
     self.context = context
     self.qualifies = qualifies
+    self.allowMissingMarkedTextRange = allowMissingMarkedTextRange
   }
   public func read(in token: ContextToken) -> AXTextSnapshot? {
+    read(in: token, deadline: ProcessInfo.processInfo.systemUptime + 0.1)
+  }
+  public func read(in token: ContextToken, deadline: TimeInterval) -> AXTextSnapshot? {
     precondition(Thread.isMainThread)
+    func budget(_ element: AXUIElement) -> Bool {
+      let remaining = deadline - ProcessInfo.processInfo.systemUptime
+      guard remaining > 0 else { return false }
+      return AXUIElementSetMessagingTimeout(element, Float(min(0.05, remaining))) == .success
+    }
     guard !IsSecureEventInputEnabled(), context.isSafe(token),
       NSWorkspace.shared.frontmostApplication?.processIdentifier == token.pid
     else { return nil }
     let app = AXUIElementCreateApplication(token.pid)
-    AXUIElementSetMessagingTimeout(app, 0.05)
+    guard budget(app) else { return nil }
     var focused: CFTypeRef?
     guard
       AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &focused)
@@ -39,36 +58,54 @@ public final class SystemAXSelectionReader: AXSelectionReading {
       let focused, CFGetTypeID(focused) == AXUIElementGetTypeID()
     else { return nil }
     let element = unsafeBitCast(focused, to: AXUIElement.self)
-    func attribute(_ name: String) -> CFTypeRef? {
+    func readAttribute(_ name: String) -> (AXError, CFTypeRef?) {
+      guard budget(element) else { return (.cannotComplete, nil) }
       var value: CFTypeRef?
-      guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success else {
-        return nil
-      }
-      return value
+      let status = AXUIElementCopyAttributeValue(element, name as CFString, &value)
+      return (status, value)
+    }
+    func attribute(_ name: String) -> CFTypeRef? {
+      let (status, value) = readAttribute(name)
+      return status == .success ? value : nil
     }
     guard let role = attribute(kAXRoleAttribute) as? String, qualifies(token.bundleID, role),
       attribute(kAXSubroleAttribute) as? String != kAXSecureTextFieldSubrole,
       let text = attribute(kAXValueAttribute) as? String, text.utf8.count <= 1024 * 1024,
       let raw = attribute(kAXSelectedTextRangeAttribute), CFGetTypeID(raw) == AXValueGetTypeID()
     else { return nil }
-    // A missing composition signal is uncertainty, not evidence of inactive composition.
-    guard let marked = attribute("AXMarkedTextRange"), CFGetTypeID(marked) == AXValueGetTypeID()
-    else { return nil }
-    var markedRange = CFRange()
-    guard AXValueGetValue(unsafeBitCast(marked, to: AXValue.self), .cfRange, &markedRange),
-      markedRange.length == 0
+    let (markedStatus, marked) = readAttribute("AXMarkedTextRange")
+    var markedRange: CFRange?
+    if markedStatus == .success {
+      guard let marked, CFGetTypeID(marked) == AXValueGetTypeID() else { return nil }
+      var decoded = CFRange()
+      guard AXValueGetValue(unsafeBitCast(marked, to: AXValue.self), .cfRange, &decoded)
+      else { return nil }
+      markedRange = decoded
+    }
+    guard AXCompositionProof.permits(
+      markedRange: markedRange,
+      attributeUnavailable: markedStatus == .attributeUnsupported || markedStatus == .noValue,
+      manual: allowMissingMarkedTextRange(), directKeyboardLayout: Self.isDirectKeyboardLayout())
     else { return nil }
     var range = CFRange()
     guard AXValueGetValue(unsafeBitCast(raw, to: AXValue.self), .cfRange, &range),
       range.location >= 0, range.length >= 0,
       range.location <= text.utf16.count, range.length <= text.utf16.count - range.location
     else { return nil }
+    guard ProcessInfo.processInfo.systemUptime <= deadline else { return nil }
     if retained == nil || !CFEqual(retained!.element, element) { retained = (UUID(), element) }
     return AXTextSnapshot(
       identity: retained!.id, value: text,
       range: NSRange(location: range.location, length: range.length))
   }
 
+  private static func isDirectKeyboardLayout() -> Bool {
+    guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
+      let pointer = TISGetInputSourceProperty(source, kTISPropertyInputSourceType)
+    else { return false }
+    let type = Unmanaged<CFString>.fromOpaque(pointer).takeUnretainedValue()
+    return type == kTISTypeKeyboardLayout
+  }
 }
 /// Selection mode, identity, context and generation are frozen when evidence is first read.
 public final class AXSelectionAdapter: SelectionAccess {
@@ -77,16 +114,28 @@ public final class AXSelectionAdapter: SelectionAccess {
   public var inputGeneration: (() -> UInt64)?
   private let context: ContextAccess
   private let reader: AXSelectionReading
+  private let manualCommandActive: () -> Bool
+  private let now: () -> TimeInterval
+  private let wait: (TimeInterval) -> Void
   public init(
     context: ContextAccess, qualifies: @escaping (String, String) -> Bool,
-    reader: AXSelectionReading? = nil
+    reader: AXSelectionReading? = nil,
+    allowMissingMarkedTextRange: @escaping () -> Bool = { false },
+    now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
+    wait: @escaping (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
   ) {
     self.context = context
-    self.reader = reader ?? SystemAXSelectionReader(context: context, qualifies: qualifies)
+    self.reader = reader ?? SystemAXSelectionReader(
+      context: context, qualifies: qualifies, allowMissingMarkedTextRange: allowMissingMarkedTextRange)
+    self.manualCommandActive = allowMissingMarkedTextRange
+    self.now = now
+    self.wait = wait
   }
-  private func snapshot(_ token: ContextToken, generation: UInt64) -> AXTextSnapshot? {
+  private func snapshot(
+    _ token: ContextToken, generation: UInt64, deadline: TimeInterval? = nil
+  ) -> AXTextSnapshot? {
     guard inputGeneration?() == generation, context.isSafe(token),
-      let value = reader.read(in: token),
+      let value = deadline.map { reader.read(in: token, deadline: $0) } ?? reader.read(in: token),
       value.value.utf8.count <= 1024 * 1024, value.range.location >= 0, value.range.length >= 0,
       value.range.location <= value.value.utf16.count,
       value.range.length <= value.value.utf16.count - value.range.location,
@@ -121,6 +170,7 @@ public final class AXSelectionAdapter: SelectionAccess {
     let range = NSRange(location: evidence.location, length: evidence.length)
     let observedRange =
       selected ? range : NSRange(location: evidence.location + evidence.length, length: 0)
+    var before: AXTextSnapshot?
     func valid() -> Bool {
       guard let current = snapshot(evidence.context, generation: generation),
         current.identity == identity,
@@ -128,18 +178,88 @@ public final class AXSelectionAdapter: SelectionAccess {
         range.location <= current.value.utf16.count,
         range.length <= current.value.utf16.count - range.location
       else { return false }
-      return (current.value as NSString).substring(with: range) == evidence.text
+      guard (current.value as NSString).substring(with: range) == evidence.text,
+        before == nil || before?.value == current.value
+      else { return false }
+      before = current
+      return true
     }
-    guard valid() else { return .aborted }
+    guard valid(), let before else { return .aborted }
+    let expectedValue = (before.value as NSString).replacingCharacters(in: range, with: text)
+    let expectedRange = NSRange(location: evidence.location + text.utf16.count, length: 0)
     let result = execute(evidence, text, selected, valid)
     guard result == .committed else { return result }
-    guard let after = snapshot(evidence.context, generation: generation),
-      after.identity == identity,
-      after.range == NSRange(location: evidence.location + text.utf16.count, length: 0),
-      evidence.location + text.utf16.count <= after.value.utf16.count,
-      (after.value as NSString).substring(
-        with: NSRange(location: evidence.location, length: text.utf16.count)) == text
+    // Posting is asynchronous. Read only: never repeat a mutation or attempt rollback.
+    // Sleep outside the tap without pumping the UI runloop (which could reenter commands).
+    let deadline = now() + 0.1
+    for _ in 0..<21 {
+      guard now() < deadline,
+        let after = snapshot(evidence.context, generation: generation, deadline: deadline),
+        now() <= deadline, after.identity == identity
+      else { return .uncertain }
+      if after.value == expectedValue && after.range == expectedRange { return .committed }
+      // Only the unchanged pre-post state is safe to wait on. Partial or unrelated edits
+      // are uncertain, even if a later read might happen to match the desired output.
+      guard after.value == before.value, after.range == before.range else { return .uncertain }
+      let remaining = deadline - now()
+      guard remaining > 0 else { return .uncertain }
+      wait(min(0.005, remaining))
+    }
+    return .uncertain
+  }
+}
+
+/// Missing marked-text metadata is not proof that composition is inactive.
+/// Explicit manual commands may accept it for a direct keyboard layout only;
+/// this does not establish absence of dead-key state. Automatic correction stays strict.
+enum AXCompositionProof {
+  static func permits(
+    markedRange: CFRange?, attributeUnavailable: Bool, manual: Bool, directKeyboardLayout: Bool
+  ) -> Bool {
+    guard let markedRange else {
+      return attributeUnavailable && manual && directKeyboardLayout
+    }
+    return markedRange.length == 0 && markedRange.location >= -1
+  }
+}
+
+extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
+  public func replaceTrackedSuffix(_ word: BufferedWord, with text: String) -> ApplyResult {
+    // Some terminal widgets expose only an empty AX input proxy. An explicit command
+    // may use physically tracked input there, but AX cannot prove the real suffix.
+    // Dispatch is deliberately distinct from a verified edit (no undo/statistics).
+    let original = word.text + word.delimiter
+    guard manualCommandActive(), !word.text.isEmpty, !word.events.isEmpty,
+      word.events.count <= 128, original.count <= 128, original.utf16.count <= 512,
+      !text.isEmpty, text.count <= 128, text.utf16.count <= 512,
+      word.events.allSatisfy({
+        $0.origin == .physical && $0.kind == .down && $0.context == word.context
+          && $0.layout == word.layout && $0.modifiers.isSubset(of: [.shift, .capsLock])
+          && $0.text?.count == 1
+      }), word.events.compactMap(\.text).joined() == word.text,
+      word.delimiter.allSatisfy({ "!? \n\r\t".contains($0) }),
+      let generation = inputGeneration?(), let before = snapshot(word.context, generation: generation),
+      before.value.isEmpty, before.range == NSRange(location: 0, length: 0), let execute
+    else { return .aborted }
+    func valid() -> Bool {
+      guard manualCommandActive(), let current = snapshot(word.context, generation: generation)
+      else { return false }
+      return current.identity == before.identity && current.value.isEmpty
+        && current.range == NSRange(location: 0, length: 0)
+    }
+    let evidence = SelectionEvidence(
+      context: word.context, text: original, location: 0, length: original.utf16.count,
+      identity: before.identity, inputGeneration: generation, mode: .suffix)
+    guard valid() else { return .aborted }
+    let result = execute(evidence, text, false, valid)
+    guard result == .committed else { return result }
+    guard let after = snapshot(word.context, generation: generation),
+      after.identity == before.identity
     else { return .uncertain }
-    return .committed
+    if after.value == text && after.range == NSRange(location: text.utf16.count, length: 0) {
+      return .committed
+    }
+    return after.value.isEmpty && after.range == NSRange(location: 0, length: 0)
+      ? .dispatched : .uncertain
   }
 }
