@@ -8,7 +8,7 @@ public struct StoredPreferencesV1: Codable, Equatable, Sendable {
  public let selectedColor: Int
  public let loginPreferred: Bool
  public let diagnosticsOptIn: Bool
- public init(snapshot: PreferencesSnapshot = PreferencesSnapshot(autoEnabled:false), selectedColor: Int = 0, loginPreferred: Bool = false, diagnosticsOptIn: Bool = false) {
+ public init(snapshot: PreferencesSnapshot = .defaults, selectedColor: Int = 0, loginPreferred: Bool = false, diagnosticsOptIn: Bool = false) {
   version = 1; self.snapshot = snapshot; self.selectedColor = selectedColor
   self.loginPreferred = loginPreferred; self.diagnosticsOptIn = diagnosticsOptIn
  }
