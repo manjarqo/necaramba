@@ -41,13 +41,16 @@ private final class MainActorRuleConsumer:RuleSnapshotConsumer {
         let generation=startGeneration
         let licenseUpdates=await licensing.updates()
         guard started,generation==startGeneration else { return }
-        let licenseSnapshot=await licensing.current()
+        let licenseSnapshot=await licensing.snapshot()
         guard started,generation==startGeneration else { return }
-        applyLicense(licenseSnapshot)
+        applyLicense(licenseSnapshot.state)
+        var latestSequence=licenseSnapshot.sequence
         licenseTask=Task { [weak self] in
-            for await state in licenseUpdates {
+            for await update in licenseUpdates {
                 guard !Task.isCancelled,let self,self.started,self.startGeneration==generation else { return }
-                self.applyLicense(state)
+                guard update.sequence>latestSequence else { continue }
+                latestSequence=update.sequence
+                self.applyLicense(update.state)
             }
         }
         do {

@@ -82,13 +82,36 @@ import NecarambaCore
   XCTAssertTrue(unsubscribed)
   XCTAssertEqual(app.licenseState,"unavailable")
  }
+ func testBufferedUpdateOlderThanSnapshotCannotReplaceRevocation() async throws {
+  let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+  let domain="test.delivery."+UUID().uuidString;let defaults=UserDefaults(suiteName:domain)!
+  defer { defaults.removePersistentDomain(forName:domain);try? FileManager.default.removeItem(at:root) }
+  let app=try ApplicationServices(directory:root,defaults:defaults,permissions:DeliveryPermissions(),loginBackend:DeliveryLogin(),onPreferences:{_ in})
+  let licensing=DeliveryLicensingFake(snapshot:.revoked,holdSnapshot:true)
+  let delivery=ApplicationDeliveryServices(application:app,configuration:.init(bundleID:"test.app"),licensing:licensing)
+  var states:[String]=[]
+  let pending=expectation(description:"later update processed")
+  app.onChanged={ states.append(app.licenseState);if app.licenseState=="pending" { pending.fulfill() } }
+  let startup=Task { await delivery.start(bundle:.main,root:root,install:{ _,_ in }) }
+  let requested=await licensing.waitForSnapshotRequest()
+  XCTAssertTrue(requested)
+  await licensing.emit(.active(until:nil,renews:false))
+  await licensing.releaseSnapshot()
+  await startup.value
+  await licensing.emit(.pending)
+  await fulfillment(of:[pending],timeout:2)
+  XCTAssertFalse(states.contains("active"))
+  XCTAssertTrue(states.contains("revoked"))
+  delivery.stop()
+ }
 }
 private actor DeliveryLicensingFake:LicensingAdapter {
  let snapshot:EntitlementState
  let holdSnapshot:Bool
  private var snapshotRequested=false
  private var snapshotWaiter:CheckedContinuation<Void,Never>?
- private var streams:[UUID:AsyncStream<EntitlementState>.Continuation]=[:]
+ private var streams:[UUID:AsyncStream<EntitlementRevision>.Continuation]=[:]
+ private var sequence:UInt64=0
  init(snapshot:EntitlementState,holdSnapshot:Bool=false) { self.snapshot=snapshot;self.holdSnapshot=holdSnapshot }
  func current() async->EntitlementState {
   if holdSnapshot {
@@ -97,6 +120,11 @@ private actor DeliveryLicensingFake:LicensingAdapter {
   }
   return snapshot
  }
+ func snapshot() async->EntitlementRevision {
+  let state=await current()
+  sequence &+= 1
+  return .init(state:state,sequence:sequence)
+ }
  func waitForSnapshotRequest() async->Bool {
   for _ in 0..<100 { if snapshotRequested { return true };await Task.yield() }
   return snapshotRequested
@@ -104,14 +132,18 @@ private actor DeliveryLicensingFake:LicensingAdapter {
  func releaseSnapshot() { snapshotWaiter?.resume();snapshotWaiter=nil }
  func purchase(productID:String) async throws->PurchaseOutcome { .pending }
  func restore() async throws->EntitlementState { snapshot }
- func updates() async->AsyncStream<EntitlementState> {
+ func updates() async->AsyncStream<EntitlementRevision> {
   let id=UUID()
   return AsyncStream { continuation in
    streams[id]=continuation
    continuation.onTermination={ [weak self] _ in Task { await self?.remove(id) } }
   }
  }
- func emit(_ state:EntitlementState) { for stream in streams.values { stream.yield(state) } }
+ func emit(_ state:EntitlementState) {
+  sequence &+= 1
+  let update=EntitlementRevision(state:state,sequence:sequence)
+  for stream in streams.values { stream.yield(update) }
+ }
  func subscriberCount()->Int { streams.count }
  private func remove(_ id:UUID) { streams[id]=nil }
  func waitForNoSubscribers() async->Bool {

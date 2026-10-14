@@ -10,7 +10,8 @@ public actor StoreKitLicensingAdapter: LicensingAdapter {
     private let now: () -> Date
     private var prior: EntitlementState = .unavailable
     private var observer: Task<Void, Never>?
-    private var listeners: [UUID: AsyncStream<EntitlementState>.Continuation] = [:]
+    private var listeners: [UUID: AsyncStream<EntitlementRevision>.Continuation] = [:]
+    private var sequence: UInt64 = 0
     private let cacheStorage: EntitlementMaterialStore?
     private var cache: VerifiedEntitlementCache?
     public init(productIDs: Set<String>, bundleID: String, environment: String = "Production", now: @escaping () -> Date = Date.init, cacheStorage: EntitlementMaterialStore? = nil) {
@@ -30,6 +31,18 @@ public actor StoreKitLicensingAdapter: LicensingAdapter {
         }
         prior = best; return best
     }
+    public func snapshot() async -> EntitlementRevision {
+        for _ in 0..<3 {
+            let before=sequence
+            let state=await current()
+            guard before==sequence else { continue }
+            sequence &+= 1
+            return .init(state:state,sequence:sequence)
+        }
+        // Continuous concurrent StoreKit changes cannot make a stale snapshot grant access.
+        sequence &+= 1
+        return .init(state:.unavailable,sequence:sequence)
+    }
     public func purchase(productID: String) async throws -> PurchaseOutcome {
         guard productIDs.contains(productID), !bundleID.isEmpty else { throw LicensingError.unknownProduct }
         guard let product = try await Product.products(for: [productID]).first else { throw LicensingError.unavailable }
@@ -46,10 +59,10 @@ public actor StoreKitLicensingAdapter: LicensingAdapter {
         guard !productIDs.isEmpty, !bundleID.isEmpty else { throw LicensingError.unavailable }
         try await AppStore.sync(); return await current()
     }
-    public func updates() async -> AsyncStream<EntitlementState> {
+    public func updates() async -> AsyncStream<EntitlementRevision> {
         guard !productIDs.isEmpty, !bundleID.isEmpty else { return AsyncStream { $0.finish() } }
         let id = UUID()
-        let stream = AsyncStream<EntitlementState> { continuation in
+        let stream = AsyncStream<EntitlementRevision> { continuation in
             listeners[id] = continuation
             continuation.onTermination = { [weak self] _ in Task { await self?.removeListener(id) } }
         }
@@ -77,8 +90,11 @@ public actor StoreKitLicensingAdapter: LicensingAdapter {
     private func consume(_ result: VerificationResult<Transaction>) async {
         guard case .verified(let transaction) = result, accepts(transaction) else { return }
         let state = stateFor(transaction)
-        prior = state; await saveCache(result); await transaction.finish()
-        for listener in listeners.values { listener.yield(state) }
+        prior = state
+        sequence &+= 1
+        let update=EntitlementRevision(state:state,sequence:sequence)
+        for listener in listeners.values { listener.yield(update) }
+        await saveCache(result); await transaction.finish()
     }
     private func entitlementCache() -> VerifiedEntitlementCache? {
         if let cache { return cache }
