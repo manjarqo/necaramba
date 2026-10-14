@@ -79,7 +79,7 @@ private final class ManualLayouts: LayoutAccess {
   func supported() -> [LayoutID] { [.init(rawValue: "US"), .init(rawValue: "RU")] }
   func select(_ id: LayoutID) -> Bool { value = id; return true }
 }
-private final class ManualEditor: SelectionAccess, ManualTrackedSuffixReplacing {
+private final class ManualEditor: SelectionAccess, ManualTrackedSuffixReplacing, ManualRepeatedSuffixReplacing {
   let context: FacadeContext
   var text = "ghbdtn"
   var selectionLength = 0
@@ -104,9 +104,15 @@ private final class ManualEditor: SelectionAccess, ManualTrackedSuffixReplacing 
       in: NSRange(location: evidence.location, length: evidence.length), with: replacement)
     return .committed
   }
+  func replaceRepeatedSuffix(_ candidate: ManualRepeatCandidate, with replacement: String) -> ApplyResult {
+    guard emptyProxy, candidate.context == context.token,
+      text == candidate.currentText + candidate.delimiter else { return .aborted }
+    text = replacement
+    return .dispatched
+  }
   func replaceTrackedSuffix(_ word: BufferedWord, with replacement: String) -> ApplyResult {
     fallbackCalls += 1
-    guard emptyProxy, word.context == context.token, word.text == text,
+    guard emptyProxy, word.context == context.token, word.text + word.delimiter == text,
       word.events.compactMap(\.text).joined() == word.text else { return .aborted }
     text = replacement
     return .dispatched
@@ -316,5 +322,76 @@ extension NativeInputControllerTests {
     editor.text = "как"
     XCTAssertEqual(controller.manualCorrection(), .committed)
     XCTAssertEqual(editor.text, "rfr")
+  }
+}
+extension NativeInputControllerTests {
+  func testRepeatedDoubleShiftTogglesLastWordAtLeastFourTimesInReadableAndProxyFields() {
+    for proxy in [false, true] {
+      let context = FacadeContext()
+      let editor = ManualEditor(context)
+      editor.emptyProxy = proxy
+      let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+        editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+      typeWord(controller, context: context)
+      for (turn, expected) in ["привет", "ghbdtn", "привет", "ghbdtn"].enumerated() {
+        let converted = expectation(description: "double Shift conversion")
+        controller.onResult = { result in
+          XCTAssertEqual(result, proxy ? .dispatched : .committed)
+          converted.fulfill()
+        }
+        let layout = controller.runtime.cachedInputContext()!.1
+        // Duplicate asynchronous TIS notification must not erase the last result.
+        controller.runtime.updateLayout(layout)
+        for (index, down) in [true, false, true, false].enumerated() {
+          controller.runtime.accept(.init(kind: down ? .down : .up, keyCode: 56,
+            modifiers: down ? [.shift] : [],
+            timestampNanos: UInt64(turn + 1) * 1_000_000_000 + UInt64(index) * 40_000_000,
+            layout: layout, context: context.token, origin: .physical, text: nil, isRepeat: false))
+        }
+        wait(for: [converted], timeout: 1)
+        XCTAssertEqual(editor.text, expected)
+      }
+    }
+  }
+  func testNavigationAndFocusChangeInvalidateRepeatedManualConversion() {
+    for changeFocus in [false, true] {
+      let context = FacadeContext()
+      let editor = ManualEditor(context)
+      editor.emptyProxy = true
+      let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+        editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+      typeWord(controller, context: context)
+      XCTAssertEqual(controller.manualCorrection(), .dispatched)
+      if changeFocus {
+        context.token = .init(pid: 42, bundleID: "test", focusEpoch: 3, layoutEpoch: 1)
+      } else {
+        controller.runtime.accept(.init(kind: .down, keyCode: 123, modifiers: [], timestampNanos: 900,
+          layout: .init(rawValue: "RU"), context: context.token, origin: .physical,
+          text: nil, isRepeat: false))
+      }
+      XCTAssertEqual(controller.manualCorrection(), .aborted)
+      XCTAssertEqual(editor.text, "привет")
+    }
+  }
+}
+
+extension NativeInputControllerTests {
+  func testRepeatedManualPreservesTrailingSpaceAndDirectPasteDiscardsCandidate() {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    editor.text = "ghbdtn "
+    editor.emptyProxy = true
+    let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+      editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+    typeWord(controller, context: context)
+    controller.runtime.accept(.init(kind: .down, keyCode: 49, modifiers: [], timestampNanos: 100,
+      layout: .init(rawValue: "US"), context: context.token, origin: .physical, text: " ", isRepeat: false))
+    for expected in ["привет ", "ghbdtn ", "привет "] {
+      XCTAssertEqual(controller.manualCorrection(), .dispatched)
+      XCTAssertEqual(editor.text, expected)
+    }
+    _ = controller.plainPaste(clipboard: FacadeClipboard())
+    XCTAssertEqual(controller.manualCorrection(), .aborted)
+    XCTAssertEqual(editor.text, "привет ")
   }
 }

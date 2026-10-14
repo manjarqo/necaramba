@@ -22,6 +22,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   private var buffer = WordBuffer()
   private var tracked: [InputEvent] = []
   private var recentWord: BufferedWord?
+  private var repeatedManual: ManualRepeatCandidate?
   private var gestures: GestureRecognizer
   private let command: (RuntimeCommand) -> Void
   private var tap: EventTapAdapter?
@@ -76,6 +77,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     generation &+= 1
     tracked.removeAll()
     recentWord = nil
+    repeatedManual = nil
     buffer.invalidate(.unknownInput)
     gestures.invalidate()
     lock.unlock()
@@ -87,6 +89,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     preferences = snapshot
     tracked.removeAll()
     recentWord = nil
+    repeatedManual = nil
     gestures = GestureRecognizer(configuration: Self.configuration(snapshot))
     buffer.invalidate(.unknownInput)
   }
@@ -101,6 +104,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     self.engine = engine
     tracked.removeAll()
     recentWord = nil
+    repeatedManual = nil
     buffer.invalidate(.unknownInput)
   }
   public var installedModelVersion: UInt64 {
@@ -111,10 +115,12 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   public func updateLayout(_ id: LayoutID) {
     lock.lock()
     defer { lock.unlock() }
+    guard layout != id else { return }
     generation &+= 1
     layout = id
     tracked.removeAll()
     recentWord = nil
+    repeatedManual = nil
     buffer.invalidate(.layoutChanged)
     gestures.invalidate()
   }
@@ -124,6 +130,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     generation &+= 1
     tracked.removeAll()
     recentWord = nil
+    repeatedManual = nil
     notifyInvalidation()
     buffer.invalidate(reason)
     gestures.invalidate()
@@ -138,6 +145,38 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     }
     return recentWord
   }
+  public func discardManualCandidate() {
+    lock.lock()
+    defer { lock.unlock() }
+    repeatedManual = nil
+    tracked.removeAll()
+    recentWord = nil
+  }
+  public func manualRepeatCandidate() -> ManualRepeatCandidate? {
+    lock.lock()
+    defer { lock.unlock() }
+    guard let candidate = repeatedManual, candidate.layout == layout,
+      context.isSafe(candidate.context) else {
+      repeatedManual = nil
+      return nil
+    }
+    return candidate
+  }
+  /// Update the intentional layout transition and retain lineage atomically against new input.
+  @discardableResult public func retainManualResult(_ candidate: ManualRepeatCandidate,
+                                                    expectedGeneration: UInt64) -> Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    guard generation == expectedGeneration, context.isSafe(candidate.context) else { return false }
+    generation &+= 1
+    layout = candidate.layout
+    tracked.removeAll()
+    recentWord = nil
+    buffer.invalidate(.layoutChanged)
+    gestures.invalidate()
+    repeatedManual = candidate
+    return true
+  }
   public func inputGeneration() -> UInt64 {
     lock.lock()
     defer { lock.unlock() }
@@ -150,6 +189,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     buffer.invalidate(.unknownInput)
     tracked.removeAll()
     recentWord = nil
+    repeatedManual = nil
     notifyInvalidation()
   }
   public func finishShortcut(_ lease: ShortcutLease, _ result: ApplyResult) {
@@ -182,10 +222,12 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     forwardedCount += 1
     guard event.origin != .ours else { return .pass }
     if event.kind != .up { generation &+= 1 }
+    if event.kind != .up && ![56, 60].contains(event.keyCode) { repeatedManual = nil }
     if event.kind == .down && ![56, 60, 58, 61].contains(event.keyCode) { notifyInvalidation() }
     guard event.origin == .physical else {
       tracked.removeAll()
       recentWord = nil
+      repeatedManual = nil
       notifyInvalidation()
       buffer.invalidate(.unknownInput)
       gestures.invalidate()
@@ -195,6 +237,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     guard context.isSafe(event.context) else {
       tracked.removeAll()
       recentWord = nil
+      repeatedManual = nil
       notifyInvalidation()
       buffer.invalidate(.unknownInput)
       return .pass
@@ -204,6 +247,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     {
       tracked.removeAll()
       recentWord = nil
+      repeatedManual = nil
       buffer.invalidate(.unknownInput)
       guard tap?.canSuppress == true else { return .pass }
       let lease = ShortcutLease(
@@ -236,10 +280,12 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
         } else {
           tracked.removeAll()
           recentWord = nil
+          repeatedManual = nil
         }
       } else if ![56, 60, 58, 61].contains(event.keyCode) {
         tracked.removeAll()
         recentWord = nil
+        repeatedManual = nil
       }
     }
     if earlyEnabled, preferences.autoEnabled, let first = tracked.first, !tracked.isEmpty {

@@ -73,3 +73,27 @@ public protocol ContextRefreshing: ContextAccess {
 
 /// Application/layout identity for non-editing gestures; never proves editable focus.
 public protocol GestureContextReading: AnyObject { func gestureContext() -> ContextToken? }
+
+/// Explicit conversion lineage. Original events remain the physically observed input;
+/// current text/layout describe the last manual result, not newly observed keystrokes.
+public struct ManualRepeatCandidate: Sendable {
+  public let original: BufferedWord
+  public let currentText: String
+  public let context: ContextToken
+  public let layout: LayoutID
+  public let delimiter: String
+  public let fieldIdentity: UUID?
+  public init(original: BufferedWord, currentText: String, context: ContextToken,
+              layout: LayoutID, delimiter: String, fieldIdentity: UUID?) {
+    self.original = original
+    self.currentText = currentText
+    self.context = context
+    self.layout = layout
+    self.delimiter = delimiter
+    self.fieldIdentity = fieldIdentity
+  }
+}
+public protocol ManualRepeatedSuffixReplacing: AnyObject {
+  /// `text` includes delimiter. Empty proxies return dispatched, never verified committed.
+  func replaceRepeatedSuffix(_ candidate: ManualRepeatCandidate, with text: String) -> ApplyResult
+}

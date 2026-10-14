@@ -142,11 +142,13 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   }
   private func ready(_ token: ContextToken, diagnose: Bool = false) -> Bool {
     guard quarantined != token else {
+      runtime.discardManualCandidate()
       if diagnose { InputDiagnostics.event("manual.ready.quarantined") }
       return false
     }
     let p = permissions.current()
     guard p.listen, p.post, p.ax, !p.secureInput else {
+      runtime.discardManualCandidate()
       if diagnose {
         InputDiagnostics.event("manual.ready.permissions", detail:
           (p.listen ? 1 : 0) | (p.post ? 2 : 0) | (p.ax ? 4 : 0) | (p.secureInput ? 8 : 0))
@@ -156,6 +158,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     let before = editContext.current()
     let after = editContext.refresh()
     guard after == token else {
+      runtime.discardManualCandidate()
       if diagnose {
         InputDiagnostics.event("manual.ready.contextMismatch")
         InputDiagnostics.event("manual.ready.beforeMatches", detail: before == token ? 1 : 0)
@@ -266,6 +269,55 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     manualTables = tables
     return tables.manualMapping(source: source, target: target)
   }
+  private func retainManualResult(original: BufferedWord, text: String, target: LayoutID,
+                                  identity: UUID?, before: ContextToken, generation: UInt64) {
+    guard let after = editContext.refresh(), after.pid == before.pid,
+      after.bundleID == before.bundleID, after.focusEpoch == before.focusEpoch else {
+      runtime.invalidateContext(reason: .focusChanged)
+      return
+    }
+    let candidate = ManualRepeatCandidate(original: original, currentText: text, context: after,
+      layout: target, delimiter: original.delimiter, fieldIdentity: identity)
+    if !runtime.retainManualResult(candidate, expectedGeneration: generation) {
+      runtime.updateLayout(target)
+    }
+  }
+  private func repeatManual(_ candidate: ManualRepeatCandidate, mapping: LayoutMapping,
+                            generation: UInt64) -> ApplyResult {
+    let text: String
+    if layoutCapture != nil {
+      guard let converted = manualTables?.manualConversion(candidate.original, target: mapping.target)
+      else { return .aborted }
+      text = converted.replacement
+    } else {
+      text = LayoutConverter.convert(candidate.currentText, mapping: mapping)
+    }
+    guard text != candidate.currentText, runtime.inputGeneration() == generation else { return .aborted }
+    let result: ApplyResult
+    if selectionAccess.suffix(candidate.currentText + candidate.delimiter, in: candidate.context) != nil {
+      result = replacement.apply(.init(expected: candidate.context, original: candidate.currentText,
+        replacement: text, sourceLayout: candidate.layout, targetLayout: mapping.target,
+        delimiter: candidate.delimiter))
+    } else if let repeated = selectionAccess as? ManualRepeatedSuffixReplacing {
+      result = repeated.replaceRepeatedSuffix(candidate, with: text + candidate.delimiter)
+      replacement.invalidate(.unknownInput)
+    } else { return .aborted }
+    if result == .dispatched {
+      guard VerifiedLayoutSwitcher(access: layouts).select(mapping.target) else {
+        quarantine(.uncertain, token: candidate.context)
+        return .uncertain
+      }
+    }
+    if result == .committed || result == .dispatched {
+      retainManualResult(original: candidate.original, text: text, target: mapping.target,
+        identity: candidate.fieldIdentity, before: candidate.context, generation: generation)
+      if result == .committed, let id = replacement.lastCommittedID { onCommitted(id, .manual) }
+    } else {
+      runtime.invalidateContext(reason: .unknownInput)
+      quarantine(result, token: candidate.context)
+    }
+    return result
+  }
   public func manualCorrection() -> ApplyResult {
     precondition(Thread.isMainThread)
     let manualGeneration = runtime.inputGeneration()
@@ -293,6 +345,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     if let evidence = selected, !evidence.text.isEmpty,
       let mapping = manualMapping
     {
+      runtime.discardManualCandidate()
       let text = LayoutConverter.convert(evidence.text, mapping: mapping)
       guard text != evidence.text else { return .aborted }
       let result = selectionAccess.replace(evidence, with: text)
@@ -314,6 +367,10 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       replacement.recordCommitted(plan, after: after)
       onCommitted(plan.id, .manual)
       return .committed
+    }
+    if let repeated = runtime.manualRepeatCandidate(), let mapping = manualMapping,
+      repeated.context == token, repeated.layout == current {
+      return repeatManual(repeated, mapping: mapping, generation: manualGeneration)
     }
     if replacement.hasUndo {
       let undone = undoLast()
@@ -354,8 +411,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
           quarantine(.uncertain, token: token)
           return .uncertain
         }
-        runtime.updateLayout(mapping.target)
-        _ = editContext.refresh()
+        retainManualResult(original: word, text: text, target: mapping.target,
+          identity: selected?.identity, before: token, generation: manualGeneration)
       } else if result == .uncertain {
         quarantine(result, token: token)
       }
@@ -367,8 +424,11 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         targetLayout: mapping.target, delimiter: word.delimiter))
     diagnoseResult(result, event: "manual.suffix.result")
     if result == .uncertain { quarantine(result, token: token) }
-    if result == .committed, let id = replacement.lastCommittedID { onCommitted(id, .manual) }
-    if let layout = layouts.current() { runtime.updateLayout(layout) }
+    if result == .committed {
+      retainManualResult(original: word, text: text, target: mapping.target,
+        identity: selected?.identity, before: token, generation: manualGeneration)
+      if let id = replacement.lastCommittedID { onCommitted(id, .manual) }
+    } else if let layout = layouts.current() { runtime.updateLayout(layout) }
     return result
   }
   public func plainPaste(clipboard: ClipboardAccess) -> ApplyResult {
@@ -380,12 +440,14 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     precondition(Thread.isMainThread)
     guard ready(token) else { return .aborted }
     replacement.invalidate(.unknownInput)
+    runtime.discardManualCandidate()
     let result = selection.plainPaste(in: token, clipboard: clipboard)
     quarantine(result, token: token)
     return result
   }
   public func undoLast() -> ApplyResult {
     precondition(Thread.isMainThread)
+    if runtime.manualRepeatCandidate() != nil { runtime.discardManualCandidate() }
     guard let token = editContext.current(), ready(token) else { return .aborted }
     let result = replacement.undoLast()
     quarantine(result, token: token)
