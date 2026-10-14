@@ -60,9 +60,11 @@ extension LinguisticEngineTests {
         XCTAssertEqual(engine.decide(word: word("HEllo"), preferences: .init(typoEnabled: false), excludedWords: []), .unchanged(.correct))
     }
 
-    func testRecordedStylePhysicalPunctuationLayoutWords() throws {
+    func testRecordedStylePhysicalPunctuationAbstainsWhenSourceCouldBeCode() throws {
         let us = LayoutID(rawValue: "fixture.us"), ru = LayoutID(rawValue: "fixture.ru")
-        let cases: [(String, String)] = [("vj;yj", "можно"), ("ktc[jp", "лесхоз"), (",tvjkm", "бемоль")]
+        // These source/target pairs occur in the independent calibration mismatch families.
+        // Physical-key provenance still cannot distinguish prose from code-like syntax.
+        let cases: [(String, String, Bool)] = [("vj;yj", "можно", false), ("ktc[jp", "лесхоз", false), (",tvjkm", "бемоль", true)]
         let sourceKeys = Array(Set(cases.flatMap { $0.0.map(String.init) })).sorted()
         let targetLetters: [String: String] = ["v":"м", "j":"о", ";":"ж", "y":"н", "k":"л", "t":"е", "c":"с", "[":"х", "p":"з", ",":"б", "m":"ь"]
         let entries = sourceKeys.enumerated().map { index, key in PhysicalLayoutMapping.Entry(keyCode: UInt16(index + 10), modifiers: [], text: targetLetters[key]!) }
@@ -71,7 +73,7 @@ extension LinguisticEngineTests {
             lexicon: cases.map { .init(word: $0.1, language: .russian, frequencyBand: 5) },
             mappings: [.init(source: us, target: ru, pairs: [:])]),
             physicalMappings: [.init(source: us, target: ru, entries: entries)])
-        for (input, expected) in cases {
+        for (input, expected, mayChange) in cases {
             var buffer = WordBuffer()
             let context = ContextToken(pid: 42, bundleID: "fixture.editor", focusEpoch: 1, layoutEpoch: 1)
             for character in input {
@@ -79,18 +81,27 @@ extension LinguisticEngineTests {
             }
             let buffered = buffer.consume(.init(kind: .down, keyCode: 49, modifiers: [], timestampNanos: 2, layout: us, context: context, origin: .physical, text: " ", isRepeat: false))
             XCTAssertEqual(buffered?.text, input)
-            XCTAssertEqual(replacement(engine.decide(word: try XCTUnwrap(buffered), preferences: .defaults, excludedWords: []))?.replacement, expected)
+            let decision = engine.decide(word: try XCTUnwrap(buffered), preferences: .defaults, excludedWords: [])
+            if mayChange { XCTAssertEqual(replacement(decision)?.replacement, expected) }
+            else { XCTAssertEqual(decision, .unchanged(.protectedToken)) }
+            if input == ",tvjkm" {
+                let neverSwitch = LinguisticEngine(snapshot: .init(modelVersion: 1,
+                    lexicon: [.init(word: expected, language: .russian, frequencyBand: 5)],
+                    protectedTokens: [input], mappings: [.init(source: us, target: ru, pairs: [:])]),
+                    physicalMappings: [.init(source: us, target: ru, entries: entries)])
+                XCTAssertEqual(neverSwitch.decide(word: try XCTUnwrap(buffered), preferences: .defaults, excludedWords: []), .unchanged(.protectedToken))
+            }
         }
     }
 
     func testPhysicalPunctuationRequiresSingleSafeSourceMarkAndExactEventText() {
         let us = LayoutID(rawValue: "fixture.us"), ru = LayoutID(rawValue: "fixture.ru")
         let context = ContextToken(pid: 42, bundleID: "fixture.editor", focusEpoch: 1, layoutEpoch: 1)
-        let chars: [(String, String)] = [("v", "м"), ("j", "о"), (";", "ж"), ("y", "н"), (".", "ю"), ("[", "х")]
+        let chars: [(String, String)] = [(",", "б"), ("v", "м"), ("j", "о"), (";", "ж"), ("y", "н"), (".", "ю"), ("[", "х")]
         let codes = Dictionary(uniqueKeysWithValues: chars.enumerated().map { ($0.element.0, UInt16($0.offset + 10)) })
         let entries = chars.enumerated().map { PhysicalLayoutMapping.Entry(keyCode: UInt16($0.offset + 10), modifiers: [], text: $0.element.1) }
         let engine = LinguisticEngine(snapshot: .init(modelVersion: 1,
-            lexicon: ["можно", "моюно", "можхно"].map { .init(word: $0, language: .russian, frequencyBand: 5) },
+            lexicon: ["можно", "моюно", "можхно", "бмо"].map { .init(word: $0, language: .russian, frequencyBand: 5) },
             mappings: [.init(source: us, target: ru, pairs: [:])]),
             physicalMappings: [.init(source: us, target: ru, entries: entries)])
         func typed(_ text: String, overrideEventText: String? = nil) -> BufferedWord {
@@ -101,13 +112,9 @@ extension LinguisticEngineTests {
         }
         XCTAssertEqual(engine.decide(word: typed("vj.yj"), preferences: .defaults, excludedWords: []), .unchanged(.protectedToken))
         XCTAssertEqual(engine.decide(word: typed("vj;[yj"), preferences: .defaults, excludedWords: []), .unchanged(.protectedToken))
-        XCTAssertEqual(engine.decide(word: typed("vj;yj", overrideEventText: "x"), preferences: .defaults, excludedWords: []), .unchanged(.protectedToken))
-        XCTAssertEqual(engine.decide(word: .init(text: "vj;yj", events: [], context: context, layout: us, delimiter: " "), preferences: .defaults, excludedWords: []), .unchanged(.protectedToken))
-        let neverSwitch = LinguisticEngine(snapshot: .init(modelVersion: 1,
-            lexicon: [.init(word: "можно", language: .russian, frequencyBand: 5)],
-            protectedTokens: ["vj;yj"], mappings: [.init(source: us, target: ru, pairs: [:])]),
-            physicalMappings: [.init(source: us, target: ru, entries: entries)])
-        XCTAssertEqual(neverSwitch.decide(word: typed("vj;yj"), preferences: .defaults, excludedWords: []), .unchanged(.protectedToken))
+        XCTAssertEqual(replacement(engine.decide(word: typed(",vj"), preferences: .defaults, excludedWords: []))?.replacement, "бмо")
+        XCTAssertEqual(engine.decide(word: typed(",vj", overrideEventText: "x"), preferences: .defaults, excludedWords: []), .unchanged(.protectedToken))
+        XCTAssertEqual(engine.decide(word: .init(text: ",vj", events: [], context: context, layout: us, delimiter: " "), preferences: .defaults, excludedWords: []), .unchanged(.protectedToken))
     }
 }
 extension LinguisticEngineTests {
