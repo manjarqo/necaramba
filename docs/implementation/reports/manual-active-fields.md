@@ -32,4 +32,23 @@ Related primary documentation: [Apple selected-text range](https://developer.app
 - Independent review found three defects (false verified proxy result, terminal submission replay, stale word after plain paste); all reproduced and fixed, rereview found no remaining actionable issues.
 
 - Final `flutter build macos --release` succeeded (60.6 MB), universal x86_64/arm64. Deep/strict codesign verification passed with the same certificate-based designated requirement as the prior granted local Release. Updated app launched without a missing-permissions onboarding dialog.
-- Physical Orca check requested from the user after launch: type `ghbdtn`, double Shift within 300 ms before Enter; awaiting result. No synthetic UI action is counted as that device check.
+- Physical Orca check requested from the user after launch: type `ghbdtn`, double Shift within 300 ms before Enter; user reported no text change. This is a FAILED device check, not a completed Orca qualification. No synthetic UI action is counted as that device check.
+
+- Follow-up diagnosis adds redacted stage/AX status logging only (no keyboard strings, AX values, titles or clipboard contents), to distinguish gesture delivery, editable focus, proof and posting failures on the actual Orca path.
+
+## Orca physical diagnosis
+
+First diagnostic reproduction reached a recognized double-Shift command but was cancelled on a context mismatch. A later controlled reproduction passed context and AX value/range proofs and retained a six-character physical word, but logged `manual.mappingExists=0`; no mutation was attempted. Read-only input-source configuration shows ABC (252) and Russian (19456). The manual command was incorrectly dependent on the classifier package's strictly resolved alias mappings. Manual physical-layout conversion must be derived independently from the installed TIS keyboard tables; automatic linguistic mappings remain unchanged.
+
+
+The independent manual mapping fix was verified against actual read-only TIS tables on this Mac: ABC/Russian strict package resolution produced zero mappings for the fixture containing the incompatible ё pair, while the physical manual mapping converted `ghbdtn` to `привет` and preserved uppercase. A host-specific temporary test was removed after recording the result; portable fixtures retain the regression.
+
+Mapping-fix verification: 148 Mac + 63 Core = 211 Swift tests passed. Universal Release build succeeded (60.7 MB), deep/strict codesign validation passed with the unchanged certificate requirement. The user subsequently confirmed the first `ghbdtn` → `привет` conversion in Orca. The following Russian `как` and Latin `ltkf` did not convert. Logs showed retained words and available mappings, but no mutation was attempted.
+
+## Consecutive words and event Unicode
+
+Read-only actual TIS tests confirmed both `как` → `rfr` and `ltkf` → `дела` map correctly. The runtime associated raw keyboard-event Unicode with a separately observed layout; these can disagree after switching layouts. Manual typed-word conversion now reconstructs both the original word and replacement from physical key codes/modifiers and captured source/target tables. Normalized events preserve context, layout, timestamps and origin. Ambiguous entries are rejected; generation checks and exact readable AX suffix proof remain in place. Selected-text conversion and automatic resolution are unchanged.
+
+RED/GREEN coverage reproduces three consecutive words with stale Unicode in the latter two, then verifies all three conversions. A further regression rejects an unrelated readable editor suffix before permitting the reconstructed original. Integrated `swift test`: 150 Mac + 63 Core = 213 passed. Independent review of `34ab8ba` found no actionable defects. Physical verification of the complete sequence in Orca remains pending.
+
+The consecutive-word fix was built as a universal arm64/x86_64 Release (60.7 MB); deep/strict signature verification passed with the same certificate requirement. The rebuilt app launched without a permissions onboarding dialog. The requested physical sequence is `ghbdtn` + double Shift, space, `как` + double Shift, space, `ltkf` + double Shift; expected result `привет rfr дела`.
