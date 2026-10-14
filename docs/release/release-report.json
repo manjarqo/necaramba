@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "manifest": "docs/release/compatibility-manifest.json",
+  "artifactPath": "",
   "buildSHA": "",
   "results": {},
   "status": "blocked",

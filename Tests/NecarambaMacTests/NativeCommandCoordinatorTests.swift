@@ -41,6 +41,43 @@ import XCTest
         do { _ = try await bridge.command("readTypedText", envelope: command(bridge, id: "two")); XCTFail() } catch {}
         XCTAssertEqual(calls, 0)
     }
+    func testDelayedImportRejectsNativeRevisionChangeAtCommit() async throws {
+        var commitCount = 0
+        var resume: CheckedContinuation<Void, Never>?
+        let bridge = NativeCommandCoordinator(snapshot: { [:] }, execute: { _, arguments in
+            await withCheckedContinuation { resume = $0 }
+            try (arguments["__nativeMutationGuard"] as? (() throws -> Void))?()
+            commitCount += 1
+            return [:]
+        })
+        let pending = Task { try await bridge.command("importArchive", envelope: command(bridge, id: "import")) }
+        while resume == nil { await Task.yield() }
+        bridge.publishChange()
+        resume?.resume()
+        do { _ = try await pending.value; XCTFail("stale import committed") }
+        catch let failure as NativeCommandFailure { XCTAssertEqual(failure.code, "conflict") }
+        XCTAssertEqual(commitCount, 0)
+        XCTAssertEqual(bridge.state()["revision"] as? Int, 1)
+    }
+    func testOtherFilePanelMutationsCarryCommitGuard() async throws {
+        for method in ["chooseApp", "chooseSound"] {
+            var resume:CheckedContinuation<Void,Never>?
+            var committed = false
+            let bridge = NativeCommandCoordinator(snapshot:{ [:] }, execute:{ _, arguments in
+                await withCheckedContinuation { resume = $0 }
+                try (arguments["__nativeMutationGuard"] as? (() throws -> Void))?()
+                committed = true
+                return [:]
+            })
+            let pending = Task { try await bridge.command(method, envelope:command(bridge,id:method)) }
+            while resume == nil { await Task.yield() }
+            bridge.publishChange()
+            resume?.resume()
+            do { _ = try await pending.value; XCTFail("\(method) committed after native change") }
+            catch let failure as NativeCommandFailure { XCTAssertEqual(failure.code,"conflict") }
+            XCTAssertFalse(committed)
+        }
+    }
     private func command(_ bridge: NativeCommandCoordinator, id: String) -> [String: Any] {
         ["requestID": id, "expectedSessionID": bridge.sessionID, "expectedRevision": 0, "arguments": [String: Any]()]
     }

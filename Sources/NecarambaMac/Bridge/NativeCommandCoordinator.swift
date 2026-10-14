@@ -64,7 +64,7 @@ public struct NativeCommandReply {
         let id = envelope["requestID"] as? String ?? ""
         guard Self.allowed.contains(method), !id.isEmpty, id.utf8.count <= 128,
               let arguments = envelope["arguments"] as? [String: Any],
-              JSONSerialization.isValidJSONObject(arguments) else { throw NativeCommandFailure("invalidArgument", requestID: id) }
+              JSONSerialization.isValidJSONObject(arguments), arguments["__nativeMutationGuard"] == nil else { throw NativeCommandFailure("invalidArgument", requestID: id) }
         let fingerprint = try JSONSerialization.data(withJSONObject: ["method": method, "arguments": arguments], options: [.sortedKeys])
         guard fingerprint.count <= 1024 * 1024 else { throw NativeCommandFailure("invalidArgument", requestID: id) }
         if let (original, result) = cache[id] {
@@ -84,7 +84,14 @@ public struct NativeCommandReply {
             }
         }
         do {
-            let result = try await execute(method, arguments)
+            var guardedArguments = arguments
+            if ["chooseApp", "chooseSound", "importArchive"].contains(method) {
+                let expectedRevision = revision
+                guardedArguments["__nativeMutationGuard"] = { [weak self] () throws in
+                    guard let self, self.revision == expectedRevision else { throw NativeCommandFailure("conflict") }
+                }
+            }
+            let result = try await execute(method, guardedArguments)
             if method != "getThumbnail" { revision += 1 }
             let reply = NativeCommandReply(requestID: id, state: state(), result: result)
             cache[id] = (fingerprint, result); cacheOrder.append(id)

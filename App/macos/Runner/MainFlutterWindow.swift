@@ -86,14 +86,19 @@ final class MainFlutterWindow: NSWindow, NSWindowDelegate, NSDraggingDestination
   func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
     guard accepts(sender), let services else { return false }
     let board = sender.draggingPasteboard
-    var data = board.data(forType:.tiff)
-    if data == nil, let urls = board.readObjects(forClasses:[NSURL.self], options:[.urlReadingFileURLsOnly:true]) as? [URL], let url = urls.first {
-      let scoped = url.startAccessingSecurityScopedResource(); defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-      if let file = try? FileHandle(forReadingFrom:url) {
-        defer { try? file.close() }; data = try? file.read(upToCount:10*1024*1024+1)
-      }
-    }
-    guard let data, let handle = services.registerHeaderDrop(data) else { return false }
+    guard let data = Self.readHeaderDropData(from: board), let handle = services.registerHeaderDrop(data) else { return false }
     windowChannel?.invokeMethod("headerDrop", arguments:["handle":handle]); return true
+  }
+  static func readHeaderDropData(from board: NSPasteboard) -> Data? {
+    // data(forType: .tiff) eagerly materializes the entire provider payload. There is no
+    // bounded streaming API for arbitrary TIFF pasteboard providers, so reject those.
+    guard let urls = board.readObjects(forClasses:[NSURL.self], options:[.urlReadingFileURLsOnly:true]) as? [URL],
+          let url = urls.first, url.isFileURL else { return nil }
+    let scoped = url.startAccessingSecurityScopedResource()
+    defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+    guard let file = try? FileHandle(forReadingFrom:url) else { return nil }
+    defer { try? file.close() }
+    guard let data = try? file.read(upToCount:10*1024*1024+1), data.count <= 10*1024*1024 else { return nil }
+    return data
   }
 }

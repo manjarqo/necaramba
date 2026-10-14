@@ -28,15 +28,20 @@ import NecarambaCore
     private var legacyRows: [WordRule] = []
     private var appRows: [AppRule] = []
     private var hasHeaderImage = false
+    private let chooseFile: (([UTType]) async -> URL?)?
 
     public init(directory:URL, defaults:UserDefaults, permissions:PermissionReading,
                 loginBackend:LoginBackend, onPreferences:@escaping (PreferencesSnapshot)->Void,
-                defaultSoundURL:URL? = nil) throws {
+                defaultSoundURL:URL? = nil, preferencesWrite: ((Data) throws -> Void)? = nil,
+                chooseFile: (([UTType]) async -> URL?)? = nil) throws {
         self.directory = directory; self.permissions = permissions
+        self.chooseFile = chooseFile
         try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
         rules = try SQLiteStore(url:directory.appendingPathComponent("rules.sqlite"))
         let store = rules
-        preferences = try PreferencesController(defaults:defaults,storedData:store.preferencesData(),persist:{ try store.savePreferences($0) },publish:onPreferences)
+        preferences = try PreferencesController(defaults:defaults,storedData:store.preferencesData(),persist:{ bytes in
+            try preferencesWrite?(bytes); try store.savePreferences(bytes)
+        },publish:onPreferences)
         sound = SoundStore(directory:directory.appendingPathComponent("Sounds"),defaultSoundURL:defaultSoundURL)
         header = try HeaderImageStore(directory:directory.appendingPathComponent("Appearance"))
         statistics = try StatisticsStore(directory:directory.appendingPathComponent("Statistics"))
@@ -88,6 +93,7 @@ import NecarambaCore
             try rules.clearWords(); try refreshRules()
         case "chooseApp":
             guard let url=await choose(types:[.applicationBundle]),let bundle=Bundle(url:url),let id=bundle.bundleIdentifier else { throw NativeCommandFailure("cancelled") }
+            try mutationGuard(a)
             let name=bundle.object(forInfoDictionaryKey:"CFBundleDisplayName") as? String ?? url.deletingPathExtension().lastPathComponent
             try rules.setApp(AppRule(bundleID:id,displayName:name,bookmark:nil,mode:.deny,updatedAt:Int64(Date().timeIntervalSince1970))); try refreshRules()
         case "setAppMode":
@@ -100,7 +106,21 @@ import NecarambaCore
             permissions.request(kind)
         case "refreshCapabilities": login.refresh()
         case "setLoginEnabled":
-            let enabled=try boolean(a,"enabled"); try login.setEnabled(enabled); try preferences.setLoginPreferred(enabled)
+            let enabled=try boolean(a,"enabled")
+            let previous=login.status
+            try login.setEnabled(enabled)
+            do { try preferences.setLoginPreferred(enabled) }
+            catch {
+                if login.status != previous {
+                    guard previous == .enabled || previous == .disabled else {
+                        onChanged?(); throw NativeCommandFailure("partialFailure")
+                    }
+                    do { try login.setEnabled(previous == .enabled) }
+                    catch { onChanged?(); throw NativeCommandFailure("partialFailure") }
+                    guard login.status == previous else { onChanged?(); throw NativeCommandFailure("partialFailure") }
+                }
+                throw error
+            }
         case "setHeaderColor":
             guard let index=a["index"] as? Int else { throw invalid() }; try preferences.setSelectedColor(index)
         case "importHeaderImage":
@@ -111,6 +131,7 @@ import NecarambaCore
         case "getThumbnail": return try thumbnail()
         case "chooseSound":
             guard let url=await choose(types:[.audio]) else { throw NativeCommandFailure("cancelled") }
+            try mutationGuard(a)
             _ = try sound.importSound(from:url)
         case "resetSound": try sound.reset()
         case "resetCounters":
@@ -126,6 +147,7 @@ import NecarambaCore
             let archive=try JSONDecoder().decode(ApplicationArchiveV1.self,from:data)
             guard archive.schemaVersion == 1,archive.rules.words.count+archive.rules.legacyWords.count<=10000,archive.rules.apps.count<=1000 else { throw invalid() }
             try archive.preferences.validate()
+            try mutationGuard(a)
             try rules.importArchive(JSONEncoder().encode(archive.rules),preferences:JSONEncoder().encode(archive.preferences))
             try preferences.adoptCommittedSettings(archive.preferences)
             try refreshRules()
@@ -166,8 +188,12 @@ import NecarambaCore
         return ["bytes":output as Data,"width":image.width,"height":image.height]
     }
     private func choose(types:[UTType]) async -> URL? {
+        if let chooseFile { return await chooseFile(types) }
         let panel=NSOpenPanel(); panel.allowedContentTypes=types; panel.allowsMultipleSelection=false; panel.canChooseDirectories=false
         return await withCheckedContinuation { continuation in panel.begin { response in continuation.resume(returning:response == .OK ? panel.url:nil) } }
+    }
+    private func mutationGuard(_ arguments:[String:Any]) throws {
+        try (arguments["__nativeMutationGuard"] as? (() throws -> Void))?()
     }
     private func save(_ data:Data,name:String) async throws {
         let panel=NSSavePanel(); panel.nameFieldStringValue=name; panel.allowedContentTypes=[.json]
