@@ -1,0 +1,13 @@
+.DS_Store
+.worktrees/
+.superpowers/
+.build/
+.swiftpm/
+build/
+.dart_tool/
+.flutter-plugins-dependencies
+Pods/
+**/ephemeral/
+**/xcuserdata/
+docs/research/caramba/evidence/
+docs/research/caramba/decompiled/
