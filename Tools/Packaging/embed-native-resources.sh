@@ -4,17 +4,19 @@ root="${SRCROOT}/../.."
 resources="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
 helper="${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Library/LoginItems/NecarambaLoginHelper.app"
 mkdir -p "$resources" "$helper/Contents/MacOS" "${DERIVED_FILE_DIR}/necaramba-helper"
-cp "$root/Resources/Sounds/correction.wav" "$resources/correction.wav"
-if [[ "${NECARAMBA_DEVELOPMENT_RULES:-NO}" == YES ]]; then
-  mkdir -p "$resources/Rules/Development" "$resources/Rules/Licenses"
-  cp "$root/App/macos/Runner/Release/BundledRules/Development/"*.json "$resources/Rules/Development/"
-  cp "$root/App/macos/Runner/Release/BundledRules/Development/signature.ed25519" "$resources/Rules/Development/"
-  cp "$root/Resources/Rules/independent-v1.json" "$resources/Rules/Development/payload.json"
-  cp "$root/Resources/Rules/Licenses/"*.txt "$resources/Rules/Licenses/"
-else
-  echo 'Production rule package and approved production configuration required' >&2
-  exit 1
+validator="${DERIVED_FILE_DIR}/necaramba-validate-production-rules"
+if [[ "${NECARAMBA_DEVELOPMENT_RULES:-NO}" == NO ]]; then
+  xcrun swiftc -swift-version 5 \
+    "$root/Sources/NecarambaCore/Types/InputTypes.swift" \
+    "$root/Sources/NecarambaCore/Types/RuleTypes.swift" \
+    "$root/Sources/NecarambaCore/Delivery/RuleManifest.swift" \
+    "$root/Sources/NecarambaCore/Delivery/RulePackageVerifier.swift" \
+    "$root/Tools/Release/ValidateProductionRulePackage.swift" \
+    -o "$validator"
 fi
+"$root/Tools/Packaging/stage-rule-resources.sh" "$root" "$resources" \
+  "${NECARAMBA_DEVELOPMENT_RULES:-NO}" "${FLUTTER_BUILD_NAME:-}" "$validator"
+cp "$root/Resources/Sounds/correction.wav" "$resources/correction.wav"
 cp "$root/App/NecarambaLoginHelper/Info.plist" "$helper/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${PRODUCT_BUNDLE_IDENTIFIER}.LoginHelper" "$helper/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleExecutable NecarambaLoginHelper' "$helper/Contents/Info.plist"

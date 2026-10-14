@@ -2,9 +2,14 @@
 set -euo pipefail
 app="${1:?Usage: verify-artifact.sh Final.app}"
 [[ -d "$app/Contents" ]] || { echo 'Not an app bundle' >&2; exit 1; }
-if [[ -e "$app/Contents/Resources/Rules/Development/DevelopmentOnly.json" ]]; then
+rules="$app/Contents/Resources/Rules"
+if [[ -e "$rules/Development" || -e "$rules/DevelopmentOnly.json" ]]; then
   echo 'Development rule package cannot be released' >&2; exit 1
 fi
+for file in manifest.json signature.ed25519 payload.json TrustedRuleKeys.json; do
+  [[ -f "$rules/Production/$file" ]] || { echo 'Production rule package is incomplete' >&2; exit 1; }
+done
+[[ -d "$rules/Production/Licenses" ]] || { echo 'Production licenses are missing' >&2; exit 1; }
 count=0
 while IFS= read -r -d '' binary; do
   file -b "$binary" | grep -q 'Mach-O' || continue
