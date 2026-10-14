@@ -350,7 +350,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Исправление русской и английской раскладки.\nРаботает локально на вашем Mac.\nmacOS 12 и новее';
 
   @override
-  String get login => 'Запускать при входе';
+  String get login => 'Запускать при входе в систему';
 
   @override
   String get diagnostics => 'Диагностика';

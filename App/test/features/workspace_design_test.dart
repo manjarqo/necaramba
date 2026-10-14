@@ -6,6 +6,38 @@ import '../support/native_fakes.dart';
 
 void main() {
   testWidgets(
+    'login toggle is available in settings and sends native command',
+    (tester) async {
+      final repository = FakeNativeRepository();
+      await tester.pumpWidget(
+        NecarambaApp(repository: repository, locale: const Locale('en')),
+      );
+      await tester.pumpAndSettle();
+      final toggle = find.byKey(const Key('launchAtLogin'));
+      expect(toggle, findsOneWidget);
+      await tester.ensureVisible(toggle);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(repository.calls.last.method, 'setLoginEnabled');
+      expect(repository.calls.last.arguments, {'enabled': true});
+      // The native reply still reports disabled; no optimistic enabled state.
+      expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    },
+  );
+
+  testWidgets('free app navigation has no purchase or license destination', (
+    tester,
+  ) async {
+    final repository = FakeNativeRepository();
+    await tester.pumpWidget(
+      NecarambaApp(repository: repository, locale: const Locale('en')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('License'), findsNothing);
+    expect(find.text('About'), findsOneWidget);
+  });
+
+  testWidgets(
     'settings explain the boundary and keep manual shortcut discoverable',
     (tester) async {
       final repository = FakeNativeRepository();
@@ -101,7 +133,6 @@ void main() {
         'Appearance',
         'Rules',
         'Statistics',
-        'License',
         'About',
         'Settings',
       ]) {

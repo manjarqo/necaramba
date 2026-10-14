@@ -47,6 +47,29 @@ class SettingsPage extends SnapshotFeature {
     );
     return [
       ui.intro(l.settingsIntro),
+      group([
+        SwitchListTile(
+          key: const Key('launchAtLogin'),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 2,
+          ),
+          title: Text(l.login),
+          subtitle: Text(switch (snapshot.login['status']) {
+            'enabled' => l.enabled,
+            'disabled' => l.disabled,
+            'requiresApproval' => l.requiresApproval,
+            _ => l.errorUnavailable,
+          }, style: theme.textTheme.bodySmall),
+          value:
+              snapshot.login['enabled'] == true ||
+              snapshot.login['status'] == 'requiresApproval',
+          onChanged: ui.busy || snapshot.login['status'] == 'unavailable'
+              ? null
+              : (value) => ui.cubit.run('setLoginEnabled', {'enabled': value}),
+        ),
+      ]),
+      const SizedBox(height: 12),
       group([toggle('autoEnabled', l.autoEnabled, description: l.afterSpace)]),
       Padding(
         padding: const EdgeInsets.fromLTRB(2, 8, 2, 0),

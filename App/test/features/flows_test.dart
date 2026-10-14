@@ -14,7 +14,14 @@ void main() {
       NecarambaApp(repository: repo, locale: const Locale('en')),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(SwitchListTile), findsNWidgets(8));
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is SwitchListTile &&
+            widget.key != const Key('launchAtLogin'),
+      ),
+      findsNWidgets(8),
+    );
     repo.failure = const NativeFailure('permissionDenied', retryable: false);
     await tester.tap(find.byKey(const Key('autoEnabled')));
     await tester.pumpAndSettle();

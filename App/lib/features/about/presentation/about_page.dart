@@ -14,15 +14,6 @@ class AboutPage extends SnapshotFeature {
     return [
       ui.intro(l.aboutIntro),
       ui.card([
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(l.login),
-          value: s.login['enabled'] == true,
-          subtitle: Text(_loginStatus(ui, '${s.login['status']}')),
-          onChanged: busy
-              ? null
-              : (value) => cubit.run('setLoginEnabled', {'enabled': value}),
-        ),
         ui.label(l.version, '1.0.0+1'),
         ui.label(l.modelVersion, s.model['version']),
         Text(l.help, style: Theme.of(context).textTheme.titleLarge),
@@ -58,11 +49,4 @@ class AboutPage extends SnapshotFeature {
       ]),
     ];
   }
-
-  String _loginStatus(FeatureUI ui, String value) => switch (value) {
-    'enabled' => ui.l.enabled,
-    'disabled' => ui.l.disabled,
-    'requiresApproval' => ui.l.requiresApproval,
-    _ => ui.l.errorUnavailable,
-  };
 }

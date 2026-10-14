@@ -13,7 +13,6 @@ import '../features/permissions/domain/permission_readiness.dart';
 import '../features/appearance/presentation/appearance_page.dart';
 import '../features/rules/presentation/rules_page.dart';
 import '../features/statistics/presentation/statistics_page.dart';
-import '../features/licensing/presentation/licensing_page.dart';
 import '../features/about/presentation/about_page.dart';
 import 'shared/workspace_header.dart';
 export '../features/appearance/presentation/header_palette.dart';
@@ -155,7 +154,6 @@ class _WorkspacePageState extends State<WorkspacePage>
     l.appearance,
     l.rules,
     l.statistics,
-    l.account,
     l.about,
   ];
   static const icons = [
@@ -165,7 +163,6 @@ class _WorkspacePageState extends State<WorkspacePage>
     Icons.palette_outlined,
     Icons.cloud_sync_outlined,
     Icons.bar_chart,
-    Icons.key_outlined,
     Icons.info_outline,
   ];
   @override
@@ -405,7 +402,6 @@ class _WorkspacePageState extends State<WorkspacePage>
     3 => AppearancePage(snapshot: s),
     4 => RulesPage(snapshot: s),
     5 => StatisticsPage(snapshot: s),
-    6 => LicensingPage(snapshot: s),
     _ => AboutPage(snapshot: s),
   };
 }
