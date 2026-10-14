@@ -25,7 +25,11 @@ public struct LinguisticEngine: Sendable {
         guard preferences.autoEnabled else { return .unchanged(.disabled) }
         let excluded = Set(excludedWords.map(TokenGuard.normalized))
         guard !excluded.contains(TokenGuard.normalized(word.text)) else { return .unchanged(.excludedWord) }
-        guard !index.isProtected(word.text) else { return .unchanged(.protectedToken) }
+        let confirmedCapsLock = !word.events.isEmpty && word.events.allSatisfy {
+            $0.origin == .physical && $0.kind == .down && $0.modifiers.contains(.capsLock) && !$0.modifiers.contains(.shift)
+        }
+        func protected(_ text: String) -> Bool { index.isProtected(confirmedCapsLock ? text.lowercased() : text) }
+        guard !protected(word.text) else { return .unchanged(.protectedToken) }
         var candidate = word.text
         var targetLayout = word.layout
         var kinds: [CorrectionKind] = []
@@ -33,25 +37,29 @@ public struct LinguisticEngine: Sendable {
         for mapping in snapshot.mappings where mapping.source == word.layout {
             let converted: String?
             if word.events.isEmpty { converted = LayoutConverter.convert(word.text, mapping: mapping) }
+            else if physicalMappings.isEmpty { converted = LayoutConverter.convert(keys: word.events, to: mapping.target, mappings: snapshot.mappings) }
             else { converted = LayoutConverter.convert(keys: word.events, to: mapping.target, physicalMappings: physicalMappings) }
-            if let converted, converted != word.text, index.isKnown(converted), !index.isProtected(converted) { candidates.append((converted, mapping.target)) }
+            if let converted, converted != word.text, index.isKnown(converted), !protected(converted) { candidates.append((converted, mapping.target)) }
         }
         if candidates.count > 1 || (index.isKnown(word.text) && !candidates.isEmpty) { return .unchanged(.ambiguous) }
         if !index.isKnown(word.text), let chosen = candidates.first {
             candidate = chosen.0; targetLayout = chosen.1; kinds.append(.layout)
         }
+        guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
         if preferences.typoEnabled, let typo = index.typo(for: candidate), index.isKnown(typo), typo != candidate {
             candidate = typo; kinds.append(.typo)
         }
+        guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
         if let caps = RuleIndex.doubleCapsCandidate(candidate), index.isKnown(caps), caps != candidate {
             candidate = caps; kinds.append(.doubleCaps)
         }
+        guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
         if preferences.yoEnabled, let yo = index.yo(for: candidate), index.isKnown(yo), yo != candidate {
             candidate = yo; kinds.append(.yo)
         }
         guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
         guard !kinds.isEmpty else { return .unchanged(index.isKnown(word.text) ? .correct : .ambiguous) }
-        guard !index.isProtected(candidate) else { return .unchanged(.protectedToken) }
+        guard !protected(candidate) else { return .unchanged(.protectedToken) }
         return .replace(.init(original: word.text, replacement: candidate, sourceLayout: word.layout, targetLayout: targetLayout, modelVersion: snapshot.modelVersion, kind: kinds.count == 1 ? kinds[0] : .combined))
     }
 }

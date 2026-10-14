@@ -44,6 +44,7 @@ public struct GestureRecognizer: Sendable {
         guard (isShift || isOption), event.kind == .flagsChanged || event.kind == .down || event.kind == .up else {
             pendingRelease = nil; cancelled = !held.isEmpty; second = false; return []
         }
+        if event.kind == .down && held.contains(event.keyCode) { return [] }
         let modifier: Modifier = isShift ? .shift : .option
         let releasing = event.kind == .up || (event.kind == .flagsChanged && held.contains(event.keyCode))
         if !releasing && !event.modifiers.contains(modifier) { return [] }

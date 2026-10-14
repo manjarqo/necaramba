@@ -39,3 +39,26 @@ final class LinguisticEngineTests: XCTestCase {
         XCTAssertEqual(e.decide(word: word("e\u{301}"), preferences: .defaults, excludedWords: []), .unchanged(.correct))
     }
 }
+extension LinguisticEngineTests {
+    func testPhysicalWordUsesKeyCodesAndIntermediateExcludedWord() {
+        let map = LayoutMapping(source: .init(rawValue: "US"), target: .init(rawValue: "RU"), pairs: ["g":"п", "h":"р", "b":"и", "d":"в", "t":"е", "n":"т"])
+        let model = RuleSnapshot(modelVersion: 1, lexicon: [.init(word: "привет", language: .russian, frequencyBand: 1), .init(word: "hi", language: .english, frequencyBand: 1)], typos: [.init(source: "привет", target: "hi", caseSensitive: false)], mappings: [map])
+        let e = LinguisticEngine(snapshot: model)
+        let w = word("ghbdtn")
+        let keys: [UInt16] = [5, 4, 11, 2, 17, 45]
+        let events = keys.map { InputEvent(kind: .down, keyCode: $0, modifiers: [], timestampNanos: 1, layout: w.layout, context: w.context, origin: .physical, text: "ignored", isRepeat: false) }
+        let typed = BufferedWord(text: w.text, events: events, context: w.context, layout: w.layout, delimiter: w.delimiter)
+        XCTAssertEqual(replacement(e.decide(word: typed, preferences: .defaults, excludedWords: []))?.replacement, "hi")
+        XCTAssertEqual(e.decide(word: typed, preferences: .defaults, excludedWords: ["привет"]), .unchanged(.excludedWord))
+    }
+}
+extension LinguisticEngineTests {
+    func testConfirmedCapsLockLayoutCandidatePreservesUppercase() {
+        let map = LayoutMapping(source: .init(rawValue: "US"), target: .init(rawValue: "RU"), pairs: ["g":"п", "h":"р", "b":"и", "d":"в", "t":"е", "n":"т"])
+        let e = LinguisticEngine(snapshot: .init(modelVersion: 1, lexicon: [.init(word: "привет", language: .russian, frequencyBand: 1)], mappings: [map]))
+        let w = word("GHBDTN")
+        let keys: [UInt16] = [5, 4, 11, 2, 17, 45]
+        let events = keys.map { InputEvent(kind: .down, keyCode: $0, modifiers: [.capsLock], timestampNanos: 1, layout: w.layout, context: w.context, origin: .physical, text: nil, isRepeat: false) }
+        XCTAssertEqual(replacement(e.decide(word: .init(text: w.text, events: events, context: w.context, layout: w.layout, delimiter: " "), preferences: .defaults, excludedWords: []))?.replacement, "ПРИВЕТ")
+    }
+}

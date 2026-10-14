@@ -48,6 +48,16 @@ public struct WordBuffer: Sendable {
         text = candidate; events.append(event)
         return nil
     }
+    /// Adapter must first prove that the editor deleted exactly the final tracked grapheme.
+    @discardableResult public mutating func consumeConfirmedBackspace(_ event: InputEvent) -> Bool {
+        guard !untrusted, event.kind == .down, event.keyCode == 51, event.origin == .physical,
+              event.modifiers.isSubset(of: [.shift, .capsLock]), let first = events.first,
+              event.context == first.context, event.layout == first.layout, !text.isEmpty else {
+            invalidate(.unknownInput); return false
+        }
+        text.removeLast(); events.removeLast()
+        return true
+    }
     private static func isBoundary(_ value: String) -> Bool {
         [" ", "\n", "\r", "\t", ".", ",", ";", ":", "!", "?"].contains(value)
     }

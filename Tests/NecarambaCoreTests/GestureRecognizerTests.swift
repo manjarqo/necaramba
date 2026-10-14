@@ -43,3 +43,12 @@ final class GestureRecognizerTests: XCTestCase {
         XCTAssertEqual(r.advance(to: 2_000_000_000_000), [])
     }
 }
+extension GestureRecognizerTests {
+    func testDuplicateDownNeverRetogglesSplit() {
+        var r = recognizer(split: true)
+        _ = r.consume(event(56, true, 0)); _ = r.consume(event(60, true, 1))
+        let e = event(60, true, 2)
+        let duplicate = InputEvent(kind: .down, keyCode: e.keyCode, modifiers: e.modifiers, timestampNanos: e.timestampNanos, layout: e.layout, context: e.context, origin: e.origin, text: nil, isRepeat: false)
+        XCTAssertEqual(r.consume(duplicate), [])
+    }
+}

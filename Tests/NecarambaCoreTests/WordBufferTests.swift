@@ -40,3 +40,13 @@ final class WordBufferTests: XCTestCase {
         _ = b.consume(event("pasted")); XCTAssertNil(b.consume(event(" ")))
     }
 }
+extension WordBufferTests {
+    func testExplicitConfirmedBackspaceRemovesOnlyTrackedSuffix() {
+        var b = WordBuffer()
+        _ = b.consume(event("a")); _ = b.consume(event("b"))
+        XCTAssertTrue(b.consumeConfirmedBackspace(event(nil, code: 51)))
+        _ = b.consume(event("c"))
+        XCTAssertEqual(b.consume(event(" "))?.text, "ac")
+        XCTAssertFalse(b.consumeConfirmedBackspace(event(nil, code: 51)))
+    }
+}
