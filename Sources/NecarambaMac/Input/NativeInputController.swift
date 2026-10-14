@@ -151,8 +151,19 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       }
       return false
     }
-    guard editContext.refresh() == token else {
-      if diagnose { InputDiagnostics.event("manual.ready.contextMismatch") }
+    let before = editContext.current()
+    let after = editContext.refresh()
+    guard after == token else {
+      if diagnose {
+        InputDiagnostics.event("manual.ready.contextMismatch")
+        InputDiagnostics.event("manual.ready.beforeMatches", detail: before == token ? 1 : 0)
+        InputDiagnostics.event("manual.ready.beforeFocusEpoch", detail: before.map { Int(clamping: $0.focusEpoch) } ?? -1)
+        InputDiagnostics.event("manual.ready.beforeLayoutEpoch", detail: before.map { Int(clamping: $0.layoutEpoch) } ?? -1)
+        InputDiagnostics.event("manual.ready.afterFocusEpoch", detail: after.map { Int(clamping: $0.focusEpoch) } ?? -1)
+        InputDiagnostics.event("manual.ready.afterLayoutEpoch", detail: after.map { Int(clamping: $0.layoutEpoch) } ?? -1)
+        InputDiagnostics.event("manual.ready.afterSameProcess", detail: after?.pid == token.pid ? 1 : 0)
+        InputDiagnostics.event("manual.ready.afterSameBundle", detail: after?.bundleID == token.bundleID ? 1 : 0)
+      }
       return false
     }
     return true

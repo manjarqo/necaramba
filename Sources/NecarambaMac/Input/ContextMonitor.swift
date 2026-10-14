@@ -90,6 +90,7 @@ public final class ContextMonitor: ContextRefreshing {
   }
   private func attach() {
     precondition(Thread.isMainThread)
+    InputDiagnostics.event("context.invalidate.attach")
     state.invalidate(.focusChanged)
     detach()
     guard let app = NSWorkspace.shared.frontmostApplication, let bundleID = app.bundleIdentifier
@@ -107,6 +108,7 @@ public final class ContextMonitor: ContextRefreshing {
     let callback: AXObserverCallback = { _, _, _, refcon in
       guard let refcon else { return }
       let monitor = Unmanaged<ContextMonitor>.fromOpaque(refcon).takeUnretainedValue()
+      InputDiagnostics.event("context.invalidate.focusNotification")
       monitor.state.invalidate(.focusChanged)
       monitor.refresh()
     }
@@ -169,14 +171,24 @@ public final class ContextMonitor: ContextRefreshing {
     let subrole = stringAttribute(element, kAXSubroleAttribute)
     let allowed =
       Self.supportsManualRole(role ?? "") && subrole != kAXSecureTextFieldSubrole
-    if lastElement == nil || !CFEqual(lastElement, element) {
+    let elementChanged = lastElement == nil || !CFEqual(lastElement, element)
+    if elementChanged {
+      InputDiagnostics.event("context.refresh.elementChanged", detail: lastElement == nil ? 0 : 1)
       focusIdentity = UUID().uuidString
       lastElement = element
     }
+    let before = state.current()
     state.update(
       pid: app.processIdentifier, bundleID: bundleID, focusID: focusIdentity,
       layout: layouts.current(), qualified: allowed)
     let token = state.current()
+    if before != token {
+      InputDiagnostics.event("context.refresh.beforeFocusEpoch", detail: before.map { Int(clamping: $0.focusEpoch) } ?? -1)
+      InputDiagnostics.event("context.refresh.afterFocusEpoch", detail: token.map { Int(clamping: $0.focusEpoch) } ?? -1)
+      InputDiagnostics.event("context.refresh.beforeLayoutEpoch", detail: before.map { Int(clamping: $0.layoutEpoch) } ?? -1)
+      InputDiagnostics.event("context.refresh.afterLayoutEpoch", detail: token.map { Int(clamping: $0.layoutEpoch) } ?? -1)
+      InputDiagnostics.event("context.refresh.focusIdentityChanged", detail: elementChanged ? 1 : 0)
+    }
     let roleReason: String
     switch role {
     case nil: roleReason = "context.role.missing"
