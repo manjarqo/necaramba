@@ -457,10 +457,25 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       let undone = undoLast()
       if undone != .aborted { return undone }
     }
-    guard let capturedWord = runtime.manualWord(), capturedWord.context == token, capturedWord.layout == current,
-      let mapping = manualMapping
-    else {
-      InputDiagnostics.event("manual.wordContextLayoutOrMappingMissing")
+    guard let capturedWord = runtime.manualWord() else {
+      InputDiagnostics.event("manual.wordMissing")
+      return .aborted
+    }
+    guard capturedWord.context == token else {
+      InputDiagnostics.event("manual.wordContextMismatch")
+      InputDiagnostics.event("manual.wordFocusEpoch", detail: Int(clamping: capturedWord.context.focusEpoch))
+      InputDiagnostics.event("manual.currentFocusEpoch", detail: Int(clamping: token.focusEpoch))
+      InputDiagnostics.event("manual.wordLayoutEpoch", detail: Int(clamping: capturedWord.context.layoutEpoch))
+      InputDiagnostics.event("manual.currentLayoutEpoch", detail: Int(clamping: token.layoutEpoch))
+      InputDiagnostics.event("manual.wordSamePID", detail: capturedWord.context.pid == token.pid ? 1 : 0)
+      return .aborted
+    }
+    guard capturedWord.layout == current else {
+      InputDiagnostics.event("manual.wordLayoutMismatch")
+      return .aborted
+    }
+    guard let mapping = manualMapping else {
+      InputDiagnostics.event("manual.wordMappingMissing")
       return .aborted
     }
     let word: BufferedWord

@@ -33,6 +33,10 @@ public final class ContextState: ContextAccess, GestureContextReading {
     token = ContextToken(
       pid: pid, bundleID: bundleID, focusEpoch: focusEpoch, layoutEpoch: layoutEpoch)
   }
+  /// Re-read authoritative focus on notifications; the publisher establishes element identity.
+  public func reconcileFocus(_ readAndPublish: () -> ContextToken?) {
+    if readAndPublish() == nil { invalidate(.focusChanged) }
+  }
   public func current() -> ContextToken? {
     lock.lock()
     defer { lock.unlock() }

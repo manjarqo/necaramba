@@ -108,9 +108,8 @@ public final class ContextMonitor: ContextRefreshing {
     let callback: AXObserverCallback = { _, _, _, refcon in
       guard let refcon else { return }
       let monitor = Unmanaged<ContextMonitor>.fromOpaque(refcon).takeUnretainedValue()
-      InputDiagnostics.event("context.invalidate.focusNotification")
-      monitor.state.invalidate(.focusChanged)
-      monitor.refresh()
+      InputDiagnostics.event("context.refresh.focusNotification")
+      monitor.state.reconcileFocus { monitor.refresh() }
     }
     let createStatus = AXObserverCreate(app.processIdentifier, callback, &created)
     guard createStatus == .success, let created else {
