@@ -47,7 +47,7 @@ The application is free to use. It has no purchase or activation screen. Necaram
 - The current automatic mode checks unambiguous dictionary matches of at least three letters after a physical Space.
 - Enter and Tab do not trigger this replacement path.
 - Unknown or ambiguous words are left unchanged.
-- After pasting or moving the caret, a fresh word boundary is needed before tracking resumes.
+- The first word after Enter is tracked without a leading space. After pasting or moving the caret, readable fields can prove the word starts at the beginning of the field or after whitespace; opaque fields still need a fresh boundary.
 - Manual conversion is useful for words that the automatic dictionary does not recognize.
 - Typo correction, double-capital correction and restoration of `ё` are not enabled in the current live automatic pipeline. Their additional-correction controls are unavailable.
 
@@ -209,7 +209,7 @@ Some specifications and historical reports describe an earlier commercial design
 - Текущий режим исправляет однозначно распознанные словарём слова длиной от трёх букв после физического пробела.
 - Enter и Tab не запускают этот сценарий замены.
 - Неизвестные и неоднозначные слова остаются без изменений.
-- После вставки текста или перемещения курсора нужна новая граница слова, чтобы возобновить отслеживание.
+- Первое слово после Enter отслеживается без начального пробела. После вставки текста или перемещения курсора в читаемых полях проверяется начало слова: начало поля или пробельный символ перед ним. В полях, не раскрывающих текст, по-прежнему нужна новая граница слова.
 - Для слов, которых нет в словаре, можно использовать ручное переключение.
 - Исправление опечаток, двух заглавных букв и восстановление `ё` пока не включены в действующий автоматический режим. Соответствующие дополнительные настройки недоступны.
 

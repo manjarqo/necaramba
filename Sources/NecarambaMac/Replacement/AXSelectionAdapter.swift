@@ -300,7 +300,7 @@ public final class AXSelectionAdapter: SelectionAccess {
     replace(evidence, with: text, authorized: { true })
   }
   private func replace(
-    _ evidence: SelectionEvidence, with text: String, authorized: () -> Bool
+    _ evidence: SelectionEvidence, with text: String, expectedValue: String? = nil, authorized: () -> Bool
   ) -> ApplyResult {
     guard authorized(), evidence.text.utf8.count <= 1024 * 1024, text.utf8.count <= 1024 * 1024,
       let identity = evidence.identity, let generation = evidence.inputGeneration,
@@ -320,6 +320,7 @@ public final class AXSelectionAdapter: SelectionAccess {
         range.length <= current.value.utf16.count - range.location
       else { return false }
       guard (current.value as NSString).substring(with: range) == evidence.text,
+        (expectedValue == nil || expectedValue == current.value),
         before == nil || before?.value == current.value
       else { return false }
       before = current
@@ -577,6 +578,7 @@ extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
     else { trace("ax.auto.boundaryOrSnapshotRejected"); return .aborted }
     let original = word.text + word.delimiter
     if before.value.isEmpty && before.range == NSRange(location: 0, length: 0) {
+      guard !candidate.requiresWordStartProof else { return .aborted }
       trace("ax.auto.emptyProxy")
       return replaceEmptyProxySuffix(
         original, in: word.context, identity: before.identity, with: text,
@@ -590,11 +592,17 @@ extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
     guard (before.value as NSString).substring(with: range) == original else {
       trace("ax.auto.readableSuffixMismatch"); return .aborted
     }
+    if candidate.requiresWordStartProof {
+      guard let stringRange = Range(range, in: before.value),
+        stringRange.lowerBound == before.value.startIndex ||
+          before.value[before.value.index(before: stringRange.lowerBound)].isWhitespace
+      else { return .aborted }
+    }
     trace("ax.auto.readableSuffix")
     let evidence = SelectionEvidence(context: word.context, text: original,
       location: range.location, length: range.length, identity: before.identity,
       inputGeneration: candidate.inputGeneration, mode: .suffix)
-    return replace(evidence, with: text, authorized: automaticBoundaryActive)
+    return replace(evidence, with: text, expectedValue: before.value, authorized: automaticBoundaryActive)
   }
 }
 

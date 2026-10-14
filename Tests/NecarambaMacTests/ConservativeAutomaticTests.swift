@@ -127,6 +127,26 @@ final class ConservativeAutomaticTests: XCTestCase {
     drain()
     XCTAssertEqual(fixture.editor.text, "приветруддщ hello ")
   }
+  func testFirstWordAfterPlainReturnNeedsNoLeadingSpaceEvenInProxy() {
+    for proxy in [false, true] {
+      let fixture = fixture(proxy: proxy)
+      feed("hello\n", fixture)
+      drain()
+      XCTAssertTrue(fixture.editor.results.isEmpty)
+      feed("ghbdtn ", fixture)
+      drain()
+      XCTAssertEqual(fixture.editor.text, "hello\nпривет ")
+    }
+  }
+
+  func testFirstReadableWordAfterFocusInvalidationNeedsNoLeadingSpace() {
+    let fixture = fixture()
+    fixture.controller.runtime.invalidateContext(reason: .mouseNavigation)
+    feed("ghbdtn ", fixture)
+    drain()
+    XCTAssertEqual(fixture.editor.text, "привет ")
+  }
+
   private func drain() {
     let done = expectation(description: "boundary executor")
     DispatchQueue.main.async { done.fulfill() }
@@ -228,6 +248,11 @@ private final class AutoEditor: SelectionAccess, AutomaticBoundarySuffixReplacin
     guard candidate.inputGeneration == generation(), candidate.word.context == context.token,
       candidate.boundary.keyCode == 49, candidate.boundary.text == " ",
       text.hasSuffix(candidate.word.text + " ") else { return .aborted }
+    if candidate.requiresWordStartProof {
+      guard !proxy else { return .aborted }
+      let prefix = text.dropLast(candidate.word.text.count + 1)
+      guard prefix.isEmpty || prefix.last?.isWhitespace == true else { return .aborted }
+    }
     text.removeLast(candidate.word.text.count + 1)
     text += replacement
     let result: ApplyResult = proxy ? .dispatched : .committed

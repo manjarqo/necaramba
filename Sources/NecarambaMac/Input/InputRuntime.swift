@@ -353,15 +353,24 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     guard event.kind == .down else { return }
     if [56, 60].contains(event.keyCode) { return }
     let ordinary = event.modifiers.isSubset(of: [.shift, .capsLock])
+    // Return starts a new line or submits the current message. It never edits
+    // the preceding word, but the next physical token has a known boundary.
+    if ordinary, [36, 76].contains(event.keyCode),
+      event.text == "\n" || event.text == "\r" {
+      automaticEvents.removeAll()
+      automaticTokenUnsafe = false
+      return
+    }
     if ordinary, event.keyCode == 49, event.text == " " {
       defer { automaticEvents.removeAll(); automaticTokenUnsafe = false }
-      guard !automaticTokenUnsafe, !automaticEvents.isEmpty,
+      guard !automaticEvents.isEmpty,
         preferences.autoEnabled, !snapshot.lexicon.isEmpty,
         automaticEvents.allSatisfy({ $0.context == event.context && $0.layout == event.layout })
       else { return }
       let word = BufferedWord(text: automaticEvents.compactMap(\.text).joined(), events: automaticEvents,
         context: event.context, layout: event.layout, delimiter: " ")
-      deliver(.automaticBoundary(.init(word: word, boundary: event, inputGeneration: generation), snapshot, preferences))
+      deliver(.automaticBoundary(.init(word: word, boundary: event, inputGeneration: generation,
+        requiresWordStartProof: automaticTokenUnsafe), snapshot, preferences))
       return
     }
     guard ordinary, let text = event.text, text.count == 1,

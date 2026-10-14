@@ -305,7 +305,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     defer { automaticActionScope.active = false }
     let identity = selectionAccess.selected(in: source.context)?.identity
     let proven = AutomaticBoundaryCandidate(word: source, boundary: candidate.boundary,
-      inputGeneration: candidate.inputGeneration)
+      inputGeneration: candidate.inputGeneration, requiresWordStartProof: candidate.requiresWordStartProof)
     let result = automatic.replaceAutomaticBoundary(proven, with: correction.replacement + source.delimiter)
     diagnoseResult(result, event: "auto.result")
     guard result == .committed || result == .dispatched else {

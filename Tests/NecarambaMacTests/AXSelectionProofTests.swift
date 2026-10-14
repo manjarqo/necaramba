@@ -354,6 +354,57 @@ final class AXSelectionProofTests: XCTestCase {
     XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .uncertain)
   }
 
+  func testUntrustedAutomaticPrefixRejectsOpaqueAndEmbeddedWordWithoutPosting() {
+    for value in ["", "url/word ", "prefixword ", "x@word "] {
+      let (adapter, reader, token) = fixture(automatic: true)
+      reader.value = value
+      reader.range = NSRange(location: value.utf16.count, length: 0)
+      let original = autoCandidate(token)
+      let candidate = AutomaticBoundaryCandidate(word: original.word, boundary: original.boundary,
+        inputGeneration: 1, requiresWordStartProof: true)
+      var posts = 0
+      adapter.execute = { _, _, _, _ in posts += 1; return .aborted }
+      XCTAssertEqual(adapter.replaceAutomaticBoundary(candidate, with: "WORD "), .aborted)
+      XCTAssertEqual(posts, 0, value)
+    }
+  }
+
+  func testUntrustedAutomaticPrefixAcceptsProvenFieldStartOrWhitespace() {
+    for prefix in ["", "previous ", "🙂\n"] {
+      let (adapter, reader, token) = fixture(automatic: true)
+      reader.value = prefix + "word "
+      reader.range = NSRange(location: reader.value.utf16.count, length: 0)
+      let original = autoCandidate(token)
+      let candidate = AutomaticBoundaryCandidate(word: original.word, boundary: original.boundary,
+        inputGeneration: 1, requiresWordStartProof: true)
+      adapter.execute = { _, _, _, preflight in
+        guard preflight() else { return .aborted }
+        reader.value = prefix + "WORD "
+        return .committed
+      }
+      XCTAssertEqual(adapter.replaceAutomaticBoundary(candidate, with: "WORD "), .committed)
+    }
+  }
+
+  func testAutomaticWordStartProofCannotChangeBeforeDispatch() {
+    let (adapter, reader, token) = fixture(automatic: true)
+    reader.value = " word "
+    reader.range = NSRange(location: 6, length: 0)
+    let original = autoCandidate(token)
+    let candidate = AutomaticBoundaryCandidate(word: original.word, boundary: original.boundary,
+      inputGeneration: 1, requiresWordStartProof: true)
+    var reads = 0
+    reader.onRead = {
+      reads += 1
+      if reads > 1 { reader.value = "/word " }
+    }
+    adapter.execute = { _, _, _, _ in
+      XCTFail("Changed prefix must not be edited")
+      return .aborted
+    }
+    XCTAssertEqual(adapter.replaceAutomaticBoundary(candidate, with: "WORD "), .aborted)
+  }
+
   private func autoCandidate(_ token: ContextToken) -> AutomaticBoundaryCandidate {
     .init(word: word(token), boundary: .init(kind: .down, keyCode: 49, modifiers: [],
       timestampNanos: 2, layout: .init(rawValue: "US"), context: token,

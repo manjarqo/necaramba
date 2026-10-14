@@ -27,3 +27,9 @@ A temporary read-only host test captured installed ABC/Russian tables and loaded
 After unknown input, paste or navigation, automatic tracking waits for a physical space before trusting a new word. This is particularly relevant to opaque terminal input proxies, where the existing document text cannot be proved. Initial and completed-space scenarios are tested separately. A manual conversion without a trailing space does not create an automatic word boundary.
 
 Light/dark Flutter previews were visually reviewed. Universal x86_64/arm64 Release (60.9 MB) built successfully and passed deep/strict codesign verification with the unchanged certificate requirement. The app launched without permission onboarding, changed from initializing to active after dictionary installation, and its narrow and wide live-window layouts were visually inspected. Physical automatic correction in Orca remains pending user verification.
+
+## First word without a leading space
+
+Regression tests reproduced dropped first words after Return and focus invalidation. Return now establishes a physical boundary for the next token without correcting the submitted word. An untrusted token can reach the automatic adapter with an explicit word-start-proof requirement, preserved when remapping captured key events. Readable AX fields must prove field start or preceding whitespace; the full observed value is pinned through destructive preflight. Opaque fields cannot satisfy this proof and still require a known physical boundary. Paste/navigation and appended manual-conversion suffix protection remain intact.
+
+Validation: 225 Mac + 65 Core = 290 Swift tests passed. Added first-word, opaque-prefix, embedded URL/email, Unicode whitespace, and changed-prefix-before-dispatch coverage. Actual physical input in Orca remains a user verification step; no claim is made that opaque focus-only resets can establish an empty field.

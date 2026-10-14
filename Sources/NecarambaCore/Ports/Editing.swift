@@ -110,10 +110,14 @@ public struct AutomaticBoundaryCandidate: Sendable {
   public let word: BufferedWord
   public let boundary: InputEvent
   public let inputGeneration: UInt64
-  public init(word: BufferedWord, boundary: InputEvent, inputGeneration: UInt64) {
+  /// Lost prefix history requires a readable editor proof of the word's start.
+  public let requiresWordStartProof: Bool
+  public init(word: BufferedWord, boundary: InputEvent, inputGeneration: UInt64,
+              requiresWordStartProof: Bool = false) {
     self.word = word
     self.boundary = boundary
     self.inputGeneration = inputGeneration
+    self.requiresWordStartProof = requiresWordStartProof
   }
 }
 public protocol AutomaticBoundarySuffixReplacing: AnyObject {
