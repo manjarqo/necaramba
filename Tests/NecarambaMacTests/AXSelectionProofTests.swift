@@ -576,6 +576,55 @@ final class AXSelectionProofTests: XCTestCase {
     XCTAssertEqual(posts, 1)
     XCTAssertLessThanOrEqual(elapsed, 0.3)
   }
+  func testReactiveOverlayReplacesProvenSuffixAsSelectionWithoutBackspaces() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.range = NSRange(location: 6, length: 0)
+    let evidence = adapter.suffix("word", in: token)!
+    reader.prepare = { _, _, authorized in
+      guard authorized() else { return .rejected }
+      reader.range = NSRange(location: 2, length: 4)
+      return .selected
+    }
+    adapter.execute = { posted, _, selected, preflight in
+      XCTAssertTrue(selected)
+      XCTAssertEqual(posted.mode, .selected)
+      XCTAssertEqual(posted.location, 2)
+      XCTAssertEqual(posted.length, 4)
+      guard preflight() else { return .aborted }
+      // A reactive search field changes its suggestion after each deletion;
+      // a direct selected replacement preserves both surrounding substrings.
+      reader.value = selected ? "A WORD Z" : "A woWORD Z"
+      reader.range = NSRange(location: 6, length: 0)
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .committed)
+  }
+
+  func testRejectedOverlaySelectionNeverFallsBackToDeletion() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.range = NSRange(location: 6, length: 0)
+    let evidence = adapter.suffix("word", in: token)!
+    reader.prepare = { _, _, _ in .rejected }
+    var posts = 0
+    adapter.execute = { _, _, _, _ in posts += 1; return .aborted }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .aborted)
+    XCTAssertEqual(posts, 0)
+  }
+
+  func testOverlaySelectionMustBeReadBackExactlyBeforePosting() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.range = NSRange(location: 6, length: 0)
+    let evidence = adapter.suffix("word", in: token)!
+    reader.prepare = { _, _, _ in
+      reader.range = NSRange(location: 1, length: 5)
+      return .selected
+    }
+    var posts = 0
+    adapter.execute = { _, _, _, _ in posts += 1; return .aborted }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .aborted)
+    XCTAssertEqual(posts, 0)
+  }
+
   private func word(_ token: ContextToken, origin: EventOrigin = .physical) -> BufferedWord {
     let layout = LayoutID(rawValue: "US")
     let events = "word".map { character in
@@ -632,7 +681,12 @@ final class AXSelectionProofTests: XCTestCase {
     XCTAssertNil(adapter.selected(in: context.current()!))
   }
 }
-private final class ProofReader: AXSelectionReading {
+private final class ProofReader: AXSelectionReading, AXSuffixSelectionPreparing {
+  var prepare: ((SelectionEvidence, AXTextSnapshot, () -> Bool) -> AXSuffixPreparation)?
+  func prepareSuffix(_ evidence: SelectionEvidence, before: AXTextSnapshot,
+    authorized: () -> Bool) -> AXSuffixPreparation {
+    prepare?(evidence, before, authorized) ?? .notRequired
+  }
   var id = UUID()
   var value = "A word Z"
   var range = NSRange(location: 2, length: 4)

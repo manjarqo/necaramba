@@ -33,6 +33,14 @@ extension AXSelectionReading {
     read(in: token)
   }
 }
+/// Some reactive overlay fields must replace a selected range instead of receiving
+/// a burst of Backspaces. Preparation changes only selection, never text.
+enum AXSuffixPreparation { case notRequired, selected, rejected }
+protocol AXSuffixSelectionPreparing: AnyObject {
+  func prepareSuffix(_ evidence: SelectionEvidence, before: AXTextSnapshot,
+    authorized: () -> Bool) -> AXSuffixPreparation
+}
+
 /// Direct system proof. This reader performs no mutations and is called only outside the tap.
 public final class SystemAXSelectionReader: AXSelectionReading {
   private let context: ContextAccess
@@ -169,6 +177,38 @@ public final class SystemAXSelectionReader: AXSelectionReading {
     return type == kTISTypeKeyboardLayout
   }
 }
+extension SystemAXSelectionReader: AXSuffixSelectionPreparing {
+  func prepareSuffix(_ evidence: SelectionEvidence, before: AXTextSnapshot,
+    authorized: () -> Bool) -> AXSuffixPreparation {
+    // Scope this delivery strategy to explicit conversion in overlay search fields.
+    // Browser and ordinary editor event delivery remains unchanged.
+    guard allowMissingMarkedTextRange(), evidence.mode == .suffix,
+      NSWorkspace.shared.frontmostApplication?.processIdentifier != evidence.context.pid
+    else { return .notRequired }
+    guard let current = read(in: evidence.context), current.identity == before.identity,
+      current.value == before.value, current.range == before.range,
+      let retained, retained.id == before.identity else { return .rejected }
+    let element = retained.element
+    var subrole: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subrole) == .success,
+      let subrole = subrole as? String else { return .rejected }
+    guard subrole == "AXSearchField" else { return .notRequired }
+    var settable = DarwinBoolean(false)
+    guard AXUIElementIsAttributeSettable(element, kAXSelectedTextRangeAttribute as CFString, &settable) == .success,
+      settable.boolValue, evidence.length > 0, authorized() else { return .rejected }
+    let focus = AXFocusedElementResolver.system.resolve(expectedPID: evidence.context.pid,
+      deadline: ProcessInfo.processInfo.systemUptime + 0.05)
+    guard let focused = focus.focus?.element, CFEqual(focused, element),
+      !IsSecureEventInputEnabled(), context.isSafe(evidence.context) else { return .rejected }
+    var range = CFRange(location: evidence.location, length: evidence.length)
+    guard let value = AXValueCreate(.cfRange, &range) else { return .rejected }
+    let status = AXUIElementSetAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, value)
+    InputDiagnostics.event("ax.overlay.selectRange", detail: Int(status.rawValue))
+    // Even a timeout may have changed selection: never fall back to Backspaces.
+    return status == .success ? .selected : .rejected
+  }
+}
+
 /// Selection mode, identity, context and generation are frozen when evidence is first read.
 public final class AXSelectionAdapter: SelectionAccess {
   public typealias Mutation = (SelectionEvidence, String, Bool, () -> Bool) -> ApplyResult
@@ -250,9 +290,10 @@ public final class AXSelectionAdapter: SelectionAccess {
       let identity = evidence.identity, let generation = evidence.inputGeneration,
       let mode = evidence.mode, let execute
     else { return .aborted }
-    let selected = mode == .selected
+    var selected = mode == .selected
+    var dispatchEvidence = evidence
     let range = NSRange(location: evidence.location, length: evidence.length)
-    let observedRange =
+    var observedRange =
       selected ? range : NSRange(location: evidence.location + evidence.length, length: 0)
     var before: AXTextSnapshot?
     func valid() -> Bool {
@@ -268,11 +309,27 @@ public final class AXSelectionAdapter: SelectionAccess {
       before = current
       return true
     }
-    guard valid(), let before else { return .aborted }
+    guard valid(), let initial = before else { return .aborted }
+    if manualCommandActive(), !selected, let preparer = reader as? AXSuffixSelectionPreparing {
+      switch preparer.prepareSuffix(evidence, before: initial, authorized: valid) {
+      case .notRequired: break
+      case .rejected:
+        trace("ax.overlay.selectionRejected"); return .aborted
+      case .selected:
+        selected = true
+        observedRange = range
+        dispatchEvidence = SelectionEvidence(context: evidence.context, text: evidence.text,
+          location: evidence.location, length: evidence.length, identity: identity,
+          inputGeneration: generation, mode: .selected)
+        guard valid() else { trace("ax.overlay.selectionUnproven"); return .aborted }
+        trace("ax.overlay.selectionPrepared")
+      }
+    }
+    guard let before else { return .aborted }
     let expectedValue = (before.value as NSString).replacingCharacters(in: range, with: text)
     let expectedRange = NSRange(location: evidence.location + text.utf16.count, length: 0)
     trace("ax.execute.begin")
-    let result = execute(evidence, text, selected, valid)
+    let result = execute(dispatchEvidence, text, selected, valid)
     traceMutation(result)
     guard result == .committed else { return result }
     // Posting is asynchronous. Only observe states derivable from the already-posted
