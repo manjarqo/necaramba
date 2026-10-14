@@ -107,7 +107,7 @@ private final class ManualEditor: SelectionAccess, ManualTrackedSuffixReplacing 
   func replaceTrackedSuffix(_ word: BufferedWord, with replacement: String) -> ApplyResult {
     fallbackCalls += 1
     guard emptyProxy, word.context == context.token, word.text == text,
-      word.events.count == 6 else { return .aborted }
+      word.events.compactMap(\.text).joined() == word.text else { return .aborted }
     text = replacement
     return .dispatched
   }
@@ -214,12 +214,12 @@ private final class ManualCapture: LayoutTableCapturing {
   var onCapture: () -> Void = {}
   func captureTables() -> CapturedLayoutTables {
     onCapture()
-    let codes: [UInt16] = [5, 4, 11, 2, 17, 45, 50]
+    let codes: [UInt16] = [5, 4, 11, 2, 17, 45, 50, 15, 3, 37, 40]
     return .init(layouts: [
-      .init(id: .init(rawValue: "US"), entries: zip(codes, Array("ghbdtn`")).map {
+      .init(id: .init(rawValue: "US"), entries: zip(codes, Array("ghbdtn`rflk")).map {
         .init(keyCode: $0.0, modifiers: [], text: String($0.1))
       }),
-      .init(id: .init(rawValue: "RU"), entries: zip(codes, Array("привет>")).map {
+      .init(id: .init(rawValue: "RU"), entries: zip(codes, Array("привет>кадл")).map {
         .init(keyCode: $0.0, modifiers: [], text: String($0.1))
       })
     ])
@@ -266,5 +266,55 @@ extension NativeInputControllerTests {
     capture.onCapture = { self.typeWord(controller, context: context) }
     XCTAssertEqual(controller.manualCorrection(), .aborted)
     XCTAssertEqual(editor.text, "ghbdtn")
+  }
+}
+
+extension NativeInputControllerTests {
+  func testSuccessiveManualWordsUsePhysicalLayoutWhenTapUnicodeIsStale() {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    editor.emptyProxy = true
+    let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+      editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+    typeWord(controller, context: context)
+    XCTAssertEqual(controller.manualCorrection(), .dispatched)
+    XCTAssertEqual(editor.text, "привет")
+    editor.text = "как"
+    for code in [15, 3, 15] {
+      controller.runtime.accept(.init(kind: .down, keyCode: UInt16(code), modifiers: [],
+        timestampNanos: 500, layout: .init(rawValue: "RU"), context: context.token,
+        origin: .physical, text: code == 15 ? "r" : "f", isRepeat: false))
+    }
+    XCTAssertEqual(controller.manualCorrection(), .dispatched)
+    XCTAssertEqual(editor.text, "rfr")
+    editor.text = "ltkf"
+    for (code, stale) in zip([37, 17, 40, 3], Array("дела")) {
+      controller.runtime.accept(.init(kind: .down, keyCode: UInt16(code), modifiers: [],
+        timestampNanos: 1000, layout: .init(rawValue: "US"), context: context.token,
+        origin: .physical, text: String(stale), isRepeat: false))
+    }
+    XCTAssertEqual(controller.manualCorrection(), .dispatched)
+    XCTAssertEqual(editor.text, "дела")
+  }
+}
+extension NativeInputControllerTests {
+  func testPhysicalSourceReconstructionStillRequiresExactEditorSuffix() {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    let layouts = ManualLayouts()
+    layouts.value = .init(rawValue: "RU")
+    let controller = NativeInputController(layouts: layouts, permissions: FacadePermissions(),
+      editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+    for code in [15, 3, 15] {
+      controller.runtime.accept(.init(kind: .down, keyCode: UInt16(code), modifiers: [],
+        timestampNanos: 500, layout: .init(rawValue: "RU"), context: context.token,
+        origin: .physical, text: code == 15 ? "r" : "f", isRepeat: false))
+    }
+    editor.text = "unrelated"
+    XCTAssertEqual(controller.manualCorrection(), .aborted)
+    XCTAssertEqual(editor.text, "unrelated")
+    editor.text = "как"
+    XCTAssertEqual(controller.manualCorrection(), .committed)
+    XCTAssertEqual(editor.text, "rfr")
   }
 }

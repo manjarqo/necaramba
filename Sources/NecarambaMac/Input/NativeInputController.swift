@@ -319,14 +319,27 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       let undone = undoLast()
       if undone != .aborted { return undone }
     }
-    guard let word = runtime.manualWord(), word.context == token, word.layout == current,
+    guard let capturedWord = runtime.manualWord(), capturedWord.context == token, capturedWord.layout == current,
       let mapping = manualMapping
     else {
       InputDiagnostics.event("manual.wordContextLayoutOrMappingMissing")
       return .aborted
     }
-    let text = LayoutConverter.convert(word.text, mapping: mapping)
-    guard text != word.text else { return .aborted }
+    let word: BufferedWord
+    let text: String
+    if layoutCapture != nil {
+      guard let converted = manualTables?.manualConversion(capturedWord, target: mapping.target) else {
+        InputDiagnostics.event("manual.physicalTranslationMissing")
+        return .aborted
+      }
+      word = converted.word
+      text = converted.replacement
+      InputDiagnostics.event("manual.rawMatchesPhysical", detail: capturedWord.text == word.text ? 1 : 0)
+    } else {
+      word = capturedWord
+      text = LayoutConverter.convert(word.text, mapping: mapping)
+    }
+    guard runtime.inputGeneration() == manualGeneration, text != word.text else { return .aborted }
     if selectionAccess.suffix(word.text + word.delimiter, in: token) == nil,
       let tracked = selectionAccess as? ManualTrackedSuffixReplacing
     {
