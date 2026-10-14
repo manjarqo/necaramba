@@ -62,6 +62,25 @@ import NecarambaCore
         XCTAssertEqual(publications, 1)
         XCTAssertEqual((app.snapshot()["login"] as? [String:Any])?["status"] as? String, "enabled")
     }
+    func testUnknownLoginStatusAfterOSActionPublishesPartialFailure() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let domain = "test.necaramba." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain); try? FileManager.default.removeItem(at: dir) }
+        let login = MutableLoginFake(); login.statusUnavailable = true
+        var writes = 0
+        let app = try ApplicationServices(directory:dir, defaults:defaults, permissions:PermissionFake(), loginBackend:login,
+            onPreferences:{ _ in }, preferencesWrite:{ _ in writes += 1; if writes > 1 { throw TestFailure.persistence } })
+        var publications = 0; app.onChanged = { publications += 1 }
+        do { _ = try await app.execute("setLoginEnabled", arguments:["enabled":true]); XCTFail() }
+        catch let failure as NativeCommandFailure { XCTAssertEqual(failure.code,"partialFailure") }
+        XCTAssertEqual(login.actions,[true])
+        XCTAssertEqual(login.value,.enabled)
+        XCTAssertEqual(login.status(),.unavailable)
+        XCTAssertFalse(app.preferences.settings.loginPreferred)
+        XCTAssertEqual(publications,1)
+        XCTAssertEqual((app.snapshot()["login"] as? [String:Any])?["status"] as? String,"unavailable")
+    }
     func testDelayedArchiveImportPreservesOriginalDataAfterNativeChange() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let domain = "test.necaramba." + UUID().uuidString
@@ -94,9 +113,10 @@ import NecarambaCore
 private enum TestFailure:Error { case persistence }
 private final class MutableLoginFake:LoginBackend {
     var value:LoginStatus = .disabled
+    var statusUnavailable = false
     var actions:[Bool] = []
     var failDisable = false
-    func status()->LoginStatus { value }
+    func status()->LoginStatus { statusUnavailable ? .unavailable : value }
     func setEnabled(_ enabled:Bool) throws {
         actions.append(enabled)
         if !enabled && failDisable { throw TestFailure.persistence }

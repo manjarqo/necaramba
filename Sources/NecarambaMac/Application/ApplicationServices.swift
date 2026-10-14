@@ -111,10 +111,12 @@ import NecarambaCore
             try login.setEnabled(enabled)
             do { try preferences.setLoginPreferred(enabled) }
             catch {
+                // Legacy ServiceManagement cannot report status. A successful OS call may
+                // have changed registration even when the status reads unavailable again.
+                guard previous == .enabled || previous == .disabled else {
+                    onChanged?(); throw NativeCommandFailure("partialFailure")
+                }
                 if login.status != previous {
-                    guard previous == .enabled || previous == .disabled else {
-                        onChanged?(); throw NativeCommandFailure("partialFailure")
-                    }
                     do { try login.setEnabled(previous == .enabled) }
                     catch { onChanged?(); throw NativeCommandFailure("partialFailure") }
                     guard login.status == previous else { onChanged?(); throw NativeCommandFailure("partialFailure") }
