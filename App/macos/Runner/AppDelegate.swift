@@ -44,8 +44,14 @@ struct NecarambaMain {
           return try await applicationServices.execute(method, arguments: arguments)
         })
       coordinator = bridge
-      let input = NativeInputController(permissions: permissions, preferences: applicationServices.preferences.snapshot)
+      let input = NativeInputController(permissions: permissions, preferences: applicationServices.preferences.snapshot,
+        conservativeAutomaticEnabled: true)
       self.input = input
+      applicationServices.runtimeIsRunning = { [weak input] in input?.runtime.isRunning ?? false }
+      input.onAutomaticReadinessChanged = { [weak applicationServices, weak bridge] ready in
+        applicationServices?.automaticReady = ready
+        bridge?.publishChange()
+      }
       input.onToggleAuto = { [weak self] in self?.toggleAuto() }
       input.onCommitted = { [weak applicationServices,weak bridge] id,kind in
         guard let applicationServices else { return }
@@ -75,7 +81,11 @@ struct NecarambaMain {
         return try await delivery.execute(method,arguments:arguments)
       }
       deliveryTask=Task { [weak self] in
-        await delivery.start(bundle:.main,root:directory.appendingPathComponent("RulePackages")) { snapshot,onInstalled in self?.input?.install(snapshot,onInstalled:onInstalled) }
+        await delivery.start(bundle:.main,root:directory.appendingPathComponent("RulePackages")) { snapshot,onInstalled in
+          // The local conversational supplement does not modify the signed package or
+          // assert that its broad release-quality gate passed.
+          self?.input?.install(ConservativeVocabulary.augment(snapshot),onInstalled:onInstalled)
+        }
       }
       bridge.onStateChanged = { [weak self] state in
         self?.settingsWindow?.publish(state)

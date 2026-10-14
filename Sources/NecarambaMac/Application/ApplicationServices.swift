@@ -15,7 +15,8 @@ import NecarambaCore
     public var onRulesChanged: (() -> Void)?
     public var externalCommand: ((String, [String:Any]) async throws -> [String:Any])?
     public var runtimeRunning = false
-    public var automaticQualified = false
+    public var runtimeIsRunning: (() -> Bool)?
+    public var automaticReady = false
     public var modelVersion: String = "0"
     public var modelState = "idle"
     public var modelLastChecked: String?
@@ -46,7 +47,16 @@ import NecarambaCore
     }
     public func snapshot() -> [String:Any] {
         let p = permissions.current()
-        let status = p.secureInput ? "secureInput" : (!p.listen || !p.post || !p.ax ? "permissionRequired" : (preferences.snapshot.autoEnabled && runtimeRunning && automaticQualified ? "active" : "off"))
+        let running = runtimeIsRunning?() ?? runtimeRunning
+        let status: String
+        if p.secureInput { status = "secureInput" }
+        else if !p.listen || !p.post || !p.ax { status = "permissionRequired" }
+        else if !preferences.snapshot.autoEnabled { status = "off" }
+        else if running && automaticReady { status = "active" }
+        else if modelState == "failed" { status = "unavailable" }
+        else if !running { status = "starting" }
+        else if modelVersion == "0" && (modelState == "idle" || modelState == "checking") { status = "starting" }
+        else { status = "unavailable" }
         let words = wordRows
         let legacy = legacyRows
         func word(_ value:WordRule,_ legacy:Bool)->[String:Any] {

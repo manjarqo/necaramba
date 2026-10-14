@@ -15,7 +15,7 @@ import NecarambaCore
             login: LoginController(backend: LoginFake()), permissions: permissions,
             files: MemoryFiles(soundURL: URL(fileURLWithPath: "/virtual/chime.wav")),
             appSelection: MemoryAppSelection(), thumbnailer: MemoryThumbnailer())
-        app.runtimeRunning = true; app.automaticQualified = true
+        app.runtimeRunning = true; app.automaticReady = true
         XCTAssertEqual(app.snapshot()["status"] as? String, "permissionRequired")
     }
 
@@ -28,10 +28,40 @@ import NecarambaCore
         permissions.state = .init(listen: true, post: true, ax: true, secureInput: false)
         let app = try ApplicationServices(directory: directory, defaults: defaults,
             permissions: permissions, loginBackend: LoginFake(), onPreferences: { _ in })
-        app.automaticQualified = true
+        app.automaticReady = true
         app.onRefreshCapabilities = { app.runtimeRunning = true }
         _ = try await app.execute("refreshCapabilities", arguments: [:])
         XCTAssertEqual(app.snapshot()["status"] as? String, "active")
+    }
+
+    func testEnabledAutomaticReportsInitializationAndUnavailableInsteadOfOff() throws {
+        let permissions = PermissionFake()
+        permissions.state = .init(listen: true, post: true, ax: true, secureInput: false)
+        let domain = "test.necaramba." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let app = try ApplicationServices(rules: MemoryApplicationRules(),
+            preferences: PreferencesController(defaults: defaults, publish: { _ in }),
+            sound: MemorySound(), header: MemoryHeader(), statistics: MemoryStatistics(),
+            login: LoginController(backend: LoginFake()), permissions: permissions,
+            files: MemoryFiles(soundURL: URL(fileURLWithPath: "/virtual/chime.wav")),
+            appSelection: MemoryAppSelection(), thumbnailer: MemoryThumbnailer())
+        app.runtimeRunning = true
+        XCTAssertEqual(app.snapshot()["status"] as? String, "starting")
+        app.modelState = "failed"
+        XCTAssertEqual(app.snapshot()["status"] as? String, "unavailable")
+        app.modelState = "current"; app.modelVersion = "1"
+        XCTAssertEqual(app.snapshot()["status"] as? String, "unavailable")
+        app.automaticReady = true
+        XCTAssertEqual(app.snapshot()["status"] as? String, "active")
+        app.modelState = "failed" // Failed update retains the already installed engine.
+        XCTAssertEqual(app.snapshot()["status"] as? String, "active")
+        app.runtimeIsRunning = { false }
+        app.modelState = "current"
+        XCTAssertEqual(app.snapshot()["status"] as? String, "starting")
+        app.runtimeIsRunning = { true }
+        try app.preferences.replace(.init(autoEnabled: false))
+        XCTAssertEqual(app.snapshot()["status"] as? String, "off")
     }
 
     func testInjectedRulesAndSoundDriveCommandsWithoutDiskStores() async throws {
