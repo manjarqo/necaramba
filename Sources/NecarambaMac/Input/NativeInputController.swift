@@ -7,14 +7,18 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   public private(set) var runtime: InputRuntime!
   private let layouts: LayoutAccess
   private let permissions: PermissionReading
+  private let editContext: ContextRefreshing
   private let selection: SelectionAdapter
   private let selectionAccess: SelectionAccess
   private let replacement: ReplacementCoordinator
   private var preferences: PreferencesSnapshot
   private var rules: RuleSnapshot
   private var engine: LinguisticEngine
+  private let layoutCapture: LayoutTableCapturing?
+  private let engineBuilder: RuleEngineBuilding
   private let compiler = DispatchQueue(label: "Necaramba rules compiler")
   private var quarantined: ContextToken?
+  private var preparationLease: ShortcutLease?
   private let corpusQualified: Bool
   private var excluded: Set<String> = []
   private var appOverrides: [String: AppOverride] = [:]
@@ -25,32 +29,41 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     profiles: CapabilityProfiles = CapabilityProfiles(), layouts: LayoutAccess = TISLayoutAdapter(),
     permissions: PermissionReading = PermissionMonitor(),
     preferences: PreferencesSnapshot = .defaults, snapshot: RuleSnapshot = .init(modelVersion: 0),
-    corpusQualified: Bool = false
+    corpusQualified: Bool = false, editingContext: ContextRefreshing? = nil,
+    selectionAccess: SelectionAccess? = nil, layoutCapture: LayoutTableCapturing? = nil,
+    engineBuilder: RuleEngineBuilding = RuleEngineBuilder()
   ) {
+    precondition(Thread.isMainThread)
     self.layouts = layouts
+    self.layoutCapture = layoutCapture ?? (layouts as? LayoutTableCapturing)
+    self.engineBuilder = engineBuilder
     self.permissions = permissions
     self.preferences = preferences
     rules = snapshot
     self.corpusQualified = corpusQualified
-    engine = LinguisticEngine(
-      snapshot: snapshot,
-      physicalMappings: (layouts as? TISLayoutAdapter)?.physicalMappings(for: snapshot) ?? [])
+    let initial = RuleSnapshot(modelVersion: 0)
+    rules = initial
+    engine = LinguisticEngine(snapshot: initial)
     let monitor = ContextMonitor(
       layouts: layouts, permissions: permissions,
       qualifies: { profiles.qualifies(bundleID: $0, role: $1) })
     context = monitor
+    editContext = editingContext ?? monitor
     let ax = AXSelectionAdapter(
-      context: monitor, qualifies: { profiles.qualifies(bundleID: $0, role: $1) })
-    selectionAccess = ax
-    selection = SelectionAdapter(selection: ax)
+      context: editContext, qualifies: { profiles.qualifies(bundleID: $0, role: $1) })
+    self.selectionAccess = selectionAccess ?? ax
+    selection = SelectionAdapter(selection: self.selectionAccess)
     replacement = ReplacementCoordinator(
-      context: monitor, layouts: layouts, sender: KeySender(selection: ax))
+      context: editContext, layouts: layouts, sender: KeySender(selection: self.selectionAccess))
     runtime = InputRuntime(
-      context: monitor.state, initialLayout: layouts.current() ?? LayoutID(rawValue: "unsupported"),
-      preferences: preferences, snapshot: snapshot, earlyEnabled: corpusQualified, engine: engine,
+      context: editingContext as ContextAccess? ?? monitor.state,
+      initialLayout: layouts.current() ?? LayoutID(rawValue: "unsupported"),
+      preferences: preferences, snapshot: initial, earlyEnabled: corpusQualified, engine: engine,
       command: { [weak self] in self?.execute($0) })
     ax.execute = { [weak self] evidence, text, selected, preflight in
-      self?.runtime.replaceByKeys(evidence, with: text, selected: selected, preflight: preflight)
+      self?.runtime.replaceByKeys(
+        evidence, with: text, selected: selected, lease: self?.preparationLease,
+        preflight: preflight)
         ?? .aborted
     }
     ax.inputGeneration = { [weak self] in self?.runtime.inputGeneration() ?? UInt64.max }
@@ -64,6 +77,9 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         self.runtime.invalidateContext(reason: .layoutChanged)
       }
       if old != id { self.replacement.invalidate(.layoutChanged) }
+    }
+    if snapshot.modelVersion != 0 || !snapshot.lexicon.isEmpty || !snapshot.mappings.isEmpty {
+      install(snapshot)
     }
   }
   @discardableResult public func start() -> Bool {
@@ -83,20 +99,24 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   }
   public func install(_ snapshot: RuleSnapshot) { install(snapshot, onInstalled: { _ in }) }
   public func install(_ snapshot: RuleSnapshot, onInstalled: @escaping (UInt64) -> Void) {
-    compiler.async { [weak self] in
+    let capture = { [weak self] in
       guard let self else { return }
-      let actual = (self.layouts as? TISLayoutAdapter)?.resolveMappings(in: snapshot) ?? snapshot
-      let prepared = LinguisticEngine(
-        snapshot: actual,
-        physicalMappings: (self.layouts as? TISLayoutAdapter)?.physicalMappings(for: actual) ?? [])
-      DispatchQueue.main.async { [weak self] in
+      let tables = self.layoutCapture?.captureTables()
+      self.compiler.async { [weak self] in
         guard let self else { return }
-        self.rules = actual
-        self.engine = prepared
-        self.runtime.install(actual, engine: prepared)
-        onInstalled(actual.modelVersion)
+        let actual = tables?.resolve(snapshot) ?? snapshot
+        let prepared = self.engineBuilder.build(
+          snapshot: actual, physicalMappings: tables?.physicalMappings(for: actual) ?? [])
+        DispatchQueue.main.async { [weak self] in
+          guard let self else { return }
+          self.rules = actual
+          self.engine = prepared
+          self.runtime.install(actual, engine: prepared)
+          onInstalled(actual.modelVersion)
+        }
       }
     }
+    if Thread.isMainThread { capture() } else { DispatchQueue.main.async(execute: capture) }
   }
   public func updateWordPolicies(_ words: Set<String>) {
     excluded = words
@@ -114,7 +134,9 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   private func ready(_ token: ContextToken) -> Bool {
     guard quarantined != token else { return false }
     let p = permissions.current()
-    guard p.listen, p.post, p.ax, !p.secureInput, context.refresh() == token else { return false }
+    guard p.listen, p.post, p.ax, !p.secureInput, editContext.refresh() == token else {
+      return false
+    }
     return true
   }
   private func execute(_ command: RuntimeCommand) {
@@ -133,7 +155,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         else { return }
         if VerifiedLayoutSwitcher(access: layouts).select(next) {
           runtime.updateLayout(next)
-          _ = context.refresh()
+          _ = editContext.refresh()
           replacement.invalidate(.layoutChanged)
         }
       }
@@ -163,10 +185,12 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         report(result, token: word.context)
         if let current = layouts.current() { runtime.updateLayout(current) }
       }
-    case .plainPaste(let token):
-      let result = plainPaste(clipboard: SystemClipboard())
-      runtime.finishShortcut(result)
-      report(result, token: token)
+    case .plainPaste(let lease):
+      preparationLease = lease
+      let result = plainPaste(in: lease.context, clipboard: SystemClipboard())
+      preparationLease = nil
+      runtime.finishShortcut(lease, result)
+      report(result, token: lease.context)
     }
   }
   private func quarantine(_ result: ApplyResult, token: ContextToken) {
@@ -183,7 +207,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   }
   public func manualCorrection() -> ApplyResult {
     precondition(Thread.isMainThread)
-    guard let token = context.current(), ready(token), let current = layouts.current() else {
+    guard let token = editContext.current(), ready(token), let current = layouts.current() else {
       return .aborted
     }
     if let evidence = selectionAccess.selected(in: token), !evidence.text.isEmpty,
@@ -197,7 +221,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         return result
       }
       guard VerifiedLayoutSwitcher(access: layouts).select(mapping.target),
-        let after = context.refresh()
+        let after = editContext.refresh()
       else {
         quarantine(.uncertain, token: token)
         return .uncertain
@@ -210,7 +234,10 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       onCommitted(plan.id, .manual)
       return .committed
     }
-    if replacement.hasUndo { return undoLast() }
+    if replacement.hasUndo {
+      let undone = undoLast()
+      if undone != .aborted { return undone }
+    }
     guard let word = runtime.manualWord(), word.context == token,
       let mapping = rules.mappings.first(where: { $0.source == word.layout })
     else { return .aborted }
@@ -226,16 +253,20 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   }
   public func plainPaste(clipboard: ClipboardAccess) -> ApplyResult {
     precondition(Thread.isMainThread)
-    guard let token = context.current(), ready(token) else { return .aborted }
+    guard let token = editContext.current() else { return .aborted }
+    return plainPaste(in: token, clipboard: clipboard)
+  }
+  public func plainPaste(in token: ContextToken, clipboard: ClipboardAccess) -> ApplyResult {
+    precondition(Thread.isMainThread)
+    guard ready(token) else { return .aborted }
     replacement.invalidate(.unknownInput)
-    runtime.invalidateContext(reason: .unknownInput)
     let result = selection.plainPaste(in: token, clipboard: clipboard)
     quarantine(result, token: token)
     return result
   }
   public func undoLast() -> ApplyResult {
     precondition(Thread.isMainThread)
-    guard let token = context.current(), ready(token) else { return .aborted }
+    guard let token = editContext.current(), ready(token) else { return .aborted }
     let result = replacement.undoLast()
     quarantine(result, token: token)
     if result == .committed, let id = replacement.lastCommittedID { onCommitted(id, .undo) }

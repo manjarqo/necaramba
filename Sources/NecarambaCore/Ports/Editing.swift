@@ -26,16 +26,22 @@ public protocol KeySending: AnyObject {
   func replaceVerifiedSuffix(_ plan: EditPlan) -> ApplyResult
 }
 /// Evidence is immutable and tied to a focus token and exact UTF16 range.
+public enum SelectionMode: Sendable, Equatable { case selected, suffix }
 public struct SelectionEvidence: Equatable, Sendable {
   public let identity: UUID?
+  public let inputGeneration: UInt64?
+  public let mode: SelectionMode?
   public let context: ContextToken
   public let text: String
   public let location: Int
   public let length: Int
   public init(
-    context: ContextToken, text: String, location: Int, length: Int, identity: UUID? = nil
+    context: ContextToken, text: String, location: Int, length: Int, identity: UUID? = nil,
+    inputGeneration: UInt64? = nil, mode: SelectionMode? = nil
   ) {
     self.identity = identity
+    self.inputGeneration = inputGeneration
+    self.mode = mode
     self.context = context
     self.text = text
     self.location = location

@@ -16,8 +16,7 @@ public final class EventTapAdapter {
   public private(set) var canSuppress = false
   private var timeouts: [UInt64] = []
   private let ownership = EditOwnership<CGEvent>()
-  private var shortcutActive = false
-  private var shortcutContext: ContextToken?
+  private let shortcut = ShortcutSession()
   private var suppressNextVUp = false
   public init(runtime: InputRuntime) { self.runtime = runtime }
   public func start() -> Bool {
@@ -124,13 +123,19 @@ public final class EventTapAdapter {
   }
   /// Preparation runs on main. The only destructive work is a prebuilt event batch on the tap run loop.
   public func replace(
-    _ evidence: SelectionEvidence, with text: String, selected: Bool, preflight: () -> Bool
+    _ evidence: SelectionEvidence, with text: String, selected: Bool, lease: ShortcutLease? = nil,
+    preflight: () -> Bool
   ) -> ApplyResult {
     precondition(Thread.isMainThread)
-    guard canSuppress, CGPreflightPostEventAccess(), let runtime, text.utf16.count <= 1024,
+    guard canSuppress, CGPreflightPostEventAccess(), let runtime,
+      let proofGeneration = evidence.inputGeneration,
+      evidence.mode == (selected ? .selected : .suffix), text.utf16.count <= 1024,
       evidence.text.count <= 128
     else { return .aborted }
-    let generation = runtime.inputGeneration()
+    let generation = lease?.generation ?? proofGeneration
+    guard proofGeneration == generation, runtime.inputGeneration() == generation,
+      lease == nil || lease?.context == evidence.context
+    else { return .aborted }
     let requested = DispatchTime.now().uptimeNanoseconds
     guard preflight() else { return .aborted }
     var batch: [CGEvent] = []
@@ -175,7 +180,9 @@ public final class EventTapAdapter {
       defer { done.signal() }
       guard let self, DispatchTime.now().uptimeNanoseconds - requested < 100_000_000,
         !IsSecureEventInputEnabled(), runtime.cachedInputContext()?.0 == evidence.context,
-        self.ownership.isActive || self.ownership.begin(now: DispatchTime.now().uptimeNanoseconds)
+        self.admit(
+          lease, generation: generation, context: evidence.context,
+          now: DispatchTime.now().uptimeNanoseconds)
       else { return }
       let outcome = self.ownership.commit(
         expectedGeneration: generation, currentGeneration: runtime.inputGeneration,
@@ -210,38 +217,40 @@ public final class EventTapAdapter {
     }
     runtime?.advance(to: now)
   }
-  public func finishShortcut(_ result: ApplyResult) {
+  private func admit(
+    _ lease: ShortcutLease?, generation: UInt64, context: ContextToken, now: UInt64
+  ) -> Bool {
+    if let lease {
+      return ownership.isActive
+        && shortcut.admits(lease, generation: generation, context: context, now: now)
+    }
+    guard shortcut.active == nil, !ownership.isActive else { return false }
+    return ownership.begin(now: now)
+  }
+  public func finishShortcut(_ lease: ShortcutLease, _ result: ApplyResult) {
     lock.lock()
     let runloop = loop
     lock.unlock()
     guard let runloop else { return }
     CFRunLoopPerformBlock(runloop, CFRunLoopMode.commonModes.rawValue) { [weak self] in
-      guard let self, self.shortcutActive else { return }
+      guard let self, self.shortcut.active == lease else { return }
       self.release(self.ownership.cancel(), result: result)
     }
     CFRunLoopWakeUp(runloop)
   }
   private func release(_ events: [CGEvent], result: ApplyResult) {
-    guard shortcutActive else {
+    guard let original = shortcut.active else {
       replay(events)
       return
     }
-    shortcutActive = false
-    let original = shortcutContext
-    shortcutContext = nil
-    if result == .aborted, runtime?.cachedInputContext()?.0 == original {
+    shortcut.cancel()
+    if result == .aborted, runtime?.cachedInputContext()?.0 == original.context {
       replay(events)
       return
     }
-    let hasUp = events.contains {
-      $0.type == .keyUp && $0.getIntegerValueField(.keyboardEventKeycode) == 9
-    }
-    suppressNextVUp = !hasUp
-    replay(
-      events.filter {
-        !([CGEventType.keyDown, .keyUp].contains($0.type)
-          && $0.getIntegerValueField(.keyboardEventKeycode) == 9)
-      })
+    let filtered = ShortcutSession.consumeTrigger(events)
+    suppressNextVUp = filtered.awaitingRelease
+    replay(filtered.events)
   }
   private func replay(_ events: [CGEvent]) {
     if !events.isEmpty { runtime?.replayedPhysicalInput() }
@@ -311,9 +320,9 @@ public final class EventTapAdapter {
         timestampNanos: DispatchTime.now().uptimeNanoseconds, layout: layout, context: context,
         origin: origin, text: text,
         isRepeat: event.getIntegerValueField(.keyboardEventAutorepeat) != 0))
-    if disposition == .suppressed, ownership.begin(now: DispatchTime.now().uptimeNanoseconds) {
-      shortcutActive = true
-      shortcutContext = context
+    if case .suppressed(let lease) = disposition,
+      ownership.begin(now: DispatchTime.now().uptimeNanoseconds), shortcut.begin(lease)
+    {
       _ = ownership.intercept(event.copy() ?? event, now: DispatchTime.now().uptimeNanoseconds)
       return false
     }

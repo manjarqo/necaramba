@@ -1,11 +1,14 @@
 import Foundation
 import NecarambaCore
 
-public enum RuntimeOutcome: Equatable { case pass, suppressed }
+public enum RuntimeOutcome: Equatable {
+  case pass
+  case suppressed(ShortcutLease)
+}
 public enum RuntimeCommand: Sendable {
   case gesture(GestureAction, ContextToken)
   case boundary(BufferedWord, RuleSnapshot, PreferencesSnapshot)
-  case plainPaste(ContextToken)
+  case plainPaste(ShortcutLease)
 }
 /// All physical events pass through. Deferred commands must independently revalidate AX evidence.
 public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
@@ -136,20 +139,22 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     recentWord = nil
     notifyInvalidation()
   }
-  public func finishShortcut(_ result: ApplyResult) {
+  public func finishShortcut(_ lease: ShortcutLease, _ result: ApplyResult) {
     lock.lock()
     let adapter = tap
     lock.unlock()
-    adapter?.finishShortcut(result)
+    adapter?.finishShortcut(lease, result)
   }
   public func replaceByKeys(
-    _ evidence: SelectionEvidence, with text: String, selected: Bool, preflight: () -> Bool
+    _ evidence: SelectionEvidence, with text: String, selected: Bool, lease: ShortcutLease? = nil,
+    preflight: () -> Bool
   ) -> ApplyResult {
     lock.lock()
     let adapter = tap
     lock.unlock()
     guard let adapter else { return .aborted }
-    return adapter.replace(evidence, with: text, selected: selected, preflight: preflight)
+    return adapter.replace(
+      evidence, with: text, selected: selected, lease: lease, preflight: preflight)
   }
   public func cachedInputContext() -> (ContextToken, LayoutID)? {
     lock.lock()
@@ -180,8 +185,10 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     {
       buffer.invalidate(.unknownInput)
       guard tap?.canSuppress == true else { return .pass }
-      deliver(.plainPaste(event.context))
-      return .suppressed
+      let lease = ShortcutLease(
+        context: event.context, generation: generation, startedNanos: event.timestampNanos)
+      deliver(.plainPaste(lease))
+      return .suppressed(lease)
     }
     if event.kind == .down {
       if let text = event.text, text.count == 1,

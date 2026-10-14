@@ -20,7 +20,19 @@ Public composition API remains NativeInputController(profiles:layouts:permission
 
 ## Verification
 
-Initial missing-type RED builds were captured for the first slice and EditOwnership. GREEN: 39 Core tests and 54 Mac tests pass after this round; dedicated ownership, early correction and async-install suites pass. Replay tool was built directly from SwiftPM object products without editing root-owned Package.swift, then executed with HostScenarios.json and 100000 events: all 11 declared simulated scenarios passed and both exact-order replays passed. No permission request, clipboard read, physical typing, installed Caramba, login item, personal file or TCC modification was performed.
+Initial missing-type RED builds were captured for the first slice and EditOwnership. GREEN: 39 Core tests and 65 Mac tests pass after this round; dedicated ownership, early correction and async-install suites pass. Replay tool was built directly from SwiftPM object products without editing root-owned Package.swift, then executed with HostScenarios.json and 100000 events: all 11 declared simulated scenarios passed and both exact-order replays passed. No permission request, clipboard read, physical typing, installed Caramba, login item, personal file or TCC modification was performed.
+
+## Review round 2 and startup crash
+
+ShortcutLease now carries a UUID, original context, original physical generation and original start time from trigger through command, clipboard/AX preparation and key execution. Timeout or overflow permanently cancels that ticket. An expired preparation cannot open a fresh lease or borrow the generation of replayed fallback input; completion for an old ticket cannot cancel a newer shortcut. The facade passes the captured context to plainPaste(in:clipboard:). Toolbar calls also capture context before preparation.
+
+SelectionEvidence freezes selected-versus-suffix mode and the physical generation captured before the initial AX read. AXSelectionAdapter validates that exact range/mode on every subsequent read rather than mutating a captured mode flag. The native key executor requires evidence generation and mode and rejects resampling a current generation. A new AXSelectionReading port permits tests of the actual adapter without AX permission or live editing.
+
+Trigger filtering consumes only the original V press, its autorepeats and first matching up. Ordinary V down/up events after that release remain in order, including the sequence with modifier release between presses. Four ShortcutSession tests use the actual CGEvent session/filter employed by EventTapAdapter. Three actual AXSelectionAdapter tests exercise both selection-mode races and input during the first AX read. A facade test verifies that stale captured focus aborts before selection or clipboard access. Aborted, non-mutating stale undo now falls through to a proven tracked word.
+
+Root supplied a reproduced startup crash: TISCreateInputSourceList asserted main queue while install called resolveMappings from the compiler queue. Fixed by capturing immutable translation tables on main (one source-list read, maximum 32 layouts × 128 keys × four modifier states), then running pure CapturedLayoutTables resolution/physical mapping and RuleEngineBuilder on the serial background queue. No Carbon/TIS object escapes capture. TIS public accessors require main. Initialization uses an empty index and routes nonempty initial snapshots through the same asynchronous compiler; the large production index is never built on main.
+
+A spy test verifies main capture, background build and main completion; a real read-only main-thread TIS capture test passes without permission changes. Another test verifies alias resolution and physical mappings entirely on a background queue using immutable tables. Root owns GUI relaunch verification; no GUI startup claim is made here. Final all-tests result: 39 Core and 65 Mac PASS; all 11 simulated replay scenarios and both 100000-event ordered replays PASS. Diff whitespace check passes.
 
 ## Remaining release gates
 
