@@ -85,6 +85,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     defer { lock.unlock() }
     generation &+= 1
     preferences = snapshot
+    tracked.removeAll()
+    recentWord = nil
     gestures = GestureRecognizer(configuration: Self.configuration(snapshot))
     buffer.invalidate(.unknownInput)
   }
@@ -182,12 +184,18 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     if event.kind != .up { generation &+= 1 }
     if event.kind == .down && ![56, 60, 58, 61].contains(event.keyCode) { notifyInvalidation() }
     guard event.origin == .physical else {
+      tracked.removeAll()
+      recentWord = nil
+      notifyInvalidation()
       buffer.invalidate(.unknownInput)
       gestures.invalidate()
       return .pass
     }
     for action in gestures.consume(event) { deliver(.gesture(action, event.context)) }
     guard context.isSafe(event.context) else {
+      tracked.removeAll()
+      recentWord = nil
+      notifyInvalidation()
       buffer.invalidate(.unknownInput)
       return .pass
     }
@@ -203,7 +211,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     }
     if event.kind == .down {
       if let text = event.text, text.count == 1,
-        text.unicodeScalars.allSatisfy({ CharacterSet.letters.contains($0) }),
+        (text.unicodeScalars.allSatisfy({ CharacterSet.letters.contains($0) })
+          || [",", ".", ";", "'", "[", "]", "<", ">", ":", "\"", "{", "}"].contains(text)),
         event.modifiers.isSubset(of: [.shift, .capsLock])
       {
         if tracked.first?.context != event.context || tracked.first?.layout != event.layout {
