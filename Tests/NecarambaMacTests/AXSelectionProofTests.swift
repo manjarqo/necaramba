@@ -241,6 +241,125 @@ final class AXSelectionProofTests: XCTestCase {
     XCTAssertEqual(attempts, 1)
   }
 
+  func testOptionalMarkedMetadataRequiresDirectLayoutInAutomaticScope() {
+    XCTAssertTrue(AXCompositionProof.permits(markedRange: nil, attributeUnavailable: true,
+      manual: false, directKeyboardLayout: true, automaticBoundary: true))
+    XCTAssertFalse(AXCompositionProof.permits(markedRange: nil, attributeUnavailable: true,
+      manual: false, directKeyboardLayout: false, automaticBoundary: true))
+    XCTAssertFalse(AXCompositionProof.permits(markedRange: CFRange(location: 0, length: 1),
+      attributeUnavailable: false, manual: false, directKeyboardLayout: true,
+      automaticBoundary: true))
+  }
+
+  func testAutomaticSpaceProxyDispatchesOnceWithCapturedGeneration() {
+    let (adapter, reader, token) = fixture(automatic: true)
+    reader.value = ""
+    reader.range = NSRange(location: 0, length: 0)
+    var attempts = 0
+    adapter.execute = { evidence, text, selected, preflight in
+      XCTAssertEqual(evidence.inputGeneration, 1)
+      XCTAssertEqual(evidence.text, "word ")
+      XCTAssertEqual(text, "WORD ")
+      XCTAssertFalse(selected)
+      guard preflight() else { return .aborted }
+      attempts += 1
+      return .committed
+    }
+    XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .dispatched)
+    XCTAssertEqual(attempts, 1)
+  }
+
+  func testAutomaticReadableSuffixRequiresExactProofAndCommits() {
+    let (adapter, reader, token) = fixture(automatic: true)
+    reader.value = "A word "
+    reader.range = NSRange(location: 7, length: 0)
+    adapter.execute = { _, _, _, preflight in
+      guard preflight() else { return .aborted }
+      reader.value = "A WORD "
+      return .committed
+    }
+    XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .committed)
+  }
+
+  func testAutomaticSubsequentInputOrAbsentScopeNeverPosts() {
+    for enabled in [false, true] {
+      let (adapter, reader, token) = fixture(automatic: enabled)
+      reader.value = ""
+      reader.range = NSRange(location: 0, length: 0)
+      adapter.inputGeneration = { enabled ? 2 : 1 }
+      adapter.execute = { _, _, _, _ in XCTFail("Stale or unauthorized auto edit"); return .committed }
+      XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .aborted)
+    }
+  }
+
+  func testAutomaticRejectsSubmissionEarlyAndMismatchedBoundary() {
+    let (adapter, reader, token) = fixture(automatic: true)
+    reader.value = ""
+    reader.range = NSRange(location: 0, length: 0)
+    adapter.execute = { _, _, _, _ in XCTFail("Invalid boundary must not post"); return .committed }
+    for delimiter in ["", "\n", "\r", "\t", "! "] {
+      let original = word(token)
+      let altered = BufferedWord(text: original.text, events: original.events,
+        context: token, layout: original.layout, delimiter: delimiter)
+      let candidate = AutomaticBoundaryCandidate(word: altered,
+        boundary: autoCandidate(token).boundary, inputGeneration: 1)
+      XCTAssertEqual(adapter.replaceAutomaticBoundary(candidate, with: "WORD" + delimiter), .aborted)
+    }
+    let wrong = InputEvent(kind: .down, keyCode: 49, modifiers: [], timestampNanos: 2,
+      layout: .init(rawValue: "RU"), context: token, origin: .physical, text: " ", isRepeat: false)
+    XCTAssertEqual(adapter.replaceAutomaticBoundary(.init(word: word(token), boundary: wrong,
+      inputGeneration: 1), with: "WORD "), .aborted)
+  }
+
+  func testAutomaticFieldChangeOrInputBeforePostAborts() {
+    for changeField in [false, true] {
+      let (adapter, reader, token) = fixture(automatic: true)
+      reader.value = ""
+      reader.range = NSRange(location: 0, length: 0)
+      var generation: UInt64 = 1
+      adapter.inputGeneration = { generation }
+      adapter.execute = { _, _, _, preflight in
+        if changeField { reader.id = UUID() } else { generation += 1 }
+        return preflight() ? .committed : .aborted
+      }
+      XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .aborted)
+    }
+  }
+
+  func testAutomaticPartialMutationIsUncertainWithoutRetry() {
+    let (adapter, reader, token) = fixture(automatic: true)
+    reader.value = ""
+    reader.range = NSRange(location: 0, length: 0)
+    var attempts = 0
+    adapter.execute = { _, _, _, _ in attempts += 1; return .uncertain }
+    XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .uncertain)
+    XCTAssertEqual(attempts, 1)
+  }
+
+  func testAutomaticReadableMismatchCannotFallBackToDestructiveProxyEdit() {
+    let (adapter, reader, token) = fixture(automatic: true)
+    reader.value = "A different "
+    reader.range = NSRange(location: 12, length: 0)
+    adapter.execute = { _, _, _, _ in XCTFail("Readable mismatch must not post"); return .committed }
+    XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .aborted)
+  }
+
+  func testAutomaticGenerationChangeAfterPostingIsUncertain() {
+    let (adapter, reader, token) = fixture(automatic: true)
+    reader.value = ""
+    reader.range = NSRange(location: 0, length: 0)
+    var generation: UInt64 = 1
+    adapter.inputGeneration = { generation }
+    adapter.execute = { _, _, _, _ in generation += 1; return .committed }
+    XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .uncertain)
+  }
+
+  private func autoCandidate(_ token: ContextToken) -> AutomaticBoundaryCandidate {
+    .init(word: word(token), boundary: .init(kind: .down, keyCode: 49, modifiers: [],
+      timestampNanos: 2, layout: .init(rawValue: "US"), context: token,
+      origin: .physical, text: " ", isRepeat: false), inputGeneration: 1)
+  }
+
   private func word(_ token: ContextToken, origin: EventOrigin = .physical) -> BufferedWord {
     let layout = LayoutID(rawValue: "US")
     let events = "word".map { character in
@@ -251,7 +370,7 @@ final class AXSelectionProofTests: XCTestCase {
   }
 
   private func fixture(
-    manual: Bool = false,
+    manual: Bool = false, automatic: Bool = false,
     now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
     wait: @escaping (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
   ) -> (AXSelectionAdapter, ProofReader, ContextToken) {
@@ -260,7 +379,7 @@ final class AXSelectionProofTests: XCTestCase {
       pid: 42, bundleID: "test", focusID: "a", layout: .init(rawValue: "US"), qualified: true)
     let reader = ProofReader()
     let adapter = AXSelectionAdapter(context: context, qualifies: { _, _ in true }, reader: reader,
-      allowMissingMarkedTextRange: { manual }, now: now, wait: wait)
+      allowMissingMarkedTextRange: { manual }, allowAutomaticBoundary: { automatic }, now: now, wait: wait)
     adapter.inputGeneration = { 1 }
     return (adapter, reader, context.current()!)
   }

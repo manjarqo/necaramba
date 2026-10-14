@@ -27,14 +27,17 @@ public final class SystemAXSelectionReader: AXSelectionReading {
   private let context: ContextAccess
   private let qualifies: (String, String) -> Bool
   private let allowMissingMarkedTextRange: () -> Bool
+  private let allowAutomaticBoundary: () -> Bool
   private var retained: (id: UUID, element: AXUIElement)?
   public init(
     context: ContextAccess, qualifies: @escaping (String, String) -> Bool,
-    allowMissingMarkedTextRange: @escaping () -> Bool = { false }
+    allowMissingMarkedTextRange: @escaping () -> Bool = { false },
+    allowAutomaticBoundary: @escaping () -> Bool = { false }
   ) {
     self.context = context
     self.qualifies = qualifies
     self.allowMissingMarkedTextRange = allowMissingMarkedTextRange
+    self.allowAutomaticBoundary = allowAutomaticBoundary
   }
   public func read(in token: ContextToken) -> AXTextSnapshot? {
     read(in: token, deadline: ProcessInfo.processInfo.systemUptime + 0.1)
@@ -42,7 +45,9 @@ public final class SystemAXSelectionReader: AXSelectionReading {
   public func read(in token: ContextToken, deadline: TimeInterval) -> AXTextSnapshot? {
     precondition(Thread.isMainThread)
     func trace(_ reason: String, detail: Int = 0) {
-      if allowMissingMarkedTextRange() { InputDiagnostics.event(reason, detail: detail) }
+      if allowMissingMarkedTextRange() || allowAutomaticBoundary() {
+        InputDiagnostics.event(reason, detail: detail)
+      }
     }
     func budget(_ element: AXUIElement) -> Bool {
       let remaining = deadline - ProcessInfo.processInfo.systemUptime
@@ -100,7 +105,8 @@ public final class SystemAXSelectionReader: AXSelectionReading {
     guard AXCompositionProof.permits(
       markedRange: markedRange,
       attributeUnavailable: markedStatus == .attributeUnsupported || markedStatus == .noValue,
-      manual: allowMissingMarkedTextRange(), directKeyboardLayout: directLayout)
+      manual: allowMissingMarkedTextRange(), directKeyboardLayout: directLayout,
+      automaticBoundary: allowAutomaticBoundary())
     else { trace("ax.compositionRejected"); return nil }
     var range = CFRange()
     guard AXValueGetValue(unsafeBitCast(raw, to: AXValue.self), .cfRange, &range),
@@ -130,19 +136,23 @@ public final class AXSelectionAdapter: SelectionAccess {
   private let context: ContextAccess
   private let reader: AXSelectionReading
   private let manualCommandActive: () -> Bool
+  private let automaticBoundaryActive: () -> Bool
   private let now: () -> TimeInterval
   private let wait: (TimeInterval) -> Void
   public init(
     context: ContextAccess, qualifies: @escaping (String, String) -> Bool,
     reader: AXSelectionReading? = nil,
     allowMissingMarkedTextRange: @escaping () -> Bool = { false },
+    allowAutomaticBoundary: @escaping () -> Bool = { false },
     now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
     wait: @escaping (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
   ) {
     self.context = context
     self.reader = reader ?? SystemAXSelectionReader(
-      context: context, qualifies: qualifies, allowMissingMarkedTextRange: allowMissingMarkedTextRange)
+      context: context, qualifies: qualifies, allowMissingMarkedTextRange: allowMissingMarkedTextRange,
+      allowAutomaticBoundary: allowAutomaticBoundary)
     self.manualCommandActive = allowMissingMarkedTextRange
+    self.automaticBoundaryActive = allowAutomaticBoundary
     self.now = now
     self.wait = wait
   }
@@ -159,7 +169,9 @@ public final class AXSelectionAdapter: SelectionAccess {
     return value
   }
   private func trace(_ reason: String, detail: Int = 0) {
-    if manualCommandActive() { InputDiagnostics.event(reason, detail: detail) }
+    if manualCommandActive() || automaticBoundaryActive() {
+      InputDiagnostics.event(reason, detail: detail)
+    }
   }
   private func traceMutation(_ result: ApplyResult) {
     switch result {
@@ -188,7 +200,12 @@ public final class AXSelectionAdapter: SelectionAccess {
       identity: value.identity, inputGeneration: generation, mode: .suffix)
   }
   public func replace(_ evidence: SelectionEvidence, with text: String) -> ApplyResult {
-    guard evidence.text.utf8.count <= 1024 * 1024, text.utf8.count <= 1024 * 1024,
+    replace(evidence, with: text, authorized: { true })
+  }
+  private func replace(
+    _ evidence: SelectionEvidence, with text: String, authorized: () -> Bool
+  ) -> ApplyResult {
+    guard authorized(), evidence.text.utf8.count <= 1024 * 1024, text.utf8.count <= 1024 * 1024,
       let identity = evidence.identity, let generation = evidence.inputGeneration,
       let mode = evidence.mode, let execute
     else { return .aborted }
@@ -198,7 +215,7 @@ public final class AXSelectionAdapter: SelectionAccess {
       selected ? range : NSRange(location: evidence.location + evidence.length, length: 0)
     var before: AXTextSnapshot?
     func valid() -> Bool {
-      guard let current = snapshot(evidence.context, generation: generation),
+      guard authorized(), let current = snapshot(evidence.context, generation: generation),
         current.identity == identity,
         current.range == observedRange, range.location >= 0, range.length >= 0,
         range.location <= current.value.utf16.count,
@@ -221,7 +238,7 @@ public final class AXSelectionAdapter: SelectionAccess {
     // Sleep outside the tap without pumping the UI runloop (which could reenter commands).
     let deadline = now() + 0.1
     for _ in 0..<21 {
-      guard now() < deadline,
+      guard authorized(), now() < deadline,
         let after = snapshot(evidence.context, generation: generation, deadline: deadline),
         now() <= deadline, after.identity == identity
       else { return .uncertain }
@@ -238,14 +255,15 @@ public final class AXSelectionAdapter: SelectionAccess {
 }
 
 /// Missing marked-text metadata is not proof that composition is inactive.
-/// Explicit manual commands may accept it for a direct keyboard layout only;
-/// this does not establish absence of dead-key state. Automatic correction stays strict.
+/// Explicit manual commands and scoped, opted-in space-boundary correction may accept
+/// it for a direct keyboard layout only; this does not establish absence of dead-key state.
 enum AXCompositionProof {
   static func permits(
-    markedRange: CFRange?, attributeUnavailable: Bool, manual: Bool, directKeyboardLayout: Bool
+    markedRange: CFRange?, attributeUnavailable: Bool, manual: Bool, directKeyboardLayout: Bool,
+    automaticBoundary: Bool = false
   ) -> Bool {
     guard let markedRange else {
-      return attributeUnavailable && manual && directKeyboardLayout
+      return attributeUnavailable && (manual || automaticBoundary) && directKeyboardLayout
     }
     return markedRange.length == 0 && markedRange.location >= -1
   }
@@ -273,16 +291,18 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
   }
 
   private func replaceEmptyProxySuffix(
-    _ original: String, in context: ContextToken, identity: UUID?, with text: String
+    _ original: String, in context: ContextToken, identity: UUID?, with text: String,
+    requiredGeneration: UInt64? = nil, authorized: (() -> Bool)? = nil
   ) -> ApplyResult {
     // An empty terminal AX proxy cannot prove its suffix. Explicit dispatch keeps
     // that uncertainty even when a prior explicit command supplied the current text.
-    guard manualCommandActive(), !original.isEmpty, original.count <= 128,
+    let allowed = authorized ?? manualCommandActive
+    guard allowed(), !original.isEmpty, original.count <= 128,
       original.utf16.count <= 512, !text.isEmpty, text.count <= 128, text.utf16.count <= 512
     else { trace("ax.tracked.boundsOrScopeRejected"); return .aborted }
-    guard let generation = inputGeneration?() else {
-      trace("ax.tracked.generationMissing"); return .aborted
-    }
+    guard let generation = requiredGeneration ?? inputGeneration?(),
+      inputGeneration?() == generation
+    else { trace("ax.tracked.generationMissingOrChanged"); return .aborted }
     guard let before = snapshot(context, generation: generation) else {
       trace("ax.tracked.snapshotMissing"); return .aborted
     }
@@ -294,7 +314,7 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
     guard before.value.isEmpty, before.range == NSRange(location: 0, length: 0) else { return .aborted }
     guard let execute else { trace("ax.tracked.executeMissing"); return .aborted }
     func valid() -> Bool {
-      guard manualCommandActive(), let current = snapshot(context, generation: generation)
+      guard allowed(), let current = snapshot(context, generation: generation)
       else { return false }
       return current.identity == before.identity && current.value.isEmpty
         && current.range == NSRange(location: 0, length: 0)
@@ -307,7 +327,7 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
     let result = execute(evidence, text, false, valid)
     traceMutation(result)
     guard result == .committed else { return result }
-    guard let after = snapshot(context, generation: generation),
+    guard allowed(), let after = snapshot(context, generation: generation),
       after.identity == before.identity
     else { return .uncertain }
     if after.value == text && after.range == NSRange(location: text.utf16.count, length: 0) {
@@ -333,5 +353,42 @@ extension AXSelectionAdapter: ManualRepeatedSuffixReplacing {
     return replaceEmptyProxySuffix(
       candidate.currentText + candidate.delimiter, in: candidate.context,
       identity: identity, with: text)
+  }
+}
+
+extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
+  public func replaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with text: String) -> ApplyResult {
+    let word = candidate.word
+    let boundary = candidate.boundary
+    guard automaticBoundaryActive(), hasPhysicalLineage(word), word.delimiter == " ",
+      boundary.origin == .physical, boundary.kind == .down, boundary.keyCode == 49,
+      boundary.text == " ", !boundary.isRepeat,
+      boundary.modifiers.isSubset(of: [.shift, .capsLock]),
+      boundary.context == word.context, boundary.layout == word.layout,
+      word.events.allSatisfy({ $0.text?.utf16.count == 1 }),
+      !text.isEmpty, text.count <= 128, text.utf16.count <= 512,
+      text.last == " ", !text.contains(where: { "\n\r\t".contains($0) }),
+      let before = snapshot(word.context, generation: candidate.inputGeneration)
+    else { trace("ax.auto.boundaryOrSnapshotRejected"); return .aborted }
+    let original = word.text + word.delimiter
+    if before.value.isEmpty && before.range == NSRange(location: 0, length: 0) {
+      trace("ax.auto.emptyProxy")
+      return replaceEmptyProxySuffix(
+        original, in: word.context, identity: before.identity, with: text,
+        requiredGeneration: candidate.inputGeneration, authorized: automaticBoundaryActive)
+    }
+    guard before.range.length == 0, before.range.location >= original.utf16.count else {
+      trace("ax.auto.readableRangeRejected"); return .aborted
+    }
+    let range = NSRange(location: before.range.location - original.utf16.count,
+      length: original.utf16.count)
+    guard (before.value as NSString).substring(with: range) == original else {
+      trace("ax.auto.readableSuffixMismatch"); return .aborted
+    }
+    trace("ax.auto.readableSuffix")
+    let evidence = SelectionEvidence(context: word.context, text: original,
+      location: range.location, length: range.length, identity: before.identity,
+      inputGeneration: candidate.inputGeneration, mode: .suffix)
+    return replace(evidence, with: text, authorized: automaticBoundaryActive)
   }
 }
