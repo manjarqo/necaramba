@@ -138,24 +138,54 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     context.state.invalidate(reason)
     replacement.invalidate(reason)
   }
-  private func ready(_ token: ContextToken) -> Bool {
-    guard quarantined != token else { return false }
+  private func ready(_ token: ContextToken, diagnose: Bool = false) -> Bool {
+    guard quarantined != token else {
+      if diagnose { InputDiagnostics.event("manual.ready.quarantined") }
+      return false
+    }
     let p = permissions.current()
-    guard p.listen, p.post, p.ax, !p.secureInput, editContext.refresh() == token else {
+    guard p.listen, p.post, p.ax, !p.secureInput else {
+      if diagnose {
+        InputDiagnostics.event("manual.ready.permissions", detail:
+          (p.listen ? 1 : 0) | (p.post ? 2 : 0) | (p.ax ? 4 : 0) | (p.secureInput ? 8 : 0))
+      }
+      return false
+    }
+    guard editContext.refresh() == token else {
+      if diagnose { InputDiagnostics.event("manual.ready.contextMismatch") }
       return false
     }
     return true
+  }
+  private func diagnoseResult(_ result: ApplyResult, event: String) {
+    let code: Int
+    switch result {
+    case .aborted: code = 0
+    case .committed: code = 1
+    case .uncertain: code = 2
+    case .dispatched: code = 3
+    }
+    InputDiagnostics.event(event, detail: code)
   }
   private func execute(_ command: RuntimeCommand) {
     precondition(Thread.isMainThread)
     switch command {
     case .gesture(let action, let token):
-      guard permissions.current().listen, !permissions.current().secureInput else { return }
+      if case .manualCorrection = action {
+        InputDiagnostics.event("manual.gesture.focusEpoch", detail: Int(clamping: token.focusEpoch))
+        InputDiagnostics.event("manual.gesture.layoutEpoch", detail: Int(clamping: token.layoutEpoch))
+      }
+      guard permissions.current().listen, !permissions.current().secureInput else {
+        if case .manualCorrection = action { InputDiagnostics.event("manual.gesture.permissionsDenied") }
+        return
+      }
       switch action {
       case .toggleAuto: onToggleAuto()
       case .manualCorrection:
-        guard ready(token) else { return }
-        report(manualCorrection(), token: token)
+        guard ready(token, diagnose: true) else { return }
+        let result = manualCorrection()
+        diagnoseResult(result, event: "manual.result")
+        report(result, token: token)
       case .switchLayout:
         guard let current = layouts.current(),
           let next = layouts.supported().first(where: { $0 != current })
@@ -217,15 +247,27 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     precondition(Thread.isMainThread)
     manualActionScope.active = true
     defer { manualActionScope.active = false }
-    guard let token = editContext.current(), ready(token), let current = layouts.current() else {
+    InputDiagnostics.event("manual.start.wordLength", detail: runtime.manualWord()?.text.count ?? 0)
+    guard let token = editContext.current() else {
+      InputDiagnostics.event("manual.contextMissing")
       return .aborted
     }
-    if let evidence = selectionAccess.selected(in: token), !evidence.text.isEmpty,
+    guard ready(token, diagnose: true) else { return .aborted }
+    guard let current = layouts.current() else {
+      InputDiagnostics.event("manual.layoutMissing")
+      return .aborted
+    }
+    let selected = selectionAccess.selected(in: token)
+    InputDiagnostics.event("manual.selectedProof", detail: selected == nil ? 0 : 1)
+    InputDiagnostics.event("manual.selectionNonempty", detail: selected?.text.isEmpty == false ? 1 : 0)
+    InputDiagnostics.event("manual.mappingExists", detail: rules.mappings.contains { $0.source == current } ? 1 : 0)
+    if let evidence = selected, !evidence.text.isEmpty,
       let mapping = rules.mappings.first(where: { $0.source == current })
     {
       let text = LayoutConverter.convert(evidence.text, mapping: mapping)
       guard text != evidence.text else { return .aborted }
       let result = selectionAccess.replace(evidence, with: text)
+      diagnoseResult(result, event: "manual.selection.result")
       guard result == .committed else {
         quarantine(result, token: token)
         return result
@@ -250,7 +292,10 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     }
     guard let word = runtime.manualWord(), word.context == token, word.layout == current,
       let mapping = rules.mappings.first(where: { $0.source == word.layout })
-    else { return .aborted }
+    else {
+      InputDiagnostics.event("manual.wordContextLayoutOrMappingMissing")
+      return .aborted
+    }
     let text = LayoutConverter.convert(word.text, mapping: mapping)
     guard text != word.text else { return .aborted }
     if selectionAccess.suffix(word.text + word.delimiter, in: token) == nil,
@@ -258,7 +303,9 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     {
       // Only explicit manual input can use a freshly proved empty AX proxy.
       // This branch runs before any proven-range mutation, never as a retry.
+      InputDiagnostics.event("manual.trackedFallback.begin")
       let result = tracked.replaceTrackedSuffix(word, with: text + word.delimiter)
+      diagnoseResult(result, event: "manual.trackedFallback.result")
       replacement.invalidate(.unknownInput)
       if result == .dispatched {
         guard VerifiedLayoutSwitcher(access: layouts).select(mapping.target) else {
@@ -276,6 +323,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       .init(
         expected: token, original: word.text, replacement: text, sourceLayout: word.layout,
         targetLayout: mapping.target, delimiter: word.delimiter))
+    diagnoseResult(result, event: "manual.suffix.result")
     if result == .uncertain { quarantine(result, token: token) }
     if result == .committed, let id = replacement.lastCommittedID { onCommitted(id, .manual) }
     if let layout = layouts.current() { runtime.updateLayout(layout) }

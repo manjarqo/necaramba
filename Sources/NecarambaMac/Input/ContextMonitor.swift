@@ -17,6 +17,13 @@ public final class ContextMonitor: ContextRefreshing {
   private var automaticToken: ContextToken?
   private var tokens: [(NotificationCenter, NSObjectProtocol)] = []
   private var active = false
+  private var lastDiagnostic: String?
+  private func diagnose(_ event: String, detail: Int = 0) {
+    let key = event + ":" + String(detail)
+    guard lastDiagnostic != key else { return }
+    lastDiagnostic = key
+    InputDiagnostics.event(event, detail: detail)
+  }
 
   public init(
     layouts: LayoutAccess, permissions: PermissionReading,
@@ -86,14 +93,14 @@ public final class ContextMonitor: ContextRefreshing {
     state.invalidate(.focusChanged)
     detach()
     guard let app = NSWorkspace.shared.frontmostApplication, let bundleID = app.bundleIdentifier
-    else { return }
+    else { diagnose("context.attach.noApplication"); return }
     let permission = permissions.current()
     if !permission.secureInput {
       state.update(
         pid: app.processIdentifier, bundleID: bundleID, focusID: nil, layout: layouts.current(),
         qualified: false)
     }
-    guard permission.ax else { return }
+    guard permission.ax else { diagnose("context.attach.noAXPermission"); return }
     let element = AXUIElementCreateApplication(app.processIdentifier)
     AXUIElementSetMessagingTimeout(element, 0.1)
     var created: AXObserver?
@@ -103,13 +110,18 @@ public final class ContextMonitor: ContextRefreshing {
       monitor.state.invalidate(.focusChanged)
       monitor.refresh()
     }
-    guard AXObserverCreate(app.processIdentifier, callback, &created) == .success, let created
-    else { return }
+    let createStatus = AXObserverCreate(app.processIdentifier, callback, &created)
+    guard createStatus == .success, let created else {
+      diagnose("context.attach.observerCreateFailed", detail: Int(createStatus.rawValue))
+      return
+    }
     let reference = Unmanaged.passUnretained(self).toOpaque()
-    guard
-      AXObserverAddNotification(
-        created, element, kAXFocusedUIElementChangedNotification as CFString, reference) == .success
-    else { return }
+    let addStatus = AXObserverAddNotification(
+      created, element, kAXFocusedUIElementChangedNotification as CFString, reference)
+    guard addStatus == .success else {
+      diagnose("context.attach.observerNotificationFailed", detail: Int(addStatus.rawValue))
+      return
+    }
     observer = created
     observedApp = element
     CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(created), .commonModes)
@@ -123,10 +135,12 @@ public final class ContextMonitor: ContextRefreshing {
     guard !permission.secureInput, let app = NSWorkspace.shared.frontmostApplication,
       let bundleID = app.bundleIdentifier
     else {
+      diagnose("context.refresh.secureOrApplicationMissing", detail: permission.secureInput ? 1 : 0)
       state.invalidate(.unknownInput)
       return nil
     }
     guard permission.ax, let observedApp else {
+      diagnose("context.refresh.permissionOrObserverMissing", detail: permission.ax ? 1 : 0)
       state.update(
         pid: app.processIdentifier, bundleID: bundleID, focusID: nil, layout: layouts.current(),
         qualified: false)
@@ -136,15 +150,17 @@ public final class ContextMonitor: ContextRefreshing {
     guard AXUIElementGetPid(observedApp, &observedPID) == .success,
       observedPID == app.processIdentifier
     else {
+      diagnose("context.refresh.observedProcessMismatch")
       state.invalidate(.focusChanged)
       return nil
     }
     var value: CFTypeRef?
-    guard
-      AXUIElementCopyAttributeValue(observedApp, kAXFocusedUIElementAttribute as CFString, &value)
-        == .success,
+    let focusedStatus = AXUIElementCopyAttributeValue(
+      observedApp, kAXFocusedUIElementAttribute as CFString, &value)
+    guard focusedStatus == .success,
       let value, CFGetTypeID(value) == AXUIElementGetTypeID()
     else {
+      diagnose("context.refresh.focusUnavailable", detail: Int(focusedStatus.rawValue))
       state.invalidate(.unknownInput)
       return nil
     }
@@ -161,6 +177,16 @@ public final class ContextMonitor: ContextRefreshing {
       pid: app.processIdentifier, bundleID: bundleID, focusID: focusIdentity,
       layout: layouts.current(), qualified: allowed)
     let token = state.current()
+    let roleReason: String
+    switch role {
+    case nil: roleReason = "context.role.missing"
+    case "AXWebArea": roleReason = "context.role.webarea"
+    case kAXTextFieldRole: roleReason = "context.role.textfield"
+    case kAXTextAreaRole: roleReason = "context.role.textarea"
+    default: roleReason = "context.role.other"
+    }
+    // Bit 0: editable token; bit 1: secure field. Role itself is a static code only.
+    diagnose(roleReason, detail: (token == nil ? 0 : 1) | (subrole == kAXSecureTextFieldSubrole ? 2 : 0))
     if allowed && qualifies(bundleID, role ?? "") { automaticToken = token }
     return token
   }
