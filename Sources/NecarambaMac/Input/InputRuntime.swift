@@ -293,6 +293,9 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       self.deliveryPending = false
       let valid = self.generation == expected
       self.lock.unlock()
+      if case .gesture(.manualCorrection, _) = value {
+        InputDiagnostics.event(valid ? "runtime.manual.delivered" : "runtime.manual.cancelled_generation")
+      }
       guard valid else { return }
       self.command(value)
     }
