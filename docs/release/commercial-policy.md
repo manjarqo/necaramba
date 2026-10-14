@@ -1,0 +1,11 @@
+# Commercial phase policy
+
+Commercial release is blocked until the owner chooses the business model and supplies own bundle/Team/Product IDs and approves this policy. Local basic input is independent of commercial configuration. Internal development/free composition must explicitly choose LocalEntitlementProvider; absence of configuration yields unavailable in StoreKit, not a purchased entitlement.
+
+Subscription policy: only StoreKit `.verified` transactions with configured product, exact bundle and environment are accepted; revocation and expiry deny paid features. Non-expiring products are unavailable until a separate policy is approved. Pending/cancelled purchases grant nothing and never clear a prior valid entitlement. Restore is the sole caller of AppStore.sync. Transaction updates are observed by a separately started/stopped serial actor. Existing input transactions finish; composition changes feature policy only for subsequent transactions.
+
+Offline grace is at most 72 hours from the last verified date and never extends beyond the signed expiration. Clock rollback before the checked date yields unavailable. Cache stores signed JWS plus checked date in the application's own Keychain service, never a boolean. Cache load asks StoreKit for the latest verified local transaction and requires exact matching signed material, product, bundle and environment. Missing/corrupt/unverifiable cache yields unavailable. Tests use an in-memory material store and synthetic verifier; no user Keychain, purchase, login or backend is accessed.
+
+Commercial.storekit contains only explicitly test IDs (`test.necaramba.local.subscription`); no real purchase or StoreKit device test has been executed. The composition root must not load that configuration in a release. Product renewal status currently reports conservative `renews:false`; commercial renewal UI qualification remains required. Exact transaction/renewal purchase tests need a configured own app, StoreKit configuration and Xcode test scheme; unit test success cannot replace them.
+
+No reference app accounts, receipts, product IDs, URLs or licensing logic are reused. Missing owner Apple credentials block signing/release, not basic input.

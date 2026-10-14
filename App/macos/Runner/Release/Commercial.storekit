@@ -1,0 +1,19 @@
+{
+  "identifier": "TEST-ONLY-LOCAL-NOT-RELEASE",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": { "_applicationInternalID": "", "_developerTeamID": "", "_failTransactionsEnabled": false, "_locale": "en_US", "_storefront": "USA", "_storeKitErrors": [] },
+  "subscriptionGroups": [{
+    "id": "TEST-ONLY-GROUP",
+    "localizations": [],
+    "name": "Local test subscriptions",
+    "subscriptions": [{
+      "adHocOffers": [], "codeOffers": [], "displayPrice": "1.00", "familyShareable": false,
+      "groupNumber": 1, "internalID": "TEST-ONLY-SUBSCRIPTION", "introductoryOffer": null,
+      "localizations": [{ "description": "Local StoreKit fixture; never a release product", "displayName": "Test subscription", "locale": "en_US" }],
+      "productID": "test.necaramba.local.subscription", "recurringSubscriptionPeriod": "P1M",
+      "referenceName": "TEST ONLY", "subscriptionGroupID": "TEST-ONLY-GROUP", "type": "RecurringSubscription"
+    }]
+  }],
+  "version": { "major": 3, "minor": 0 }
+}
