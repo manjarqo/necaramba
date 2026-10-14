@@ -30,6 +30,9 @@ final class AppearanceStatisticsTests: XCTestCase {
   XCTAssertThrowsError(try store.importImage(data:Data("bad".utf8)))
   XCTAssertThrowsError(try store.importImage(data:Data(count:10*1024*1024+1)))
   XCTAssertEqual(try store.loadImageData(),saved)
+  let wide=try XCTUnwrap(NSBitmapImageRep(bitmapDataPlanes:nil,pixelsWide:8193,pixelsHigh:1,bitsPerSample:8,samplesPerPixel:4,hasAlpha:true,isPlanar:false,colorSpaceName:.deviceRGB,bytesPerRow:0,bitsPerPixel:0))
+  XCTAssertThrowsError(try store.importImage(data:XCTUnwrap(wide.representation(using:.png,properties:[:]))))
+  XCTAssertEqual(try store.loadImageData(),saved)
   try store.remove(); XCTAssertNil(try store.loadImageData())
  }
  func testSoundRejectsCorruptOversizedAndOverDurationPreservingCustom() throws {

@@ -26,8 +26,9 @@ final class LifecycleControllerTests:XCTestCase {
    let controller=LifecycleController(runtime:runtime,source:source)
    controller.start(); controller.start(); source.callback?(.sleep)
    XCTAssertEqual(source.starts,1); XCTAssertEqual(runtime.reasons,[.sleep])
-   controller.stop(); source.callback?(.sleep); XCTAssertEqual(runtime.reasons.count,1)
-   controller.start(); source.callback?(.unknownInput); XCTAssertEqual(runtime.reasons,[.sleep,.unknownInput])
+   let stale=source.callback
+   controller.stop(); stale?(.sleep); source.callback?(.sleep); XCTAssertEqual(runtime.reasons.count,1)
+   controller.start(); stale?(.sleep); source.callback?(.unknownInput); XCTAssertEqual(runtime.reasons,[.sleep,.unknownInput])
    controller.stop()
   }
  }
