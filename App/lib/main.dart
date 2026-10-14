@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'data/platform_native_repository.dart';
+import 'data/platform_window_interaction.dart';
 import 'domain/repositories/native_repository.dart';
 import 'domain/repositories/window_interaction.dart';
 import 'domain/usecases/native_usecases.dart';
@@ -11,7 +12,10 @@ import 'l10n/app_localizations.dart';
 import 'presentation/native_cubit.dart';
 import 'presentation/workspace_page.dart';
 
-void main() => runApp(const NecarambaApp());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(NecarambaApp(windowInteraction: PlatformWindowInteraction()));
+}
 
 class NecarambaApp extends StatefulWidget {
   const NecarambaApp({
