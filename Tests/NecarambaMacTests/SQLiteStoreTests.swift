@@ -19,6 +19,23 @@ final class SQLiteStoreTests: XCTestCase {
       XCTAssertEqual(try SQLiteStore(url: url).words().map(\.original), ["превет"])
     }
   }
+  func testRuntimeExclusionsIncludeImportedLegacyWordWithoutChangingStoredData() throws {
+    try temporary { url in
+      let store = try SQLiteStore(url: url)
+      let short = try store.addWord(" École ", at: 1)
+      let long = String(repeating: "A", count: 100)
+      let legacy = WordRule(
+        id: UUID(), normalized: String(repeating: "a", count: 100), original: long,
+        createdAt: 2, shareOptIn: false)
+      try store.importArchive(JSONEncoder().encode(RuleArchiveV1(words: [legacy], apps: [])))
+
+      XCTAssertEqual(try store.runtimeWordExclusions(), Set(["école", String(repeating: "a", count: 100)]))
+      XCTAssertEqual(try store.words(), [short])
+      XCTAssertEqual(try store.legacyWords(), [legacy])
+      let reopened = try SQLiteStore(url: url)
+      XCTAssertEqual(try reopened.legacyWords(), [legacy])
+    }
+  }
   func testPersistenceUniquenessAppsAndBackup() throws {
     try temporary { url in
       let s = try SQLiteStore(url: url)

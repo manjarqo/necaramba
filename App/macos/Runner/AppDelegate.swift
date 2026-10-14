@@ -95,7 +95,7 @@ struct NecarambaMain {
   private func publishRulePolicies() {
     guard let services, let input else { return }
     do {
-      input.updateWordPolicies(Set(try services.rules.words().map(\.normalized)))
+      input.updateWordPolicies(try services.rules.runtimeWordExclusions())
       input.updateAppPolicies(Dictionary(uniqueKeysWithValues:try services.rules.apps().map { ($0.bundleID, $0.mode == .allow ? AppOverride.allow : .deny) }))
     } catch { services.modelState = "failed" }
   }

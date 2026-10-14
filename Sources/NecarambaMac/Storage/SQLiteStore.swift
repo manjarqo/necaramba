@@ -110,6 +110,12 @@ public final class SQLiteStore: WordRuleStore, AppRuleStore {
   public func legacyWords() throws -> [WordRule] {
     try queue.sync { try readWords("legacy_word_rules") }
   }
+  /// Runtime exclusions include imported legacy rules, which remain read-only in the UI.
+  public func runtimeWordExclusions() throws -> Set<String> {
+    try queue.sync {
+      Set(try (readWords("word_rules") + readWords("legacy_word_rules")).map(\.normalized))
+    }
+  }
   func insert(_ word: WordRule, table: String) throws {
     try write(
       "INSERT INTO \(table)(id,normalized,original,created_at,share_opt_in) VALUES(?,?,?,?,?)",
