@@ -4,7 +4,7 @@
 
 Fix text typed in the wrong keyboard layout, switch layouts with Shift, and keep control of automatic corrections.
 
-[English](#english) · [Русский](#русский)
+[English](#english) · [Русский](#русский) · [GPLv3](LICENSE)
 
 ---
 
@@ -160,7 +160,9 @@ For bug reports, include the macOS version, application and field type, active i
 
 ### License and acknowledgements
 
-The application is intended to remain free to use. **The source-code license is still being selected; this repository does not yet contain a root `LICENSE` file.** Publication and source availability alone do not establish an open-source license.
+Necaramba is free software licensed under the **GNU General Public License, version 3 only** (`GPL-3.0-only`). See [LICENSE](LICENSE) for the full terms. Copyright © 2026 Necaramba contributors.
+
+You may use, modify and redistribute the program, including commercially, under GPLv3. When distributing covered versions, provide the corresponding source code under the same license and preserve the required notices. The program is provided without warranty.
 
 Independent dictionary sources retain their own notices; see [corpus provenance](Corpora/README.md), [English notices](Corpora/Sources/en/README_en_US.txt) and [Russian notices](Corpora/Sources/ru_RU/README_ru_RU.txt). Those notices must be preserved regardless of the license selected for Necaramba's own code.
 
@@ -317,7 +319,9 @@ swift Tools/Release/validate-release-report.swift docs/release/release-report.js
 
 ### Лицензия и сторонние материалы
 
-Приложение планируется распространять бесплатно. **Лицензия исходного кода пока выбирается; корневого файла `LICENSE` в репозитории ещё нет.** Публикация исходников сама по себе не определяет условия open-source-лицензии.
+Necaramba — свободное программное обеспечение под **GNU General Public License, только версия 3** (`GPL-3.0-only`). Полный текст находится в [LICENSE](LICENSE). Copyright © 2026 Necaramba contributors.
+
+Программу можно использовать, изменять и распространять, в том числе коммерчески, на условиях GPLv3. При распространении охватываемых лицензией версий необходимо предоставлять соответствующие исходники под той же лицензией и сохранять обязательные уведомления. Программа предоставляется без гарантий.
 
 Независимые словари имеют собственные условия использования: [происхождение корпуса](Corpora/README.md), [английский словарь](Corpora/Sources/en/README_en_US.txt), [русский словарь](Corpora/Sources/ru_RU/README_ru_RU.txt). Эти уведомления сохраняются независимо от лицензии собственного кода Necaramba.
 
