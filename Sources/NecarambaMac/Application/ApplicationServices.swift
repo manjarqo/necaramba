@@ -115,10 +115,10 @@ import NecarambaCore
         case "resetSound": try sound.reset()
         case "resetCounters":
             guard try boolean(a,"confirmed") else { throw NativeCommandFailure("cancelled") }; try statistics.reset()
-        case "exportRules":
+        case "exportArchive":
             let archive = ApplicationArchiveV1(rules:try JSONDecoder().decode(RuleArchiveV1.self,from:rules.exportArchive()),preferences:preferences.settings)
             try await save(JSONEncoder().encode(archive),name:"necaramba-rules.json")
-        case "importRules":
+        case "importArchive":
             guard let url=await choose(types:[.json]) else { throw NativeCommandFailure("cancelled") }
             let file=try FileHandle(forReadingFrom:url); defer { try? file.close() }
             let data=try file.read(upToCount:10*1024*1024+1) ?? Data()

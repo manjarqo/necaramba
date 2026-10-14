@@ -13,3 +13,9 @@ Own local app UI was opened with CUA: Russian dark/narrow layout, navigation and
 Input facade is connected but default denies unqualified editors and automatic corpus gate is false. Runtime review found incomplete edit ownership, manual priority and interception; assigned fix round. Current code is not a full functioning analogue and must not be released. Independent corpus holdout recall80.867% fails95%; no fake readiness.
 
 Release gate rejects missing tuples/evidence. Production identity/signing/notarization, endpoint, commercial product configuration, native Intel/macOS12 host matrix and MAS feasibility remain blocked/unrun. Config files are templates, not tested release configurations. No release or network purchase/share occurred.
+
+## Delivery/runtime integration followup
+
+Integrated build with verified independent development bundle: `flutter build macos --release` PASS60.0MB. Full integrated Swift tests:82 Mac +60 Core PASS, zero failures. ApplicationDeliveryTests2PASS bind exact preview payload/UUID and reject replayed consent, plus disabled-config services; no real sends/purchases. RuleUpdateCoordinator uses main-actor adapter and active model version is published only by runtime install completion, after off-main index construction. Own default sound and aggregate counters use committed edit IDs; background input keeps Dart closed. Actual production endpoints/IDs remain absent and disabled. Status/menu actions retain native authority; RU/EN menu strings and conventional Settings/Close shortcuts added.
+
+Runtime first safety review fix is integrated, with post-edit proof and tap-confined bounded key-event ownership; scoped rereview is ongoing. Physical/editor qualification remains UNRUN, so default-deny is retained. Development rule packages have an explicit marker that artifact verification rejects for release.

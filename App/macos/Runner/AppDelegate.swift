@@ -19,6 +19,8 @@ struct NecarambaMain {
   private var settingsWindow: MainFlutterWindow?
   private var services: ApplicationServices?
   private var input: NativeInputController?
+  private var delivery: ApplicationDeliveryServices?
+  private var deliveryTask: Task<Void,Never>?
   private var lifecycle: LifecycleController?
   private var coordinator: NativeCommandCoordinator?
 
@@ -43,11 +45,29 @@ struct NecarambaMain {
       let input = NativeInputController(preferences: applicationServices.preferences.snapshot)
       self.input = input
       input.onToggleAuto = { [weak self] in self?.toggleAuto() }
+      input.onCommitted = { [weak applicationServices,weak bridge] id,kind in
+        guard let applicationServices else { return }
+        let formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.timeZone=TimeZone(secondsFromGMT:0);formatter.dateFormat="yyyy-MM-dd"
+        do {
+          try applicationServices.statistics.recordCommitted(id:id,kind:kind,day:formatter.string(from:Date()))
+          applicationServices.sound.playCorrection(committedID:id)
+          bridge?.publishChange()
+        } catch { NSSound.beep() }
+      }
       applicationServices.onRulesChanged = { [weak self] in self?.publishRulePolicies() }
       applicationServices.onChanged = { [weak bridge] in bridge?.publishChange() }
       publishRulePolicies()
       applicationServices.runtimeRunning = input.start()
       let lifecycle = LifecycleController(runtime: input); lifecycle.start(); self.lifecycle = lifecycle
+      let delivery = ApplicationDeliveryServices(application:applicationServices,configuration:.init(bundleID:id))
+      self.delivery=delivery
+      applicationServices.externalCommand = { [weak delivery] method,arguments in
+        guard let delivery else { throw NativeCommandFailure("unavailable") }
+        return try await delivery.execute(method,arguments:arguments)
+      }
+      deliveryTask=Task { [weak self] in
+        await delivery.start(bundle:.main,root:directory.appendingPathComponent("RulePackages")) { snapshot,onInstalled in self?.input?.install(snapshot,onInstalled:onInstalled) }
+      }
       bridge.onStateChanged = { [weak self] state in
         self?.settingsWindow?.publish(state)
         self?.updateMenu()
@@ -57,8 +77,12 @@ struct NecarambaMain {
       updateMenu()
       let appMenu = NSMenu()
       let root = NSMenuItem(); let menu = NSMenu()
-      let quit = NSMenuItem(title: "Quit Necaramba", action: #selector(quitApp), keyEquivalent: "q"); quit.target = self
-      menu.addItem(quit); root.submenu = menu; appMenu.addItem(root); NSApp.mainMenu = appMenu
+      let settings = NSMenuItem(title: text("Settings…","Настройки…"), action:#selector(openSettings), keyEquivalent:",");settings.target=self;menu.addItem(settings);menu.addItem(.separator())
+      let quit = NSMenuItem(title: text("Quit Necaramba","Завершить Necaramba"), action: #selector(quitApp), keyEquivalent: "q"); quit.target = self
+      menu.addItem(quit); root.submenu = menu; appMenu.addItem(root)
+      let windowItem=NSMenuItem(); let windowMenu=NSMenu(title:text("Window","Окно"))
+      windowMenu.addItem(withTitle:text("Close","Закрыть"),action:#selector(NSWindow.performClose(_:)),keyEquivalent:"w")
+      windowItem.submenu=windowMenu;appMenu.addItem(windowItem);NSApp.windowsMenu=windowMenu;NSApp.mainMenu=appMenu
       // Login launch stays in the menu bar; explicit launches open settings.
       let loginLaunch = NSAppleEventManager.shared().currentAppleEvent?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
       if !loginLaunch && !ProcessInfo.processInfo.arguments.contains("--background") { openSettings() }
@@ -75,7 +99,7 @@ struct NecarambaMain {
       input.updateAppPolicies(Dictionary(uniqueKeysWithValues:try services.rules.apps().map { ($0.bundleID, $0.mode == .allow ? AppOverride.allow : .deny) }))
     } catch { services.modelState = "failed" }
   }
-  func applicationWillTerminate(_ notification: Notification) { lifecycle?.stop(); input?.stop() }
+  func applicationWillTerminate(_ notification: Notification) { deliveryTask?.cancel(); delivery?.stop(); lifecycle?.stop(); input?.stop() }
   func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
   func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { openSettings(); return true }
@@ -90,7 +114,7 @@ struct NecarambaMain {
     window.title = "Necaramba"; window.minSize = NSSize(width: 700, height: 520)
     window.isReleasedWhenClosed = false
     window.attach(services: services, coordinator: coordinator)
-    window.onClose = { [weak self] in self?.settingsWindow = nil }
+    window.onClose = { [weak self] in self?.delivery?.cancelPendingShare(); self?.settingsWindow = nil }
     settingsWindow = window
     window.center(); window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
   }
@@ -100,20 +124,21 @@ struct NecarambaMain {
     catch { NSSound.beep() }
   }
   @objc private func quitApp() { NSApp.terminate(nil) }
+  private func text(_ english:String,_ russian:String)->String { Locale.preferredLanguages.first?.hasPrefix("ru") == true ? russian : english }
   private func updateMenu() {
     guard let services else { return }
     let menu = NSMenu()
     let open = NSMenuItem(title: "Necaramba…", action: #selector(openSettings), keyEquivalent: ","); open.target = self
     menu.addItem(open)
-    let auto = NSMenuItem(title: "Automatic correction", action: #selector(toggleAuto), keyEquivalent: ""); auto.target = self
+    let auto = NSMenuItem(title: text("Automatic correction","Автоматическая коррекция"), action: #selector(toggleAuto), keyEquivalent: ""); auto.target = self
     auto.state = services.preferences.snapshot.autoEnabled ? .on : .off; menu.addItem(auto)
     let permissions = services.permissions.current()
     if permissions.secureInput || !permissions.listen || !permissions.post {
-      let warning = NSMenuItem(title: permissions.secureInput ? "Secure Input is active" : "Permissions required", action: #selector(openSettings), keyEquivalent: "")
+      let warning = NSMenuItem(title: permissions.secureInput ? text("Secure Input is active","Защищённый ввод активен") : text("Permissions required","Требуются разрешения"), action: #selector(openSettings), keyEquivalent: "")
       warning.target = self; menu.addItem(warning)
     }
     menu.addItem(.separator())
-    let quit = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"); quit.target = self; menu.addItem(quit)
+    let quit = NSMenuItem(title: text("Quit","Завершить"), action: #selector(quitApp), keyEquivalent: "q"); quit.target = self; menu.addItem(quit)
     item?.menu = menu
   }
 }

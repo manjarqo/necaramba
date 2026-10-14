@@ -12,3 +12,6 @@ PRODUCT_BUNDLE_IDENTIFIER = local.necaramba.app
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+
+// Local prototype only; production configurations must override.
+NECARAMBA_DEVELOPMENT_RULES = YES
