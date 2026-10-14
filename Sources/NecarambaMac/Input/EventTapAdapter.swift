@@ -9,12 +9,16 @@ public final class EventTapAdapter {
  private var loop:CFRunLoop?
  private var tap:CFMachPort?
  private var stopped=false
+ private let ready=DispatchSemaphore(value:0)
+ private var installed=false
  private var timeouts:[UInt64]=[]
  public init(runtime:InputRuntime) { self.runtime=runtime }
  public func start()->Bool {
   guard CGPreflightListenEventAccess() else { return false }
-  lock.lock(); defer { lock.unlock() }; guard thread == nil else { return true }; stopped=false
-  let worker=Thread { [weak self] in self?.run() }; worker.name="Necaramba input"; thread=worker; worker.start(); return true
+  lock.lock(); guard thread == nil else { let result=installed; lock.unlock(); return result }; stopped=false; installed=false
+  let worker=Thread { [weak self] in self?.run() }; worker.name="Necaramba input"; thread=worker; lock.unlock(); worker.start()
+  guard ready.wait(timeout:.now()+1) == .success else { stop(); return false }
+  lock.lock(); let result=installed; lock.unlock(); return result
  }
  public func stop() { lock.lock(); stopped=true; let runloop=loop; lock.unlock(); if let runloop { CFRunLoopStop(runloop) } }
  private func run() {
@@ -24,15 +28,16 @@ public final class EventTapAdapter {
    guard let reference else { return Unmanaged.passUnretained(event) }
    let owner=Unmanaged<EventTapAdapter>.fromOpaque(reference).takeUnretainedValue()
    owner.receive(type,event); return Unmanaged.passUnretained(event)
-  },userInfo:Unmanaged.passUnretained(self).toOpaque()) else { lock.lock(); thread=nil; lock.unlock(); return }
+  },userInfo:Unmanaged.passUnretained(self).toOpaque()) else { lock.lock(); thread=nil; lock.unlock(); ready.signal(); return }
   let runloop=CFRunLoopGetCurrent()
   lock.lock(); tap=port; loop=runloop; let halt=stopped; lock.unlock()
-  guard !halt,let source=CFMachPortCreateRunLoopSource(nil,port,0) else { CFMachPortInvalidate(port); return }
+  guard !halt,let source=CFMachPortCreateRunLoopSource(nil,port,0) else { CFMachPortInvalidate(port); lock.lock(); tap=nil; loop=nil; thread=nil; lock.unlock(); ready.signal(); return }
   CFRunLoopAddSource(runloop,source,.commonModes)
   let timer=CFRunLoopTimerCreateWithHandler(nil,CFAbsoluteTimeGetCurrent()+0.02,0.02,0,0) { [weak self] _ in self?.runtime?.advance(to:DispatchTime.now().uptimeNanoseconds) }
-  CFRunLoopAddTimer(runloop,timer,.commonModes); CGEvent.tapEnable(tap:port,enable:true); CFRunLoopRun()
+  CFRunLoopAddTimer(runloop,timer,.commonModes); CGEvent.tapEnable(tap:port,enable:true)
+  lock.lock(); installed=true; lock.unlock(); ready.signal(); CFRunLoopRun()
   CFRunLoopTimerInvalidate(timer); CFRunLoopRemoveSource(runloop,source,.commonModes); CFMachPortInvalidate(port)
-  lock.lock(); loop=nil; tap=nil; thread=nil; lock.unlock()
+  lock.lock(); loop=nil; tap=nil; thread=nil; installed=false; lock.unlock()
  }
  private func receive(_ type:CGEventType,_ event:CGEvent) {
   guard let runtime else { return }

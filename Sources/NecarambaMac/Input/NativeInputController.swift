@@ -23,6 +23,7 @@ public final class NativeInputController:InputRuntimeControl,RuleSnapshotConsume
   selection=SelectionAdapter(selection:ax)
   replacement=ReplacementCoordinator(context:monitor,layouts:layouts,sender:KeySender(selection:ax))
   runtime=InputRuntime(context:monitor.state,initialLayout:layouts.current() ?? LayoutID(rawValue:"unsupported"),preferences:preferences,snapshot:snapshot,command:{[weak self] in self?.execute($0)})
+  runtime.onInputInvalidation={ [weak self] in self?.replacement.invalidate(.unknownInput) }
  }
  @discardableResult public func start()->Bool { precondition(Thread.isMainThread); context.start(); return runtime.start() }
  public func stop() { precondition(Thread.isMainThread); runtime.stop(); context.stop(); replacement.invalidate(.unknownInput) }
