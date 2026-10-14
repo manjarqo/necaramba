@@ -144,6 +144,28 @@ void main() {
       expect(find.textContaining('Checked. macOS'), findsOneWidget);
     },
   );
+  testWidgets(
+    'checked feedback survives unrelated snapshots but expires on capability change',
+    (tester) async {
+      final repo = FakeNativeRepository()
+        ..current = fixture(capabilities: missing);
+      await mount(tester, repo);
+      await tester.tap(find.byKey(const Key('refreshPermissions')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsOneWidget);
+      repo.publish(fixture(revision: 2, auto: false, capabilities: missing));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsOneWidget);
+      repo.publish(
+        fixture(revision: 3, capabilities: {...missing, 'listen': true}),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsNothing);
+      repo.publish(fixture(revision: 4, capabilities: missing));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsNothing);
+    },
+  );
   testWidgets('latest missing snapshot wins over a grant in the same frame', (
     tester,
   ) async {

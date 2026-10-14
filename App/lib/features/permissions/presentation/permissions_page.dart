@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -80,6 +81,12 @@ class PermissionRefreshControl extends StatefulWidget {
 class _PermissionRefreshControlState extends State<PermissionRefreshControl> {
   NativeState? _checked;
 
+  bool _matchesCheck(NativeState? current) =>
+      current != null &&
+      _checked != null &&
+      current.sessionID == _checked!.sessionID &&
+      mapEquals(current.capabilities, _checked!.capabilities);
+
   Future<void> _refresh(NativeCubit cubit) async {
     setState(() => _checked = null);
     final reply = await cubit.run('refreshCapabilities', {});
@@ -98,22 +105,20 @@ class _PermissionRefreshControlState extends State<PermissionRefreshControl> {
   Widget build(BuildContext context) =>
       BlocConsumer<NativeCubit, NativeViewState>(
         listener: (context, view) {
-          if (view.pending.isNotEmpty && _checked != null) {
+          if (_checked != null &&
+              (view.pending.isNotEmpty || !_matchesCheck(view.confirmed))) {
             setState(() => _checked = null);
           }
         },
         builder: (context, view) {
           final ui = FeatureUI(context);
           final current = view.confirmed;
-          final checked = _checked;
           final showFeedback =
-              checked != null &&
+              _matchesCheck(current) &&
               view.connected &&
               view.error == null &&
               view.pending.isEmpty &&
               current != null &&
-              current.sessionID == checked.sessionID &&
-              current.revision == checked.revision &&
               !hasKeyboardPermissions(current);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
