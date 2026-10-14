@@ -1,30 +1,47 @@
 import Foundation
 import AVFoundation
+import Darwin
 /// File validation and playback run on a serial utility executor, outside the input executor.
 public final class SoundStore {
  private let queue=DispatchQueue(label:"org.necaramba.sound",qos:.utility)
  private let url:URL
  private let defaultSoundURL:URL?
+ private let snapshotCaptured: () throws -> Void
  private var enabled=true
  private var player:AVAudioPlayer?
  private var recent:[UUID]=[]
- public init(directory:URL,defaultSoundURL:URL? = nil) { url=directory.appendingPathComponent("correction.audio"); self.defaultSoundURL=defaultSoundURL }
+ public convenience init(directory:URL,defaultSoundURL:URL? = nil) { self.init(directory:directory,defaultSoundURL:defaultSoundURL,snapshotCaptured:{}) }
+ internal init(directory:URL,defaultSoundURL:URL? = nil,snapshotCaptured:@escaping () throws -> Void) { url=directory.appendingPathComponent("correction.audio"); self.defaultSoundURL=defaultSoundURL; self.snapshotCaptured=snapshotCaptured }
  public func setEnabled(_ value:Bool) { queue.async { self.enabled=value; if !value { self.player?.stop() } } }
  @discardableResult public func importSound(from source:URL) throws -> URL {
   try queue.sync {
    guard source.isFileURL else { throw ManagedAssetError.nonLocalURL }
    let scoped=source.startAccessingSecurityScopedResource(); defer { if scoped { source.stopAccessingSecurityScopedResource() } }
-   let size=try source.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? Int.max
-   guard size>0,size<=5*1024*1024 else { throw ManagedAssetError.tooLarge }
+   let directory=url.deletingLastPathComponent()
+   try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+   // Bound the read itself. Size metadata cannot protect against a concurrently growing file.
+   let handle=try FileHandle(forReadingFrom:source)
+   defer { try? handle.close() }
+   var bytes=Data()
+   let readLimit=5*1024*1024+1
+   while bytes.count<readLimit {
+    guard let chunk=try handle.read(upToCount:min(64*1024,readLimit-bytes.count)),!chunk.isEmpty else { break }
+    bytes.append(chunk)
+   }
+   guard !bytes.isEmpty,bytes.count<=5*1024*1024 else { throw ManagedAssetError.tooLarge }
+   let temporary=directory.appendingPathComponent(".sound-import-"+UUID().uuidString+".audio")
+   try bytes.write(to:temporary,options:.withoutOverwriting)
+   defer { try? FileManager.default.removeItem(at:temporary) }
+   try snapshotCaptured()
    // Decode the entire bounded file, not just its header, before replacing the managed asset.
    let file:AVAudioFile
-   do { file=try AVAudioFile(forReading:source) } catch { throw ManagedAssetError.invalidSound }
+   do { file=try AVAudioFile(forReading:temporary) } catch { throw ManagedAssetError.invalidSound }
    let rate=file.processingFormat.sampleRate
    guard rate>0,rate<=192000,file.processingFormat.channelCount<=8,file.length>0,Double(file.length)/rate<=10,Double(file.length)*Double(file.processingFormat.channelCount)*4<=32*1024*1024,let buffer=AVAudioPCMBuffer(pcmFormat:file.processingFormat,frameCapacity:AVAudioFrameCount(file.length)) else { throw ManagedAssetError.invalidSound }
    do { try file.read(into:buffer) } catch { throw ManagedAssetError.invalidSound }
    guard Int64(buffer.frameLength)==file.length else { throw ManagedAssetError.invalidSound }
-   try FileManager.default.createDirectory(at:url.deletingLastPathComponent(),withIntermediateDirectories:true)
-   try Data(contentsOf:source).write(to:url,options:.atomic)
+   // Promote exactly the decoded file on the same filesystem; rename atomically preserves the old asset on failure.
+   guard rename(temporary.path,url.path)==0 else { throw NSError(domain:NSPOSIXErrorDomain,code:Int(errno)) }
    return url
   }
  }

@@ -10,7 +10,7 @@ Owned worktree: `.worktrees/services`; Tasks C2/C5/C6. No Runner, Dart, Package.
 - `SoundStore(directory:defaultSoundURL:)`: `importSound(from:) -> URL`, `reset`, `customSoundURL`, `setEnabled`, `playCorrection`, `playCorrection(committedID:)`. Utility queue, 5 MiB/10 seconds and full bounded decode before atomic replacement; 192 kHz/8 channel/32 MiB decoded safety bounds. Disabled playback stops current playback and does not play queued later events. Recent committed UUID dedup window1024; producer owns duplication guarantees beyond window. Default URL must be bundled and injected by root.
 - `StatisticsStore(directory:) throws`: separate atomic aggregate-only JSON store by explicit root ruling, `recordCommitted(id:kind:day:)`, `count`, `totals`, `estimatedSeconds`, `reset`. Date and persisted schema/counter validation. UUID window1024 updated after successful disk commit. Saturating total/estimate arithmetic. Weights version1: layout/manual1, typo/doubleCaps/yo2, undo0 seconds; estimate, not measured timing. Reset does not touch rules. Never call disk methods from tap or main UI executor.
 - `LoginBackend`, `LoginStatus`, `LoginController`: status refreshed even when a setter throws; approval is never replaced with assumed success. `SystemLoginBackend(mainBundleID:defaults:)` uses SMAppService on13+, validated own helper ID on12. Legacy status is unavailable because its API has no authoritative query. Tracked legacy registration disabled before modern registration.
-- `LifecycleController(runtime:source:)`: start/stop idempotent; callback generations reject already queued stale delivery. Injectable source must deliver callbacks on main thread. Default `SystemLifecycleNotificationSource` owns sleep/wake/lock/unlock only, removes observer from its original center. B remains sole focus/layout/secure-input owner; integrator can call `handle` for explicit A invalidation reasons.
+- `LifecycleController(runtime:source:)`: start/stop idempotent; callback generations reject already queued stale delivery. Injectable source callbacks are annotated `@MainActor`; default notifications hop to the actor before controller state is accessed. Default `SystemLifecycleNotificationSource` owns sleep/wake/lock/unlock only, removes observer from its original center. B remains sole focus/layout/secure-input owner; integrator can call `handle` for explicit A invalidation reasons.
 - `App/NecarambaLoginHelper`: validates enclosing `.app/Contents/Library/LoginItems/*.app` nesting and matching own bundle identifiers; launches enclosing app only if no matching running instance and exits. LSUIElement, macOS12 minimum. Root must create, sign and embed helper target with mainID + `.LoginHelper`.
 
 ## Original asset
@@ -32,3 +32,23 @@ Real login settings/TCC untouched. Physical sound playback, helper launch/logout
 ## Integration ownership
 
 Combined rules/preferences import recovery journal and transaction marker are explicitly owned by root (requires SQLite owner hook). This work makes no cross-store ACID claim. Flutter/header drop/menus/defaultSoundURL/configuration and native runtime preference wiring are composition-root work. Counters only receive committed actions; no keyboard text enters these APIs.
+
+
+## Review follow-up: sound snapshot and lifecycle actor
+
+Sound import now reads at most5MiB+1 in bounded chunks from a single file handle,
+creates a unique managed temporary file, decodes exactly that file, then POSIX
+renames it atomically to the managed destination. It never rereads the source
+path for persisted bytes. Temporary files are removed on every failure path.
+An internal snapshotCaptured test hook permits deterministic source mutation;
+production initialization supplies a no-op.
+
+Behavior RED: the deterministic valid→corrupt source mutation test failed with
+19 persisted bytes versus7296 validated bytes under the old reread implementation.
+GREEN: same test now preserves the captured valid bytes, and corrupt→valid source
+mutation still rejects the corrupt snapshot without changing the previous asset.
+LifecycleNotificationSource callback contract is now `@MainActor`; default
+notification delivery uses a main-actor Task before invoking it. Existing observer
+ownership/stale generation tests remain passing, and a detached-task invocation
+test verifies delivery on main actor and no delivery after stop.
+Fresh full suite passes34 Mac +5 Core tests. Real host gates remain UNRUN.

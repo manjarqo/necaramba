@@ -59,4 +59,28 @@ final class AppearanceStatisticsTests: XCTestCase {
   try store.reset(); XCTAssertNil(store.customSoundURL)
  }
 
+ func testSoundSourceMutationCannotChangeValidatedSnapshot() throws {
+  let dir=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+  try FileManager.default.createDirectory(at:dir,withIntermediateDirectories:true)
+  defer { try? FileManager.default.removeItem(at:dir) }
+  let source=dir.appendingPathComponent("source.wav")
+  let format=try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate:8000,channels:1))
+  do {
+   let file=try AVAudioFile(forWriting:source,settings:format.settings)
+   let buffer=try XCTUnwrap(AVAudioPCMBuffer(pcmFormat:format,frameCapacity:800)); buffer.frameLength=800
+   for i in 0..<800 { buffer.floatChannelData![0][i]=0 }
+   try file.write(from:buffer)
+  }
+  let valid=try Data(contentsOf:source)
+  let managed=dir.appendingPathComponent("managed")
+  let store=SoundStore(directory:managed, snapshotCaptured: { try Data("invalid replacement".utf8).write(to:source) })
+  let saved=try store.importSound(from:source)
+  XCTAssertEqual(try Data(contentsOf:saved),valid)
+  // A corrupt captured snapshot cannot become acceptable if the original source changes later.
+  let rejecting=SoundStore(directory:managed,snapshotCaptured: { try valid.write(to:source) })
+  XCTAssertThrowsError(try rejecting.importSound(from:source))
+  XCTAssertEqual(try Data(contentsOf:saved),valid)
+  XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:managed.path),["correction.audio"])
+ }
+
 }

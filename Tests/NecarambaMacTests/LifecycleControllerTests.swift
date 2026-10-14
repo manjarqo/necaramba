@@ -8,13 +8,14 @@ private final class LoginFake: LoginBackend {
 }
 private final class LifecycleRuntime:InputRuntimeControl {
  var reasons:[InvalidationReason]=[]
+ var deliveredOnMain=true
  func updatePreferences(_ snapshot:PreferencesSnapshot) { }
- func invalidateContext(reason:InvalidationReason) { reasons.append(reason) }
+ func invalidateContext(reason:InvalidationReason) { deliveredOnMain = deliveredOnMain && Thread.isMainThread; reasons.append(reason) }
 }
 private final class LifecycleSourceFake:LifecycleNotificationSource {
- var callback:((InvalidationReason)->Void)?
+ var callback:(@MainActor (InvalidationReason)->Void)?
  var starts=0
- func start(_ callback:@escaping (InvalidationReason)->Void) { starts+=1; self.callback=callback }
+ func start(_ callback:@escaping @MainActor (InvalidationReason)->Void) { starts+=1; self.callback=callback }
  func stop() { callback=nil }
 }
 final class LifecycleControllerTests:XCTestCase {
@@ -32,4 +33,16 @@ final class LifecycleControllerTests:XCTestCase {
    controller.stop()
   }
  }
+ @MainActor func testBackgroundInvocationHopsBeforeReadingControllerState() async {
+  let runtime=LifecycleRuntime(),source=LifecycleSourceFake()
+  let controller=LifecycleController(runtime:runtime,source:source)
+  controller.start()
+  let callback=source.callback
+  await Task.detached { await callback?(.sleep) }.value
+  XCTAssertEqual(runtime.reasons,[.sleep]); XCTAssertTrue(runtime.deliveredOnMain)
+  controller.stop()
+  await Task.detached { await callback?(.sleep) }.value
+  XCTAssertEqual(runtime.reasons,[.sleep])
+ }
+
 }

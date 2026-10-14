@@ -2,19 +2,19 @@ import Foundation
 import AppKit
 import NecarambaCore
 public protocol LifecycleNotificationSource:AnyObject {
- func start(_ callback:@escaping (InvalidationReason)->Void)
+ func start(_ callback:@escaping @MainActor (InvalidationReason)->Void)
  func stop()
 }
 /// Owns only sleep/session notifications. B remains the sole focus/layout/secure-input owner.
 public final class SystemLifecycleNotificationSource:LifecycleNotificationSource {
  private var tokens:[(NotificationCenter,NSObjectProtocol)]=[]
  public init() { }
- public func start(_ callback:@escaping (InvalidationReason)->Void) {
+ public func start(_ callback:@escaping @MainActor (InvalidationReason)->Void) {
   guard tokens.isEmpty else { return }
   let workspace=NSWorkspace.shared.notificationCenter
   let distributed=DistributedNotificationCenter.default()
   let bindings:[(NotificationCenter,Notification.Name,InvalidationReason)] = [(workspace,NSWorkspace.willSleepNotification,.sleep),(workspace,NSWorkspace.didWakeNotification,.unknownInput),(distributed,Notification.Name("com.apple.screenIsLocked"),.sessionLock),(distributed,Notification.Name("com.apple.screenIsUnlocked"),.unknownInput)]
-  for (center,name,reason) in bindings { tokens.append((center,center.addObserver(forName:name,object:nil,queue:.main) { _ in callback(reason) })) }
+  for (center,name,reason) in bindings { tokens.append((center,center.addObserver(forName:name,object:nil,queue:.main) { _ in Task { @MainActor in callback(reason) } })) }
  }
  public func stop() { for (center,token) in tokens { center.removeObserver(token) }; tokens.removeAll() }
  deinit { stop() }
@@ -30,7 +30,7 @@ public final class SystemLifecycleNotificationSource:LifecycleNotificationSource
   guard !started else { return }; started=true; generation+=1
   let current=generation
   source.start { [weak self] reason in
-   // Sources deliver on the main thread; the generation also rejects queued callbacks after stop/restart.
+   // Actor-isolated callbacks enforce main-actor delivery; generations reject stale queued callbacks.
    guard let self,self.started,self.generation==current else { return }
    self.handle(reason)
   }
