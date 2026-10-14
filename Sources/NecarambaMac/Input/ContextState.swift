@@ -4,6 +4,7 @@ import NecarambaCore
 /// Cached evidence only. A system observer publishes here outside event callbacks.
 public final class ContextState: ContextAccess, GestureContextReading {
   private let lock = NSLock()
+  private var reconciliationDepth = 0
   private var token: ContextToken?
   private var gestureToken: ContextToken?
   private var focusID: String?
@@ -33,11 +34,25 @@ public final class ContextState: ContextAccess, GestureContextReading {
     token = ContextToken(
       pid: pid, bundleID: bundleID, focusEpoch: focusEpoch, layoutEpoch: layoutEpoch)
   }
-  /// Re-read authoritative focus on notifications; the publisher establishes element identity.
+  /// Hide cached evidence while the publisher revalidates identity and invalidates failed reads.
   public func reconcileFocus(_ readAndPublish: () -> ContextToken?) {
-    if readAndPublish() == nil { invalidate(.focusChanged) }
+    lock.lock()
+    reconciliationDepth += 1
+    lock.unlock()
+    defer {
+      lock.lock()
+      reconciliationDepth -= 1
+      lock.unlock()
+    }
+    _ = readAndPublish()
   }
   public func current() -> ContextToken? {
+    lock.lock()
+    defer { lock.unlock() }
+    return reconciliationDepth == 0 ? token : nil
+  }
+  /// Only the main-thread AX publisher may inspect this while reconciling.
+  func publishedCurrent() -> ContextToken? {
     lock.lock()
     defer { lock.unlock() }
     return token
@@ -45,7 +60,7 @@ public final class ContextState: ContextAccess, GestureContextReading {
   public func gestureContext() -> ContextToken? {
     lock.lock()
     defer { lock.unlock() }
-    return gestureToken
+    return reconciliationDepth == 0 ? gestureToken : nil
   }
   public func isSafe(_ expected: ContextToken) -> Bool { current() == expected }
   public func invalidate(_ reason: InvalidationReason) {

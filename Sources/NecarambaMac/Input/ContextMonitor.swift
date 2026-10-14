@@ -10,6 +10,7 @@ public final class ContextMonitor: ContextRefreshing {
   private let layouts: LayoutAccess
   private let permissions: PermissionReading
   private let qualifies: (String, String) -> Bool
+  private let focusPolling = FocusRefreshPolling()
   private var observer: AXObserver?
   private var observedApp: AXUIElement?
   private var lastElement: AXUIElement?
@@ -80,6 +81,7 @@ public final class ContextMonitor: ContextRefreshing {
     tokens.append((center, token))
   }
   private func detach() {
+    focusPolling.stop()
     if let observer {
       CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .commonModes)
     }
@@ -104,6 +106,7 @@ public final class ContextMonitor: ContextRefreshing {
     guard permission.ax else { diagnose("context.attach.noAXPermission"); return }
     let element = AXUIElementCreateApplication(app.processIdentifier)
     AXUIElementSetMessagingTimeout(element, 0.1)
+    observedApp = element
     var created: AXObserver?
     let callback: AXObserverCallback = { _, _, _, refcon in
       guard let refcon else { return }
@@ -114,6 +117,7 @@ public final class ContextMonitor: ContextRefreshing {
     let createStatus = AXObserverCreate(app.processIdentifier, callback, &created)
     guard createStatus == .success, let created else {
       diagnose("context.attach.observerCreateFailed", detail: Int(createStatus.rawValue))
+      startFocusRefresh(notificationsAvailable: false)
       return
     }
     let reference = Unmanaged.passUnretained(self).toOpaque()
@@ -121,12 +125,19 @@ public final class ContextMonitor: ContextRefreshing {
       created, element, kAXFocusedUIElementChangedNotification as CFString, reference)
     guard addStatus == .success else {
       diagnose("context.attach.observerNotificationFailed", detail: Int(addStatus.rawValue))
+      startFocusRefresh(notificationsAvailable: false)
       return
     }
     observer = created
     observedApp = element
     CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(created), .commonModes)
-    refresh()
+    startFocusRefresh(notificationsAvailable: true)
+  }
+  private func startFocusRefresh(notificationsAvailable: Bool) {
+    focusPolling.start(notificationsAvailable: notificationsAvailable) { [weak self] in
+      guard let self, self.active else { return }
+      self.state.reconcileFocus { self.refresh() }
+    }
   }
   /// Explicit revalidation before an edit must be invoked on the main thread.
   @discardableResult public func refresh() -> ContextToken? {
@@ -176,11 +187,11 @@ public final class ContextMonitor: ContextRefreshing {
       focusIdentity = UUID().uuidString
       lastElement = element
     }
-    let before = state.current()
+    let before = state.publishedCurrent()
     state.update(
       pid: app.processIdentifier, bundleID: bundleID, focusID: focusIdentity,
       layout: layouts.current(), qualified: allowed)
-    let token = state.current()
+    let token = state.publishedCurrent()
     if before != token {
       InputDiagnostics.event("context.refresh.beforeFocusEpoch", detail: before.map { Int(clamping: $0.focusEpoch) } ?? -1)
       InputDiagnostics.event("context.refresh.afterFocusEpoch", detail: token.map { Int(clamping: $0.focusEpoch) } ?? -1)

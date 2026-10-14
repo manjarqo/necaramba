@@ -457,6 +457,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       let undone = undoLast()
       if undone != .aborted { return undone }
     }
+    InputDiagnostics.event("manual.cachedLayoutMatchesCurrent", detail: runtime.cachedInputContext()?.1 == current ? 1 : 0)
     guard let capturedWord = runtime.manualWord() else {
       InputDiagnostics.event("manual.wordMissing")
       return .aborted

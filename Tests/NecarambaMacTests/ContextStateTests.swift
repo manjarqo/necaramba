@@ -7,18 +7,40 @@ final class ContextStateTests: XCTestCase {
     let state = ContextState()
     publish(state, focus: "field")
     let before = try XCTUnwrap(state.current())
-    state.reconcileFocus { self.publish(state, focus: "field"); return state.current() }
+    state.reconcileFocus { self.publish(state, focus: "field"); return state.publishedCurrent() }
     XCTAssertEqual(state.current(), before)
     XCTAssertTrue(state.isSafe(before))
+  }
+  func testReconciliationHidesCachedEvidenceUntilSameFieldConfirmed() throws {
+    let state = ContextState()
+    publish(state, focus: "field")
+    let before = try XCTUnwrap(state.current())
+    state.reconcileFocus {
+      XCTAssertNil(state.current())
+      XCTAssertNil(state.gestureContext())
+      XCTAssertFalse(state.isSafe(before))
+      self.publish(state, focus: "field")
+      return before
+    }
+    XCTAssertEqual(state.current(), before)
   }
   func testChangedAndReturnedFocusNeverRevivesOldToken() throws {
     let state = ContextState()
     publish(state, focus: "first")
     let before = try XCTUnwrap(state.current())
-    state.reconcileFocus { self.publish(state, focus: "second"); return state.current() }
+    state.reconcileFocus { self.publish(state, focus: "second"); return state.publishedCurrent() }
     XCTAssertFalse(state.isSafe(before))
-    state.reconcileFocus { self.publish(state, focus: "first"); return state.current() }
+    state.reconcileFocus { self.publish(state, focus: "first"); return state.publishedCurrent() }
     XCTAssertFalse(state.isSafe(before))
+  }
+  func testKnownNoneditableFocusPreservesLayoutGestureContext() {
+    let state = ContextState()
+    state.reconcileFocus {
+      self.publish(state, focus: "noneditable", qualified: false)
+      return nil
+    }
+    XCTAssertNil(state.current())
+    XCTAssertNotNil(state.gestureContext())
   }
   func testMissingOrSecureFocusInvalidatesPreviouslyUsableContext() throws {
     for missing in [false, true] {
@@ -27,6 +49,7 @@ final class ContextStateTests: XCTestCase {
       let before = try XCTUnwrap(state.current())
       state.reconcileFocus {
         if !missing { self.publish(state, focus: "field", qualified: false) }
+        state.invalidate(.focusChanged)
         return nil
       }
       XCTAssertNil(state.current())
