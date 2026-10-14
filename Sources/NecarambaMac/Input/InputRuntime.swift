@@ -151,6 +151,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     repeatedManual = nil
     tracked.removeAll()
     recentWord = nil
+    buffer.invalidate(.unknownInput)
   }
   public func manualRepeatCandidate() -> ManualRepeatCandidate? {
     lock.lock()

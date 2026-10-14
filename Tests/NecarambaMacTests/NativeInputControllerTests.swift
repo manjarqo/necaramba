@@ -395,3 +395,41 @@ extension NativeInputControllerTests {
     XCTAssertEqual(editor.text, "привет ")
   }
 }
+extension NativeInputControllerTests {
+  func testDirectPasteDiscardsPrePasteAutomaticBufferBeforeNextSpace() {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    editor.emptyProxy = true
+    let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+      editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+    typeWord(controller, context: context)
+    _ = controller.plainPaste(clipboard: FacadeClipboard())
+    controller.runtime.accept(.init(kind: .down, keyCode: 49, modifiers: [], timestampNanos: 100,
+      layout: .init(rawValue: "US"), context: context.token, origin: .physical, text: " ", isRepeat: false))
+    XCTAssertNil(controller.runtime.manualWord())
+    XCTAssertEqual(controller.manualCorrection(), .aborted)
+  }
+  func testPermissionDeniedDoubleShiftDiscardsRepeatBeforePermissionsReturn() {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    editor.emptyProxy = true
+    let permissions = FacadePermissions()
+    let controller = NativeInputController(layouts: ManualLayouts(), permissions: permissions,
+      editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+    typeWord(controller, context: context)
+    XCTAssertEqual(controller.manualCorrection(), .dispatched)
+    permissions.secure = true
+    for (index, down) in [true, false, true, false].enumerated() {
+      controller.runtime.accept(.init(kind: down ? .down : .up, keyCode: 56,
+        modifiers: down ? [.shift] : [], timestampNanos: 1_000_000_000 + UInt64(index) * 40_000_000,
+        layout: .init(rawValue: "RU"), context: context.token, origin: .physical, text: nil, isRepeat: false))
+    }
+    let drained = expectation(description: "permission-denied gesture dispatched")
+    DispatchQueue.main.async { drained.fulfill() }
+    wait(for: [drained], timeout: 1)
+    permissions.secure = false
+    XCTAssertNil(controller.runtime.manualRepeatCandidate())
+    XCTAssertEqual(controller.manualCorrection(), .aborted)
+    XCTAssertEqual(editor.text, "привет")
+  }
+}

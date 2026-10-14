@@ -192,6 +192,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         InputDiagnostics.event("manual.gesture.layoutEpoch", detail: Int(clamping: token.layoutEpoch))
       }
       guard permissions.current().listen, !permissions.current().secureInput else {
+        runtime.discardManualCandidate()
         if case .manualCorrection = action { InputDiagnostics.event("manual.gesture.permissionsDenied") }
         return
       }
