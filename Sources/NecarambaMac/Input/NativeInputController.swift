@@ -428,8 +428,11 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     }
     InputDiagnostics.event("manual.mappingExists", detail: manualMapping == nil ? 0 : 1)
     if let evidence = selected, !evidence.text.isEmpty,
-      let mapping = manualMapping
+      let preferredMapping = manualMapping
     {
+      let mapping = LayoutConverter.selectionMapping(evidence.text, preferred: preferredMapping,
+        alternative: self.manualMapping(from: preferredMapping.target))
+      guard runtime.inputGeneration() == manualGeneration else { return .aborted }
       runtime.discardManualCandidate()
       let text = LayoutConverter.convert(evidence.text, mapping: mapping)
       guard text != evidence.text else { return .aborted }
@@ -445,11 +448,11 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         quarantine(.uncertain, token: token)
         return .uncertain
       }
-      let original = BufferedWord(text: evidence.text, events: [], context: token, layout: current, delimiter: "")
+      let original = BufferedWord(text: evidence.text, events: [], context: token, layout: mapping.source, delimiter: "")
       retainManualResult(original: original, text: text, target: mapping.target,
         identity: evidence.identity, before: token, generation: manualGeneration, alternateText: evidence.text)
       let plan = EditPlan(
-        expected: token, original: evidence.text, replacement: text, sourceLayout: current,
+        expected: token, original: evidence.text, replacement: text, sourceLayout: mapping.source,
         targetLayout: mapping.target, delimiter: "")
       replacement.recordCommitted(plan, after: after)
       onCommitted(plan.id, .manual)

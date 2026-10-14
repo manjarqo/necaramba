@@ -210,6 +210,7 @@ public final class ContextMonitor: ContextRefreshing {
       let value, CFGetTypeID(value) == AXUIElementGetTypeID()
     else {
       diagnose("context.refresh.focusUnavailable", detail: Int(focusedStatus.rawValue))
+      diagnoseSystemFocus(expectedPID: app.processIdentifier)
       state.invalidate(.unknownInput)
       return nil
     }
@@ -218,6 +219,7 @@ public final class ContextMonitor: ContextRefreshing {
     let subrole = stringAttribute(element, kAXSubroleAttribute)
     let allowed =
       Self.supportsManualRole(role ?? "") && subrole != kAXSecureTextFieldSubrole
+    if !allowed { diagnoseSystemFocus(expectedPID: app.processIdentifier) }
     let elementChanged = lastElement == nil || !CFEqual(lastElement, element)
     if elementChanged {
       InputDiagnostics.event("context.refresh.elementChanged", detail: lastElement == nil ? 0 : 1)
@@ -256,6 +258,22 @@ public final class ContextMonitor: ContextRefreshing {
     diagnose(roleReason, detail: (token == nil ? 0 : 1) | (subrole == kAXSecureTextFieldSubrole ? 2 : 0))
     if allowed && qualifies(bundleID, role ?? "") { automaticToken = token }
     return token
+  }
+  /// Static diagnostics only: no AX values, titles, bundle IDs or input text are logged.
+  private func diagnoseSystemFocus(expectedPID: pid_t) {
+    let system = AXUIElementCreateSystemWide()
+    AXUIElementSetMessagingTimeout(system, 0.05)
+    var value: CFTypeRef?
+    let status = AXUIElementCopyAttributeValue(system, kAXFocusedUIElementAttribute as CFString, &value)
+    guard status == .success, let value, CFGetTypeID(value) == AXUIElementGetTypeID() else {
+      diagnose("context.systemFocus.unavailable", detail: Int(status.rawValue)); return
+    }
+    let element = unsafeBitCast(value, to: AXUIElement.self)
+    var pid: pid_t = 0
+    guard AXUIElementGetPid(element, &pid) == .success else { return }
+    let bundle = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier ?? ""
+    diagnose(bundle.hasPrefix("com.apple.Spotlight") ? "context.systemFocus.spotlight" : "context.systemFocus.other",
+      detail: pid == expectedPID ? 0 : 1)
   }
   private func stringAttribute(_ element: AXUIElement, _ key: String) -> String? {
     var value: CFTypeRef?

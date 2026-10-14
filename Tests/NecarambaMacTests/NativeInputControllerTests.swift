@@ -357,6 +357,23 @@ extension NativeInputControllerTests {
       }
     }
   }
+  func testSelectedTextUsesItsAlphabetRatherThanActiveInputLayout() {
+    for (selected, active, expected) in [("привет", "US", "ghbdtn"), ("ghbdtn", "RU", "привет")] {
+      let context = FacadeContext()
+      let editor = ManualEditor(context)
+      editor.text = selected
+      editor.selectionLength = selected.utf16.count
+      let layouts = ManualLayouts()
+      layouts.value = .init(rawValue: active)
+      let controller = NativeInputController(layouts: layouts, permissions: FacadePermissions(),
+        editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+      XCTAssertEqual(controller.manualCorrection(), .committed)
+      XCTAssertEqual(editor.text, expected)
+      editor.selectionLength = 0
+      XCTAssertEqual(controller.manualCorrection(), .committed)
+      XCTAssertEqual(editor.text, selected)
+    }
+  }
   func testRepeatedConversionSurvivesSingleShiftBetweenPairsAndInitialSelection() {
     for initiallySelected in [false, true] {
       let context = FacadeContext()

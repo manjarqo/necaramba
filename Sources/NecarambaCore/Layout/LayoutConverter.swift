@@ -19,6 +19,19 @@ public struct PhysicalLayoutMapping: Sendable, Equatable {
 }
 
 public enum LayoutConverter {
+    /// Selected text may have been entered in a layout different from the active source.
+    /// Alphabetic evidence chooses direction; punctuation-only selections keep the preference.
+    public static func selectionMapping(_ text: String, preferred: LayoutMapping,
+                                        alternative: LayoutMapping?) -> LayoutMapping {
+        guard let alternative else { return preferred }
+        func score(_ mapping: LayoutMapping) -> Int {
+            text.reduce(0) { count, character in
+                count + (character.isLetter && convert(String(character), mapping: mapping) != String(character) ? 1 : 0)
+            }
+        }
+        return score(alternative) > score(preferred) ? alternative : preferred
+    }
+
     public static func convert(_ text: String, mapping: LayoutMapping) -> String {
         text.map { character in
             let value = String(character)
