@@ -398,7 +398,7 @@ final class AXSelectionProofTests: XCTestCase {
   }
 
   func testIntermediateProofRejectsUnrelatedSurroundingsOrCaret() {
-    for state in [("A wor Q", 5), ("B wor Z", 5), ("A wor Z", 2)] {
+    for state in [("A wor Q", 5), ("B wor Z", 5), ("A wor Z", 1)] {
       var waits = 0
       let (adapter, reader, token) = fixture(wait: { _ in waits += 1 })
       reader.range = NSRange(location: 6, length: 0)
@@ -444,6 +444,118 @@ final class AXSelectionProofTests: XCTestCase {
       return .committed
     }
     XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .uncertain)
+    XCTAssertEqual(reads, 2)
+  }
+
+  func testTransportTimeoutWithPinnedOrUnknownIdentityWaitsForExactFinalProof() {
+    for knownIdentity in [false, true] {
+      let (adapter, reader, token) = fixture()
+      reader.range = NSRange(location: 6, length: 0)
+      let evidence = adapter.suffix("word", in: token)!
+      var reads = 0
+      var posts = 0
+      adapter.execute = { _, _, _, _ in
+        posts += 1
+        reader.onObservation = {
+          reads += 1
+          if reads == 1 {
+            return .transient(identity: knownIdentity ? reader.id : nil,
+              value: knownIdentity ? "A wo Z" : nil)
+          }
+          return .snapshot(.init(identity: reader.id, value: "A WORD Z",
+            range: NSRange(location: 6, length: 0)))
+        }
+        return .committed
+      }
+      XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .committed)
+      XCTAssertEqual(posts, 1)
+      XCTAssertEqual(reads, 2)
+    }
+  }
+
+  func testIndependentValueAndRangeProgressWaitsForExactFinalProof() {
+    let (adapter, reader, token) = fixture()
+    reader.range = NSRange(location: 6, length: 0)
+    let evidence = adapter.suffix("word", in: token)!
+    adapter.execute = { _, _, _, _ in
+      var states = [("A wor Z", 4), ("A  Z", 6), ("A WORD Z", 6)]
+      reader.onRead = {
+        let state = states.removeFirst()
+        reader.value = state.0
+        reader.range = NSRange(location: state.1, length: 0)
+      }
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .committed)
+  }
+
+  func testKnownIdentityChangeRejectedSecurityOrUnrelatedPartialValueNeverRecover() {
+    for kind in 0..<3 {
+      let (adapter, reader, token) = fixture()
+      reader.range = NSRange(location: 6, length: 0)
+      let evidence = adapter.suffix("word", in: token)!
+      var reads = 0
+      adapter.execute = { _, _, _, _ in
+        reader.onObservation = {
+          reads += 1
+          if reads > 1 { return .snapshot(.init(identity: reader.id, value: "A WORD Z",
+            range: NSRange(location: 6, length: 0))) }
+          if kind == 0 { return .transient(identity: UUID(), value: nil) }
+          if kind == 1 { return .rejected }
+          return .transient(identity: reader.id, value: "B wo Z")
+        }
+        return .committed
+      }
+      XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .uncertain)
+      XCTAssertEqual(reads, 1)
+    }
+  }
+
+  func testPersistentTransportTimeoutIsBoundedAndNeverReposts() {
+    var elapsed: TimeInterval = 0
+    let (adapter, reader, token) = fixture(now: { elapsed }, wait: { elapsed += $0 })
+    let evidence = adapter.selected(in: token)!
+    var posts = 0
+    adapter.execute = { _, _, _, _ in
+      posts += 1
+      reader.onObservation = { .transient(identity: nil, value: nil) }
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .uncertain)
+    XCTAssertEqual(posts, 1)
+    XCTAssertLessThanOrEqual(elapsed, 0.1)
+  }
+
+  func testNewerValueWithOlderCachedCaretWaitsForExactFinalProof() {
+    let (adapter, reader, token) = fixture()
+    reader.range = NSRange(location: 6, length: 0)
+    let evidence = adapter.suffix("word", in: token)!
+    adapter.execute = { _, _, _, _ in
+      var reads = 0
+      reader.onRead = {
+        reads += 1
+        reader.value = reads == 1 ? "A WO Z" : "A WORD Z"
+        reader.range = NSRange(location: reads == 1 ? 2 : 6, length: 0)
+      }
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .committed)
+  }
+
+  func testCaretCannotRegressAgainstItsOwnObservedProgress() {
+    let (adapter, reader, token) = fixture()
+    reader.range = NSRange(location: 6, length: 0)
+    let evidence = adapter.suffix("word", in: token)!
+    var reads = 0
+    adapter.execute = { _, _, _, _ in
+      reader.onRead = {
+        reads += 1
+        reader.value = reads == 1 ? "A wor Z" : "A wo Z"
+        reader.range = NSRange(location: reads == 1 ? 3 : 4, length: 0)
+      }
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "X"), .uncertain)
     XCTAssertEqual(reads, 2)
   }
 
@@ -508,6 +620,11 @@ private final class ProofReader: AXSelectionReading {
   var value = "A word Z"
   var range = NSRange(location: 2, length: 4)
   var onRead: () -> Void = {}
+  var onObservation: (() -> AXSelectionObservation)?
+  func observe(in token: ContextToken, deadline: TimeInterval) -> AXSelectionObservation {
+    if let onObservation { return onObservation() }
+    return read(in: token).map(AXSelectionObservation.snapshot) ?? .rejected
+  }
   func read(in token: ContextToken) -> AXTextSnapshot? {
     onRead()
     return .init(identity: id, value: value, range: range)

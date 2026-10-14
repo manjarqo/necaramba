@@ -13,11 +13,22 @@ public struct AXTextSnapshot {
     self.range = range
   }
 }
+/// A post-dispatch observation may be incomplete or combine independently read attributes.
+/// Missing identity means a transport timeout while looking up focus, never a proven match.
+public enum AXSelectionObservation {
+  case snapshot(AXTextSnapshot)
+  case transient(identity: UUID?, value: String?)
+  case rejected
+}
 public protocol AXSelectionReading: AnyObject {
   func read(in token: ContextToken) -> AXTextSnapshot?
   func read(in token: ContextToken, deadline: TimeInterval) -> AXTextSnapshot?
+  func observe(in token: ContextToken, deadline: TimeInterval) -> AXSelectionObservation
 }
 extension AXSelectionReading {
+  public func observe(in token: ContextToken, deadline: TimeInterval) -> AXSelectionObservation {
+    read(in: token, deadline: deadline).map(AXSelectionObservation.snapshot) ?? .rejected
+  }
   public func read(in token: ContextToken, deadline: TimeInterval) -> AXTextSnapshot? {
     read(in: token)
   }
@@ -43,30 +54,51 @@ public final class SystemAXSelectionReader: AXSelectionReading {
     read(in: token, deadline: ProcessInfo.processInfo.systemUptime + 0.1)
   }
   public func read(in token: ContextToken, deadline: TimeInterval) -> AXTextSnapshot? {
+    guard case .snapshot(let snapshot) = observe(in: token, deadline: deadline),
+      snapshot.range.location <= snapshot.value.utf16.count,
+      snapshot.range.length <= snapshot.value.utf16.count - snapshot.range.location
+    else { return nil }
+    return snapshot
+  }
+  public func observe(in token: ContextToken, deadline: TimeInterval) -> AXSelectionObservation {
     precondition(Thread.isMainThread)
     func trace(_ reason: String, detail: Int = 0) {
       if allowMissingMarkedTextRange() || allowAutomaticBoundary() {
         InputDiagnostics.event(reason, detail: detail)
       }
     }
+    func stillSafe() -> Bool {
+      !IsSecureEventInputEnabled() && context.isSafe(token)
+        && NSWorkspace.shared.frontmostApplication?.processIdentifier == token.pid
+    }
     func budget(_ element: AXUIElement) -> Bool {
       let remaining = deadline - ProcessInfo.processInfo.systemUptime
       guard remaining > 0 else { trace("ax.readDeadlineExceeded"); return false }
       return AXUIElementSetMessagingTimeout(element, Float(min(0.05, remaining))) == .success
     }
-    guard !IsSecureEventInputEnabled(), context.isSafe(token),
-      NSWorkspace.shared.frontmostApplication?.processIdentifier == token.pid
-    else { trace("ax.unsafeContext"); return nil }
+    func transient(identity: UUID?, value: String? = nil) -> AXSelectionObservation {
+      guard stillSafe(), ProcessInfo.processInfo.systemUptime < deadline else { return .rejected }
+      return .transient(identity: identity, value: value)
+    }
+    guard stillSafe() else { trace("ax.unsafeContext"); return .rejected }
     let app = AXUIElementCreateApplication(token.pid)
-    guard budget(app) else { return nil }
+    guard budget(app) else { return .rejected }
     var focused: CFTypeRef?
     let focusStatus = AXUIElementCopyAttributeValue(
       app, kAXFocusedUIElementAttribute as CFString, &focused)
     trace("ax.readFocus", detail: Int(focusStatus.rawValue))
+    if focusStatus == .cannotComplete {
+      // No identity is claimed while focus lookup is unavailable. This can only
+      // suspend read-only verification; preparation still receives no snapshot.
+      return transient(identity: nil)
+    }
     guard focusStatus == .success,
       let focused, CFGetTypeID(focused) == AXUIElementGetTypeID()
-    else { trace("ax.invalidFocus"); return nil }
+    else { trace("ax.invalidFocus"); return .rejected }
     let element = unsafeBitCast(focused, to: AXUIElement.self)
+    // Record every positively observed identity, even when a later attribute times out.
+    if retained == nil || !CFEqual(retained!.element, element) { retained = (UUID(), element) }
+    let identity = retained!.id
     func readAttribute(_ name: String) -> (AXError, CFTypeRef?) {
       guard budget(element) else { return (.cannotComplete, nil) }
       var value: CFTypeRef?
@@ -81,23 +113,24 @@ public final class SystemAXSelectionReader: AXSelectionReading {
       }
       return (status, value)
     }
-    func attribute(_ name: String) -> CFTypeRef? {
-      let (status, value) = readAttribute(name)
-      return status == .success ? value : nil
+    let (roleStatus, roleValue) = readAttribute(kAXRoleAttribute)
+    guard roleStatus == .success, let role = roleValue as? String,
+      qualifies(token.bundleID, role) else { trace("ax.invalidRole"); return .rejected }
+    let (subroleStatus, subroleValue) = readAttribute(kAXSubroleAttribute)
+    if subroleStatus == .success {
+      guard let subrole = subroleValue as? String, subrole != kAXSecureTextFieldSubrole
+      else { trace("ax.secureOrMalformedSubrole"); return .rejected }
+    } else if subroleStatus != .attributeUnsupported && subroleStatus != .noValue {
+      trace("ax.subroleUnproven"); return .rejected
     }
-    guard let role = attribute(kAXRoleAttribute) as? String, qualifies(token.bundleID, role),
-      attribute(kAXSubroleAttribute) as? String != kAXSecureTextFieldSubrole,
-      let text = attribute(kAXValueAttribute) as? String, text.utf8.count <= 1024 * 1024,
-      let raw = attribute(kAXSelectedTextRangeAttribute), CFGetTypeID(raw) == AXValueGetTypeID()
-    else { trace("ax.invalidFieldMetadata"); return nil }
     let (markedStatus, marked) = readAttribute("AXMarkedTextRange")
     var markedRange: CFRange?
     if markedStatus == .success {
       guard let marked, CFGetTypeID(marked) == AXValueGetTypeID()
-      else { trace("ax.malformedMarkedRange"); return nil }
+      else { trace("ax.malformedMarkedRange"); return .rejected }
       var decoded = CFRange()
       guard AXValueGetValue(unsafeBitCast(marked, to: AXValue.self), .cfRange, &decoded)
-      else { trace("ax.malformedMarkedRange"); return nil }
+      else { trace("ax.malformedMarkedRange"); return .rejected }
       markedRange = decoded
     }
     let directLayout = Self.isDirectKeyboardLayout()
@@ -107,17 +140,25 @@ public final class SystemAXSelectionReader: AXSelectionReading {
       attributeUnavailable: markedStatus == .attributeUnsupported || markedStatus == .noValue,
       manual: allowMissingMarkedTextRange(), directKeyboardLayout: directLayout,
       automaticBoundary: allowAutomaticBoundary())
-    else { trace("ax.compositionRejected"); return nil }
+    else { trace("ax.compositionRejected"); return .rejected }
+    let (textStatus, textValue) = readAttribute(kAXValueAttribute)
+    if textStatus == .cannotComplete { return transient(identity: identity) }
+    guard textStatus == .success, let text = textValue as? String, text.utf8.count <= 1024 * 1024
+    else { trace("ax.invalidTextMetadata"); return .rejected }
+    let (rangeStatus, rangeValue) = readAttribute(kAXSelectedTextRangeAttribute)
+    if rangeStatus == .cannotComplete { return transient(identity: identity, value: text) }
+    guard rangeStatus == .success, let raw = rangeValue, CFGetTypeID(raw) == AXValueGetTypeID()
+    else { trace("ax.invalidRangeMetadata"); return .rejected }
     var range = CFRange()
     guard AXValueGetValue(unsafeBitCast(raw, to: AXValue.self), .cfRange, &range),
       range.location >= 0, range.length >= 0,
-      range.location <= text.utf16.count, range.length <= text.utf16.count - range.location
-    else { trace("ax.malformedSelectedRange"); return nil }
-    guard ProcessInfo.processInfo.systemUptime <= deadline else { return nil }
-    if retained == nil || !CFEqual(retained!.element, element) { retained = (UUID(), element) }
-    return AXTextSnapshot(
-      identity: retained!.id, value: text,
-      range: NSRange(location: range.location, length: range.length))
+      range.location <= 1024 * 1024, range.length <= 1024 * 1024
+    else { trace("ax.malformedSelectedRange"); return .rejected }
+    guard stillSafe(), ProcessInfo.processInfo.systemUptime <= deadline else { return .rejected }
+    // Value and range are independent AX calls. They may describe different instants
+    // of this posted batch; only read() and a final exact proof treat them as one state.
+    return .snapshot(AXTextSnapshot(identity: identity, value: text,
+      range: NSRange(location: range.location, length: range.length)))
   }
 
   private static func isDirectKeyboardLayout() -> Bool {
@@ -243,17 +284,17 @@ public final class AXSelectionAdapter: SelectionAccess {
     let prefixLength = prefix.utf16.count
     let suffixLength = suffix.utf16.count
     let deletionSteps = selected ? 0 : evidence.text.count
-    func nextProgress(_ after: AXTextSnapshot, minimum: Int) -> Int? {
-      if minimum == 0 && after.value == before.value && after.range == before.range { return 0 }
-      let length = after.value.utf16.count
-      guard after.range.length == 0, length >= prefixLength + suffixLength else { return nil }
-      let value = after.value as NSString
-      guard value.substring(to: prefixLength) == prefix,
-        value.substring(from: length - suffixLength) == suffix else { return nil }
+    func valueProgress(_ value: String, minimum: Int) -> Int? {
+      guard value.utf8.count <= 1024 * 1024 else { return nil }
+      let length = value.utf16.count
+      guard length >= prefixLength + suffixLength else { return nil }
+      let source = value as NSString
+      guard source.substring(to: prefixLength) == prefix,
+        source.substring(from: length - suffixLength) == suffix else { return nil }
       let middleLength = length - prefixLength - suffixLength
-      guard after.range.location == prefixLength + middleLength else { return nil }
-      let middle = value.substring(with: NSRange(location: prefixLength, length: middleLength))
+      let middle = source.substring(with: NSRange(location: prefixLength, length: middleLength))
       var steps: [Int] = []
+      if value == before.value { steps.append(0) }
       if !selected, middle.count <= evidence.text.count,
         String(evidence.text.prefix(middle.count)) == middle {
         steps.append(deletionSteps - middle.count)
@@ -263,33 +304,74 @@ public final class AXSelectionAdapter: SelectionAccess {
       }
       return steps.filter { $0 >= minimum }.min()
     }
-    var progress = 0
+    var possibleRanges: [(range: NSRange, step: Int)] = [(before.range, 0)]
+    if !selected {
+      var offset = prefixLength
+      possibleRanges.append((NSRange(location: offset, length: 0), deletionSteps))
+      for (index, character) in evidence.text.enumerated() {
+        offset += String(character).utf16.count
+        possibleRanges.append((NSRange(location: offset, length: 0), deletionSteps - index - 1))
+      }
+    }
+    var inserted = 0
+    possibleRanges.append((NSRange(location: prefixLength, length: 0), deletionSteps + 1))
+    for scalar in text.unicodeScalars {
+      inserted += scalar.value > 0xFFFF ? 2 : 1
+      possibleRanges.append((NSRange(location: prefixLength + inserted, length: 0), deletionSteps + 1 + inserted))
+    }
+    var observedValueProgress = 0
+    var observedRangeProgress = 0
     for _ in 0..<21 {
       guard authorized(), now() < deadline else {
         trace("ax.readback.scopeOrDeadlineRejected"); return .uncertain
       }
-      guard let after = snapshot(evidence.context, generation: generation, deadline: deadline) else {
-        let unchangedGeneration = inputGeneration?() == generation
-        let safeContext = context.isSafe(evidence.context)
-        trace("ax.readback.snapshotUnavailable", detail: (unchangedGeneration ? 1 : 0) | (safeContext ? 2 : 0))
-        return .uncertain
+      guard inputGeneration?() == generation, context.isSafe(evidence.context) else {
+        trace("ax.readback.contextOrGenerationChanged"); return .uncertain
+      }
+      let observation = reader.observe(in: evidence.context, deadline: deadline)
+      guard authorized(), inputGeneration?() == generation, context.isSafe(evidence.context) else {
+        trace("ax.readback.contextOrGenerationChanged"); return .uncertain
       }
       guard now() <= deadline else { trace("ax.readback.deadlineExceeded"); return .uncertain }
-      guard after.identity == identity else { trace("ax.readback.identityChanged"); return .uncertain }
-      if after.value == expectedValue && after.range == expectedRange {
-        trace("ax.readback.confirmed"); return .committed
+      switch observation {
+      case .rejected:
+        trace("ax.readback.rejectedObservation"); return .uncertain
+      case .transient(let observedIdentity, let value):
+        if let observedIdentity, observedIdentity != identity {
+          trace("ax.readback.identityChanged"); return .uncertain
+        }
+        if let value {
+          guard observedIdentity != nil,
+            let next = valueProgress(value, minimum: observedValueProgress) else {
+            trace("ax.readback.unprovenPartialValue"); return .uncertain
+          }
+          observedValueProgress = next
+        }
+        trace(observedIdentity == nil ? "ax.readback.focusTransportPending" : "ax.readback.attributeTransportPending")
+      case .snapshot(let after):
+        guard after.identity == identity else { trace("ax.readback.identityChanged"); return .uncertain }
+        if after.value == expectedValue && after.range == expectedRange {
+          trace("ax.readback.confirmed"); return .committed
+        }
+        guard let nextValue = valueProgress(after.value, minimum: observedValueProgress),
+          let nextRange = possibleRanges.lazy.filter({
+            $0.range == after.range && $0.step >= observedRangeProgress
+          }).map({ $0.step }).min() else {
+          let flags = (after.value == expectedValue ? 1 : 0) | (after.range == expectedRange ? 2 : 0)
+            | (after.value == before.value ? 4 : 0) | (after.range == before.range ? 8 : 0)
+          trace("ax.readback.unprovenState", detail: flags)
+          return .uncertain
+        }
+        // Separate AX attributes may expose independently cached points in the posted
+        // sequence. Track each history without assuming cache freshness from call order;
+        // a torn observation only permits waiting, never a successful edit.
+        observedValueProgress = nextValue
+        observedRangeProgress = nextRange
+        trace(nextValue == 0 && nextRange == 0 ? "ax.readback.unchanged"
+          : (nextValue == nextRange ? "ax.readback.postedIntermediate" : "ax.readback.tornPostedIntermediate"))
       }
-      guard let next = nextProgress(after, minimum: progress) else {
-        let flags = (after.value == expectedValue ? 1 : 0) | (after.range == expectedRange ? 2 : 0)
-          | (after.value == before.value ? 4 : 0) | (after.range == before.range ? 8 : 0)
-        trace("ax.readback.unprovenState", detail: flags)
-        return .uncertain
-      }
-      progress = next
-      trace(progress == 0 ? "ax.readback.unchanged" : "ax.readback.postedIntermediate")
       let remaining = deadline - now()
       guard remaining > 0 else { trace("ax.readback.deadlineExceeded"); return .uncertain }
-      // Outside the tap, without pumping the UI runloop or reentering commands.
       wait(min(0.005, remaining))
     }
     trace("ax.readback.attemptsExhausted")

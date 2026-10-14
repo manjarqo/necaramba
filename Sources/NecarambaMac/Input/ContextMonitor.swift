@@ -126,17 +126,25 @@ public final class ContextMonitor: ContextRefreshing {
         guard let self, self.active,
           NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier else { return }
         InputDiagnostics.event("context.chrome.activationRefresh")
-        self.attach(activateAccessibility: false)
+        if self.observer != nil {
+          self.refreshObservedFocus()
+        } else {
+          self.attachObserver(to: element, pid: app.processIdentifier)
+        }
       })
     }
+    attachObserver(to: element, pid: app.processIdentifier)
+  }
+  private func attachObserver(to element: AXUIElement, pid: pid_t) {
+    guard permissions.current().ax else { refreshObservedFocus(); return }
     var created: AXObserver?
     let callback: AXObserverCallback = { _, _, _, refcon in
       guard let refcon else { return }
       let monitor = Unmanaged<ContextMonitor>.fromOpaque(refcon).takeUnretainedValue()
       InputDiagnostics.event("context.refresh.focusNotification")
-      monitor.state.reconcileFocus { monitor.refresh() }
+      monitor.refreshObservedFocus()
     }
-    let createStatus = AXObserverCreate(app.processIdentifier, callback, &created)
+    let createStatus = AXObserverCreate(pid, callback, &created)
     guard createStatus == .success, let created else {
       diagnose("context.attach.observerCreateFailed", detail: Int(createStatus.rawValue))
       startFocusRefresh(notificationsAvailable: false)
@@ -158,8 +166,13 @@ public final class ContextMonitor: ContextRefreshing {
   private func startFocusRefresh(notificationsAvailable: Bool) {
     focusPolling.start(notificationsAvailable: notificationsAvailable) { [weak self] in
       guard let self, self.active else { return }
-      self.state.reconcileFocus { self.refresh() }
+      self.refreshObservedFocus()
     }
+  }
+  private func refreshObservedFocus() {
+    ObservedFocusRefresh.perform(state: state, refresh: { self.refresh() }, synchronizeLayout: {
+      self.onLayoutChanged?(self.layouts.current())
+    })
   }
   /// Explicit revalidation before an edit must be invoked on the main thread.
   @discardableResult public func refresh() -> ContextToken? {
