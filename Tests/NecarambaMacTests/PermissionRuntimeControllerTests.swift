@@ -1,0 +1,41 @@
+import XCTest
+import NecarambaCore
+@testable import NecarambaMac
+
+@MainActor final class PermissionRuntimeControllerTests: XCTestCase {
+    func testPermissionTransitionsRestartRuntimeButFocusAndSecureInputDoNot() {
+        let permissions = RuntimePermissions()
+        var actions: [String] = []
+        let controller = PermissionRuntimeController(permissions: permissions,
+            start: { actions.append("start"); return true }, stop: { actions.append("stop") })
+        XCTAssertTrue(controller.refresh())
+        XCTAssertTrue(controller.refresh())
+        permissions.state = .init(listen: true, post: true, ax: false, secureInput: false)
+        XCTAssertTrue(controller.refresh())
+        permissions.state = .init(listen: true, post: true, ax: true, secureInput: false)
+        XCTAssertTrue(controller.refresh())
+        permissions.state = .init(listen: true, post: true, ax: true, secureInput: true)
+        XCTAssertTrue(controller.refresh())
+        permissions.state = .init(listen: false, post: true, ax: true, secureInput: true)
+        XCTAssertTrue(controller.refresh())
+        XCTAssertEqual(actions, ["start", "stop", "start", "stop", "start", "stop", "start"])
+        XCTAssertEqual(permissions.requests, [])
+    }
+    func testFailedRestartReportsStoppedAndAllowsRetryWithoutPermissionChange() {
+        let permissions = RuntimePermissions()
+        var canStart = true
+        let controller = PermissionRuntimeController(permissions: permissions, start: { canStart }, stop: {})
+        XCTAssertTrue(controller.refresh())
+        canStart = false
+        permissions.state = .init(listen: true, post: true, ax: true, secureInput: false)
+        XCTAssertFalse(controller.refresh())
+        canStart = true
+        XCTAssertTrue(controller.refresh())
+    }
+}
+private final class RuntimePermissions: PermissionReading {
+    var state = PermissionState(listen: true, post: false, ax: false, secureInput: false)
+    var requests: [PermissionKind] = []
+    func current() -> PermissionState { state }
+    func request(_ kind: PermissionKind) { requests.append(kind) }
+}

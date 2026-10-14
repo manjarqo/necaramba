@@ -3,6 +3,37 @@ import NecarambaCore
 @testable import NecarambaMac
 
 @MainActor final class ApplicationServicesTests: XCTestCase {
+    func testMissingAccessibilityRequiresPermissionEvenWhenListenAndPostAreGranted() throws {
+        let permissions = PermissionFake()
+        permissions.state = .init(listen: true, post: true, ax: false, secureInput: false)
+        let domain = "test.necaramba." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let app = try ApplicationServices(rules: MemoryApplicationRules(),
+            preferences: PreferencesController(defaults: defaults, publish: { _ in }),
+            sound: MemorySound(), header: MemoryHeader(), statistics: MemoryStatistics(),
+            login: LoginController(backend: LoginFake()), permissions: permissions,
+            files: MemoryFiles(soundURL: URL(fileURLWithPath: "/virtual/chime.wav")),
+            appSelection: MemoryAppSelection(), thumbnailer: MemoryThumbnailer())
+        app.runtimeRunning = true; app.automaticQualified = true
+        XCTAssertEqual(app.snapshot()["status"] as? String, "permissionRequired")
+    }
+
+    func testExplicitCapabilityRefreshPublishesRefreshedRuntimeState() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let domain = "test.necaramba." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain); try? FileManager.default.removeItem(at: directory) }
+        let permissions = PermissionFake()
+        permissions.state = .init(listen: true, post: true, ax: true, secureInput: false)
+        let app = try ApplicationServices(directory: directory, defaults: defaults,
+            permissions: permissions, loginBackend: LoginFake(), onPreferences: { _ in })
+        app.automaticQualified = true
+        app.onRefreshCapabilities = { app.runtimeRunning = true }
+        _ = try await app.execute("refreshCapabilities", arguments: [:])
+        XCTAssertEqual(app.snapshot()["status"] as? String, "active")
+    }
+
     func testInjectedRulesAndSoundDriveCommandsWithoutDiskStores() async throws {
         let rules = MemoryApplicationRules()
         let sound = MemorySound()
@@ -138,7 +169,8 @@ private final class MutableLoginFake:LoginBackend {
     }
 }
 private final class PermissionFake: PermissionReading {
-    func current() -> PermissionState { .init(listen:false,post:false,ax:false,secureInput:false) }
+    var state = PermissionState(listen:false,post:false,ax:false,secureInput:false)
+    func current() -> PermissionState { state }
     func request(_ kind:PermissionKind) {}
 }
 private struct LoginFake: LoginBackend {

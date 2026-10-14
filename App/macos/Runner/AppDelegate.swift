@@ -19,6 +19,7 @@ struct NecarambaMain {
   private var settingsWindow: MainFlutterWindow?
   private var services: ApplicationServices?
   private var input: NativeInputController?
+  private var permissionRuntime: PermissionRuntimeController?
   private var delivery: ApplicationDeliveryServices?
   private var deliveryTask: Task<Void,Never>?
   private var lifecycle: LifecycleController?
@@ -30,8 +31,9 @@ struct NecarambaMain {
       let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent(id, isDirectory: true)
       let defaults = UserDefaults.standard
+      let permissions = PermissionMonitor()
       let applicationServices = try ApplicationComposition.make(directory: directory, defaults: defaults,
-        permissions: PermissionMonitor(), loginBackend: SystemLoginBackend(mainBundleID: id, defaults: defaults),
+        permissions: permissions, loginBackend: SystemLoginBackend(mainBundleID: id, defaults: defaults),
         onPreferences: { [weak self] snapshot in self?.services?.sound.setEnabled(snapshot.soundEnabled); self?.input?.updatePreferences(snapshot) },
         defaultSoundURL: Bundle.main.url(forResource: "correction", withExtension: "wav"))
       services = applicationServices
@@ -42,7 +44,7 @@ struct NecarambaMain {
           return try await applicationServices.execute(method, arguments: arguments)
         })
       coordinator = bridge
-      let input = NativeInputController(preferences: applicationServices.preferences.snapshot)
+      let input = NativeInputController(permissions: permissions, preferences: applicationServices.preferences.snapshot)
       self.input = input
       input.onToggleAuto = { [weak self] in self?.toggleAuto() }
       input.onCommitted = { [weak applicationServices,weak bridge] id,kind in
@@ -57,7 +59,13 @@ struct NecarambaMain {
       applicationServices.onRulesChanged = { [weak self] in self?.publishRulePolicies() }
       applicationServices.onChanged = { [weak bridge] in bridge?.publishChange() }
       publishRulePolicies()
-      applicationServices.runtimeRunning = input.start()
+      let permissionRuntime = PermissionRuntimeController(permissions: permissions,
+        start: { [weak input] in input?.start() ?? false }, stop: { [weak input] in input?.stop() })
+      self.permissionRuntime = permissionRuntime
+      applicationServices.onRefreshCapabilities = { [weak applicationServices, weak permissionRuntime] in
+        applicationServices?.runtimeRunning = permissionRuntime?.refresh() ?? false
+      }
+      applicationServices.onRefreshCapabilities?()
       let lifecycle = LifecycleController(runtime: input); lifecycle.start(); self.lifecycle = lifecycle
       let delivery = ApplicationDeliveryServices(application:applicationServices,configuration:.init(bundleID:id))
       self.delivery=delivery
@@ -83,9 +91,11 @@ struct NecarambaMain {
       let windowItem=NSMenuItem(); let windowMenu=NSMenu(title:text("Window","Окно"))
       windowMenu.addItem(withTitle:text("Close","Закрыть"),action:#selector(NSWindow.performClose(_:)),keyEquivalent:"w")
       windowItem.submenu=windowMenu;appMenu.addItem(windowItem);NSApp.windowsMenu=windowMenu;NSApp.mainMenu=appMenu
-      // Login launch stays in the menu bar; explicit launches open settings.
+      // Missing permissions need onboarding even after a background/login launch.
       let loginLaunch = NSAppleEventManager.shared().currentAppleEvent?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
-      if !loginLaunch && !ProcessInfo.processInfo.arguments.contains("--background") { openSettings() }
+      let access = permissions.current()
+      if !access.listen || !access.post || !access.ax ||
+         (!loginLaunch && !ProcessInfo.processInfo.arguments.contains("--background")) { openSettings() }
     } catch {
       let alert = NSAlert(); alert.messageText = "Necaramba could not open its local data"
       alert.informativeText = "Existing data has been preserved. Close the app and inspect the local data directory before retrying."
@@ -104,7 +114,7 @@ struct NecarambaMain {
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
   func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { openSettings(); return true }
   func applicationDidBecomeActive(_ notification: Notification) {
-    services?.login.refresh(); services?.runtimeRunning = input?.start() ?? false; coordinator?.publishChange()
+    services?.login.refresh(); services?.onRefreshCapabilities?(); coordinator?.publishChange()
   }
   @objc private func openSettings() {
     guard let services, let coordinator else { return }
@@ -133,7 +143,7 @@ struct NecarambaMain {
     let auto = NSMenuItem(title: text("Automatic correction","Автоматическая коррекция"), action: #selector(toggleAuto), keyEquivalent: ""); auto.target = self
     auto.state = services.preferences.snapshot.autoEnabled ? .on : .off; menu.addItem(auto)
     let permissions = services.permissions.current()
-    if permissions.secureInput || !permissions.listen || !permissions.post {
+    if permissions.secureInput || !permissions.listen || !permissions.post || !permissions.ax {
       let warning = NSMenuItem(title: permissions.secureInput ? text("Secure Input is active","Защищённый ввод активен") : text("Permissions required","Требуются разрешения"), action: #selector(openSettings), keyEquivalent: "")
       warning.target = self; menu.addItem(warning)
     }

@@ -11,6 +11,7 @@ import NecarambaCore
     public let login: any ApplicationLogin
     public let permissions: PermissionReading
     private let version: String
+    public var onRefreshCapabilities: (() -> Void)?
     public var onRulesChanged: (() -> Void)?
     public var externalCommand: ((String, [String:Any]) async throws -> [String:Any])?
     public var runtimeRunning = false
@@ -45,7 +46,7 @@ import NecarambaCore
     }
     public func snapshot() -> [String:Any] {
         let p = permissions.current()
-        let status = p.secureInput ? "secureInput" : (!p.listen || !p.post ? "permissionRequired" : (preferences.snapshot.autoEnabled && runtimeRunning && automaticQualified ? "active" : "off"))
+        let status = p.secureInput ? "secureInput" : (!p.listen || !p.post || !p.ax ? "permissionRequired" : (preferences.snapshot.autoEnabled && runtimeRunning && automaticQualified ? "active" : "off"))
         let words = wordRows
         let legacy = legacyRows
         func word(_ value:WordRule,_ legacy:Bool)->[String:Any] {
@@ -97,7 +98,7 @@ import NecarambaCore
         case "requestPermission":
             guard let kind=PermissionKind(rawValue:try string(a,"kind")) else { throw invalid() }
             permissions.request(kind)
-        case "refreshCapabilities": login.refresh()
+        case "refreshCapabilities": login.refresh(); onRefreshCapabilities?()
         case "setLoginEnabled":
             let enabled=try boolean(a,"enabled")
             let previous=login.status
