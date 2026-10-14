@@ -21,7 +21,20 @@ public struct EditPlan: Equatable, Sendable {
     self.delimiter = delimiter
   }
 }
-public enum ApplyResult: Equatable, Sendable { case committed, aborted, uncertain }
+public enum ApplyResult: Equatable, Sendable {
+  case committed, aborted, uncertain
+  /// Explicit manual command: complete event batch posted to a proved focused
+  /// empty input proxy; the editor exposes no text readback. Never journal/count
+  /// this as a verified commit or retry it automatically.
+  case dispatched
+}
+
+/// Explicit manual fallback for editors whose input proxy hides its text.
+/// Implementations must revalidate focused field, physical input and generation;
+/// this port is never used by automatic correction.
+public protocol ManualTrackedSuffixReplacing: AnyObject {
+  func replaceTrackedSuffix(_ word: BufferedWord, with text: String) -> ApplyResult
+}
 public protocol KeySending: AnyObject {
   func replaceVerifiedSuffix(_ plan: EditPlan) -> ApplyResult
 }
