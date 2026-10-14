@@ -88,6 +88,8 @@ class _WorkspacePageState extends State<WorkspacePage>
                 children: [
                   Text(l.permissionSetupIntro),
                   const SizedBox(height: 20),
+                  const PermissionRefreshControl(),
+                  const SizedBox(height: 12),
                   PermissionControls(snapshot: view.confirmed!),
                   if (view.error != null && view.error != 'cancelled')
                     Text(
@@ -100,13 +102,6 @@ class _WorkspacePageState extends State<WorkspacePage>
               ),
             ),
             actions: [
-              TextButton(
-                key: const Key('refreshPermissions'),
-                onPressed: view.pending.isNotEmpty || !view.connected
-                    ? null
-                    : () => nativeCubit.run('refreshCapabilities', {}),
-                child: Text(l.refresh),
-              ),
               TextButton(
                 key: const Key('permissionsLater'),
                 onPressed: () => Navigator.of(dialogContext).pop(),

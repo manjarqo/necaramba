@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../domain/entities/native_state.dart';
+import '../../../presentation/native_cubit.dart';
 import '../../../presentation/shared/feature_ui.dart';
+import '../domain/permission_readiness.dart';
 
 class PermissionsPage extends SnapshotFeature {
   const PermissionsPage({super.key, required super.snapshot});
@@ -11,14 +15,12 @@ class PermissionsPage extends SnapshotFeature {
     return [
       ui.intro(l.accessIntro),
       ui.card([
+        const PermissionRefreshControl(),
+        const SizedBox(height: 12),
         PermissionControls(snapshot: s),
         ui.label(
           l.secureInput,
           s.capabilities['secureInput'] == true ? l.active : l.inactive,
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: ui.button(l.refresh, 'refreshCapabilities'),
         ),
       ]),
     ];
@@ -64,4 +66,75 @@ class PermissionControls extends SnapshotFeature {
         ),
       ),
   ];
+}
+
+/// Feedback belongs to this permission surface and only to an explicit check.
+class PermissionRefreshControl extends StatefulWidget {
+  const PermissionRefreshControl({super.key});
+
+  @override
+  State<PermissionRefreshControl> createState() =>
+      _PermissionRefreshControlState();
+}
+
+class _PermissionRefreshControlState extends State<PermissionRefreshControl> {
+  NativeState? _checked;
+
+  Future<void> _refresh(NativeCubit cubit) async {
+    setState(() => _checked = null);
+    final reply = await cubit.run('refreshCapabilities', {});
+    if (!mounted || reply == null) return;
+    final current = cubit.state.confirmed;
+    if (cubit.state.connected &&
+        current != null &&
+        current.sessionID == reply.state.sessionID &&
+        current.revision >= reply.state.revision &&
+        !hasKeyboardPermissions(current)) {
+      setState(() => _checked = current);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocConsumer<NativeCubit, NativeViewState>(
+        listener: (context, view) {
+          if (view.pending.isNotEmpty && _checked != null) {
+            setState(() => _checked = null);
+          }
+        },
+        builder: (context, view) {
+          final ui = FeatureUI(context);
+          final current = view.confirmed;
+          final checked = _checked;
+          final showFeedback =
+              checked != null &&
+              view.connected &&
+              view.error == null &&
+              view.pending.isEmpty &&
+              current != null &&
+              current.sessionID == checked.sessionID &&
+              current.revision == checked.revision &&
+              !hasKeyboardPermissions(current);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              OutlinedButton(
+                key: const Key('refreshPermissions'),
+                onPressed: ui.busy ? null : () => _refresh(ui.cubit),
+                child: Text(ui.l.refresh),
+              ),
+              if (view.pending.contains('refreshCapabilities'))
+                const LinearProgressIndicator(),
+              if (showFeedback)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(ui.l.permissionCheckMissing),
+                  ),
+                ),
+            ],
+          );
+        },
+      );
 }

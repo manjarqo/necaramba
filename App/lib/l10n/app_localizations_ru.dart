@@ -174,6 +174,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get request => 'Запросить доступ';
 
   @override
+  String get permissionCheckMissing =>
+      'Проверено. macOS пока не предоставила доступ этой копии Necaramba. Если переключатели уже включены, удалите старую запись Necaramba из соответствующего списка и добавьте текущую копию через «+», затем перезапустите приложение.';
+
+  @override
   String get refresh => 'Обновить статус';
 
   @override

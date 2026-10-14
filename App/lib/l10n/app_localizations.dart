@@ -410,6 +410,12 @@ abstract class AppLocalizations {
   /// **'Request access'**
   String get request;
 
+  /// No description provided for @permissionCheckMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked. macOS has not yet granted access to this copy of Necaramba. If the switches are already on, remove the old Necaramba entry from the relevant list and add the current copy using “+”, then restart the app.'**
+  String get permissionCheckMissing;
+
   /// No description provided for @refresh.
   ///
   /// In en, this message translates to:

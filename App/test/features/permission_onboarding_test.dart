@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:necaramba/domain/repositories/native_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:necaramba/main.dart';
 
@@ -54,6 +57,93 @@ void main() {
     expect(repo.calls.last.method, 'refreshCapabilities');
     expect(repo.calls.where((c) => c.method == 'requestPermission'), isEmpty);
   });
+  testWidgets(
+    'explicit refresh acknowledges missing access locally and clears on request',
+    (tester) async {
+      final repo = FakeNativeRepository()
+        ..current = fixture(capabilities: missing);
+      await mount(tester, repo);
+      final checked = find.textContaining('Checked. macOS');
+      expect(checked, findsNothing);
+      await tester.tap(find.byKey(const Key('refreshPermissions')));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: find.byType(AlertDialog), matching: checked),
+        findsOneWidget,
+      );
+      repo.pending = Completer<NativeReply>();
+      await tester.ensureVisible(find.byKey(const Key('request-listen')));
+      await tester.tap(find.byKey(const Key('request-listen')));
+      await tester.pump();
+      expect(checked, findsNothing);
+      repo.pending!.completeError(
+        const NativeFailure('unavailable', retryable: true),
+      );
+      await tester.pumpAndSettle();
+      expect(checked, findsNothing);
+    },
+  );
+  testWidgets(
+    'failed refresh never reports checked and successful grant closes dialog',
+    (tester) async {
+      final repo = FakeNativeRepository()
+        ..current = fixture(capabilities: missing);
+      await mount(tester, repo);
+      repo.failure = const NativeFailure('unavailable', retryable: true);
+      await tester.tap(find.byKey(const Key('refreshPermissions')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsNothing);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      repo.current = fixture(revision: 2, capabilities: granted);
+      await tester.tap(find.byKey(const Key('refreshPermissions')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+    },
+  );
+  testWidgets(
+    'Permissions page acknowledges explicit refresh only on that page',
+    (tester) async {
+      final repo = FakeNativeRepository()
+        ..current = fixture(capabilities: missing);
+      await mount(tester, repo);
+      await tester.tap(find.byKey(const Key('permissionsLater')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Access').first);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Refresh status'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Refresh status'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsOneWidget);
+      await tester.tap(find.text('Settings').first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsNothing);
+    },
+  );
+  testWidgets(
+    'refresh feedback uses newer confirmed state than delayed reply',
+    (tester) async {
+      final repo = FakeNativeRepository()
+        ..current = fixture(capabilities: missing);
+      await mount(tester, repo);
+      repo.pending = Completer<NativeReply>();
+      await tester.tap(find.byKey(const Key('refreshPermissions')));
+      await tester.pump();
+      expect(find.textContaining('Checked. macOS'), findsNothing);
+      repo.publish(fixture(revision: 3, capabilities: missing));
+      await tester.pump();
+      repo.pending!.complete(
+        NativeReply(
+          requestID: 'check',
+          state: fixture(revision: 2, capabilities: granted),
+          result: {},
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.textContaining('Checked. macOS'), findsOneWidget);
+    },
+  );
   testWidgets('latest missing snapshot wins over a grant in the same frame', (
     tester,
   ) async {

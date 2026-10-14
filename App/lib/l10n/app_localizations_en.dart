@@ -173,6 +173,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get request => 'Request access';
 
   @override
+  String get permissionCheckMissing =>
+      'Checked. macOS has not yet granted access to this copy of Necaramba. If the switches are already on, remove the old Necaramba entry from the relevant list and add the current copy using “+”, then restart the app.';
+
+  @override
   String get refresh => 'Refresh status';
 
   @override
