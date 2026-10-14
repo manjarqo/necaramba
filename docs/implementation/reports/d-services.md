@@ -4,7 +4,7 @@ Scope: independently signed rule packages, offline slot installation and bounded
 
 ## Evidence
 
-- Fresh `swift test` in the delivery worktree: 51 NecarambaMacTests and 45 NecarambaCoreTests passed, zero failures. These are unit and URLProtocol tests on arm64 macOS 14, not device/editor/release tests.
+- Fresh `swift test` in the delivery worktree: 51 NecarambaMacTests and 45 NecarambaCoreTests passed, zero failures. These are unit and URLProtocol tests on the local arm64 host (verified by root: macOS27.0.1, build26A434; the XCTest target triple is not the host OS), not device/editor/release tests.
 - Both `SignRulePackage.swift` and `PrepareDevelopmentRulePackage.swift` compiled with the shared RuleManifest format source using `swiftc`.
 - The independent corpus SHA256 was checked against the development manifest: `c5b8ffaae684f053cb57203bc364115fec413224f659d0bbac8b9b2d1b04a133`; the manifest records 12,376,802 bytes and the development signature is 64 bytes. The matching payload is still in the corpus worktree for the integrator to copy into the prototype bundle.
 - Existing D1–D4 tests arrived with the worktree; their original RED logs were unavailable. This takeover observed RED for `testReplayingIdenticalSignedMaterialCannotExtendGrace` and for the new `testBundledVersionRemainsRemoteFloorWhenInstalledSlotLoads`; both passed after fixes, and the full suite passed.
