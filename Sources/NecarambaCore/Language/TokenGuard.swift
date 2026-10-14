@@ -11,6 +11,8 @@ public enum TokenGuard {
         let cyrillic = scalars.contains { (0x400...0x52F).contains($0.value) }
         if latin && cyrillic { return true }
         let letters = text.filter { $0.isLetter }
-        return letters.count > 1 && letters == letters.uppercased()
+        if letters.count > 1 && letters == letters.uppercased() { return true }
+        let title = text.prefix(1).uppercased() + text.dropFirst().lowercased()
+        return text != text.lowercased() && text != title && RuleIndex.doubleCapsCandidate(text) == nil
     }
 }

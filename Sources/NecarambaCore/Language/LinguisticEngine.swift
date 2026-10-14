@@ -1,0 +1,57 @@
+public enum DecisionReason: String, Sendable, Equatable { case correct, ambiguous, protectedToken, excludedWord, disabled, unsupportedLayout }
+public enum CorrectionKind: String, Sendable, Equatable { case layout, typo, doubleCaps, yo, combined }
+public struct Correction: Sendable, Equatable {
+    public let original: String
+    public let replacement: String
+    public let sourceLayout: LayoutID
+    public let targetLayout: LayoutID
+    public let modelVersion: UInt64
+    public let kind: CorrectionKind
+    public init(original: String, replacement: String, sourceLayout: LayoutID, targetLayout: LayoutID, modelVersion: UInt64, kind: CorrectionKind) {
+        self.original = original; self.replacement = replacement; self.sourceLayout = sourceLayout; self.targetLayout = targetLayout; self.modelVersion = modelVersion; self.kind = kind
+    }
+}
+public enum LinguisticDecision: Sendable, Equatable { case unchanged(DecisionReason), replace(Correction) }
+
+/// Conservative working slice. Release enablement requires the independent corpus gate.
+public struct LinguisticEngine: Sendable {
+    private let snapshot: RuleSnapshot
+    private let index: RuleIndex
+    private let physicalMappings: [PhysicalLayoutMapping]
+    public init(snapshot: RuleSnapshot, physicalMappings: [PhysicalLayoutMapping] = []) {
+        self.snapshot = snapshot; self.index = RuleIndex(snapshot: snapshot); self.physicalMappings = physicalMappings
+    }
+    public func decide(word: BufferedWord, preferences: PreferencesSnapshot, excludedWords: Set<String>) -> LinguisticDecision {
+        guard preferences.autoEnabled else { return .unchanged(.disabled) }
+        let excluded = Set(excludedWords.map(TokenGuard.normalized))
+        guard !excluded.contains(TokenGuard.normalized(word.text)) else { return .unchanged(.excludedWord) }
+        guard !index.isProtected(word.text) else { return .unchanged(.protectedToken) }
+        var candidate = word.text
+        var targetLayout = word.layout
+        var kinds: [CorrectionKind] = []
+        var candidates: [(String, LayoutID)] = []
+        for mapping in snapshot.mappings where mapping.source == word.layout {
+            let converted: String?
+            if word.events.isEmpty { converted = LayoutConverter.convert(word.text, mapping: mapping) }
+            else { converted = LayoutConverter.convert(keys: word.events, to: mapping.target, physicalMappings: physicalMappings) }
+            if let converted, converted != word.text, index.isKnown(converted), !index.isProtected(converted) { candidates.append((converted, mapping.target)) }
+        }
+        if candidates.count > 1 || (index.isKnown(word.text) && !candidates.isEmpty) { return .unchanged(.ambiguous) }
+        if !index.isKnown(word.text), let chosen = candidates.first {
+            candidate = chosen.0; targetLayout = chosen.1; kinds.append(.layout)
+        }
+        if preferences.typoEnabled, let typo = index.typo(for: candidate), index.isKnown(typo), typo != candidate {
+            candidate = typo; kinds.append(.typo)
+        }
+        if let caps = RuleIndex.doubleCapsCandidate(candidate), index.isKnown(caps), caps != candidate {
+            candidate = caps; kinds.append(.doubleCaps)
+        }
+        if preferences.yoEnabled, let yo = index.yo(for: candidate), index.isKnown(yo), yo != candidate {
+            candidate = yo; kinds.append(.yo)
+        }
+        guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
+        guard !kinds.isEmpty else { return .unchanged(index.isKnown(word.text) ? .correct : .ambiguous) }
+        guard !index.isProtected(candidate) else { return .unchanged(.protectedToken) }
+        return .replace(.init(original: word.text, replacement: candidate, sourceLayout: word.layout, targetLayout: targetLayout, modelVersion: snapshot.modelVersion, kind: kinds.count == 1 ? kinds[0] : .combined))
+    }
+}
