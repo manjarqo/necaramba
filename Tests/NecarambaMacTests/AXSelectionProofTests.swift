@@ -625,6 +625,34 @@ final class AXSelectionProofTests: XCTestCase {
     XCTAssertEqual(posts, 0)
   }
 
+  func testOverlayCaretWordReadsWholeTokenAndPreservesUTF16Offset() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.overlay = true
+    reader.value = "🙂 first ghbdtn  "
+    reader.range = NSRange(location: 17, length: 0)
+    guard case .word(let evidence) = adapter.wordBeforeCaret(in: token) else {
+      return XCTFail("Full visible word must be available")
+    }
+    XCTAssertEqual(evidence.text, "ghbdtn  ")
+    XCTAssertEqual(evidence.location, 9)
+    XCTAssertEqual(evidence.length, 8)
+    XCTAssertEqual(evidence.mode, .suffix)
+    XCTAssertEqual(evidence.identity, reader.id)
+    XCTAssertEqual(evidence.inputGeneration, 1)
+  }
+
+  func testOverlayCaretWordRejectsMiddleOfWordAndEmptyProxy() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.overlay = true
+    for (text, caret) in [("ghbdtn", 3), ("", 0), ("  ", 2)] {
+      reader.value = text
+      reader.range = NSRange(location: caret, length: 0)
+      guard case .unavailable = adapter.wordBeforeCaret(in: token) else {
+        return XCTFail("Cannot prove a complete word")
+      }
+    }
+  }
+
   private func word(_ token: ContextToken, origin: EventOrigin = .physical) -> BufferedWord {
     let layout = LayoutID(rawValue: "US")
     let events = "word".map { character in
@@ -682,6 +710,8 @@ final class AXSelectionProofTests: XCTestCase {
   }
 }
 private final class ProofReader: AXSelectionReading, AXSuffixSelectionPreparing {
+  var overlay = false
+  func requiresCaretWord(in token: ContextToken) -> Bool { overlay }
   var prepare: ((SelectionEvidence, AXTextSnapshot, () -> Bool) -> AXSuffixPreparation)?
   func prepareSuffix(_ evidence: SelectionEvidence, before: AXTextSnapshot,
     authorized: () -> Bool) -> AXSuffixPreparation {

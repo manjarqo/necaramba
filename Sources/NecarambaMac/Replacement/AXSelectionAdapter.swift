@@ -35,10 +35,23 @@ extension AXSelectionReading {
 }
 /// Some reactive overlay fields must replace a selected range instead of receiving
 /// a burst of Backspaces. Preparation changes only selection, never text.
+enum ManualCaretWord {
+  case notRequired, unavailable
+  case word(SelectionEvidence)
+}
+protocol ManualCaretWordReading: AnyObject {
+  func wordBeforeCaret(in token: ContextToken) -> ManualCaretWord
+}
+
 enum AXSuffixPreparation { case notRequired, selected, rejected }
 protocol AXSuffixSelectionPreparing: AnyObject {
+  func requiresCaretWord(in token: ContextToken) -> Bool
   func prepareSuffix(_ evidence: SelectionEvidence, before: AXTextSnapshot,
     authorized: () -> Bool) -> AXSuffixPreparation
+}
+
+extension AXSuffixSelectionPreparing {
+  func requiresCaretWord(in token: ContextToken) -> Bool { false }
 }
 
 /// Direct system proof. This reader performs no mutations and is called only outside the tap.
@@ -178,6 +191,9 @@ public final class SystemAXSelectionReader: AXSelectionReading {
   }
 }
 extension SystemAXSelectionReader: AXSuffixSelectionPreparing {
+  func requiresCaretWord(in token: ContextToken) -> Bool {
+    NSWorkspace.shared.frontmostApplication?.processIdentifier != token.pid
+  }
   func prepareSuffix(_ evidence: SelectionEvidence, before: AXTextSnapshot,
     authorized: () -> Bool) -> AXSuffixPreparation {
     // Scope this delivery strategy to explicit conversion in overlay search fields.
@@ -579,5 +595,33 @@ extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
       location: range.location, length: range.length, identity: before.identity,
       inputGeneration: candidate.inputGeneration, mode: .suffix)
     return replace(evidence, with: text, authorized: automaticBoundaryActive)
+  }
+}
+
+
+extension AXSelectionAdapter: ManualCaretWordReading {
+  func wordBeforeCaret(in token: ContextToken) -> ManualCaretWord {
+    guard manualCommandActive(),
+      let overlay = reader as? AXSuffixSelectionPreparing,
+      overlay.requiresCaretWord(in: token) else { return .notRequired }
+    guard let generation = inputGeneration?(), let value = snapshot(token, generation: generation),
+      value.range.length == 0,
+      let caret = Range(value.range, in: value.value)?.lowerBound else { return .unavailable }
+    // A cursor in the middle of a token cannot prove the last complete typed word.
+    guard caret == value.value.endIndex || value.value[caret].isWhitespace else { return .unavailable }
+    var end = caret
+    while end > value.value.startIndex && value.value[value.value.index(before: end)].isWhitespace {
+      end = value.value.index(before: end)
+    }
+    var start = end
+    while start > value.value.startIndex && !value.value[value.value.index(before: start)].isWhitespace {
+      start = value.value.index(before: start)
+    }
+    guard start < end else { return .unavailable }
+    let text = String(value.value[start..<caret])
+    guard text.count <= 128, text.utf16.count <= 512 else { return .unavailable }
+    let range = NSRange(start..<caret, in: value.value)
+    return .word(.init(context: token, text: text, location: range.location, length: range.length,
+      identity: value.identity, inputGeneration: generation, mode: .suffix))
   }
 }

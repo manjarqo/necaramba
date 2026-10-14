@@ -79,9 +79,14 @@ private final class ManualLayouts: LayoutAccess {
   func supported() -> [LayoutID] { [.init(rawValue: "US"), .init(rawValue: "RU")] }
   func select(_ id: LayoutID) -> Bool { value = id; return true }
 }
-private final class ManualEditor: SelectionAccess, ManualTrackedSuffixReplacing, ManualRepeatedSuffixReplacing {
+private final class ManualEditor: ManualCaretWordReading, SelectionAccess, ManualTrackedSuffixReplacing, ManualRepeatedSuffixReplacing {
   let context: FacadeContext
   var text = "ghbdtn"
+  var authoritativeCaretWord = false
+  func wordBeforeCaret(in token: ContextToken) -> ManualCaretWord {
+    guard authoritativeCaretWord else { return .notRequired }
+    return suffix(text, in: token).map(ManualCaretWord.word) ?? .unavailable
+  }
   var selectionLength = 0
   var emptyProxy = false
   var fallbackCalls = 0
@@ -156,6 +161,36 @@ extension NativeInputControllerTests {
     wait(for: [committed], timeout: 1)
     XCTAssertEqual(editor.text, "привет")
   }
+  func testSpotlightUsesFullVisibleWordWhenOnlyLastTwoKeysWereCaptured() {
+    let (controller, context, editor) = installedController()
+    editor.authoritativeCaretWord = true
+    for (index, character) in Array("tn").enumerated() {
+      controller.runtime.accept(.init(kind: .down, keyCode: index == 0 ? 17 : 45,
+        modifiers: [], timestampNanos: UInt64(index), layout: .init(rawValue: "US"),
+        context: context.token, origin: .physical, text: String(character), isRepeat: false))
+    }
+    XCTAssertEqual(controller.runtime.manualWord()?.text, "tn")
+    XCTAssertEqual(controller.manualCorrection(), .committed)
+    XCTAssertEqual(editor.text, "привет")
+  }
+
+  func testSpotlightNeverUsesPartialCaptureWhenWholeWordCannotBeProven() {
+    let (controller, context, editor) = installedController()
+    editor.authoritativeCaretWord = true
+    editor.emptyProxy = true
+    typeWord(controller, context: context)
+    XCTAssertEqual(controller.manualCorrection(), .aborted)
+    XCTAssertEqual(editor.text, "ghbdtn")
+    XCTAssertEqual(editor.fallbackCalls, 0)
+  }
+
+  func testSpotlightUsesVisibleWordWhenCaptureWasEntirelyLost() {
+    let (controller, _, editor) = installedController()
+    editor.authoritativeCaretWord = true
+    XCTAssertEqual(controller.manualCorrection(), .committed)
+    XCTAssertEqual(editor.text, "привет")
+  }
+
   func testEmptyProfilesAllowExplicitSelectionConversion() {
     let (controller, _, editor) = installedController()
     editor.selectionLength = 6

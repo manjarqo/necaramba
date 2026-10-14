@@ -427,7 +427,20 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       return .aborted
     }
     InputDiagnostics.event("manual.mappingExists", detail: manualMapping == nil ? 0 : 1)
-    if let evidence = selected, !evidence.text.isEmpty,
+    var explicitText = selected
+    if selected?.text.isEmpty != false, runtime.manualRepeatCandidate() == nil,
+      let visibleWord = selectionAccess as? ManualCaretWordReading {
+      switch visibleWord.wordBeforeCaret(in: token) {
+      case .notRequired: break
+      case .unavailable:
+        InputDiagnostics.event("manual.caretWordUnavailable")
+        return .aborted
+      case .word(let evidence):
+        explicitText = evidence
+        InputDiagnostics.event("manual.caretWordLength", detail: evidence.text.count)
+      }
+    }
+    if let evidence = explicitText, !evidence.text.isEmpty,
       let preferredMapping = manualMapping
     {
       let mapping = LayoutConverter.selectionMapping(evidence.text, preferred: preferredMapping,
