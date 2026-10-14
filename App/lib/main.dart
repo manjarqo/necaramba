@@ -42,6 +42,7 @@ class _NecarambaAppState extends State<NecarambaApp> {
     super.initState();
     _drops = widget.windowInteraction?.headerDropHandles.listen(
       _cubit.importHeaderDrop,
+      onError: _cubit.reportWindowFailure,
     );
   }
 

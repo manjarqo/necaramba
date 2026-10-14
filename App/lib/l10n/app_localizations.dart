@@ -275,7 +275,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsIntro.
   ///
   /// In en, this message translates to:
-  /// **'Local correction, under your control. Changes take effect after the native service confirms them.'**
+  /// **'Local correction, under your control. Settings are saved on this Mac.'**
   String get settingsIntro;
 
   /// No description provided for @manualHint.
@@ -329,7 +329,7 @@ abstract class AppLocalizations {
   /// No description provided for @legacy.
   ///
   /// In en, this message translates to:
-  /// **'Imported legacy exception — edit explicitly to shorten'**
+  /// **'Imported legacy exception — original preserved'**
   String get legacy;
 
   /// No description provided for @chooseApp.

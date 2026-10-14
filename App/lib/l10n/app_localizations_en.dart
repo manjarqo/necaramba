@@ -100,7 +100,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsIntro =>
-      'Local correction, under your control. Changes take effect after the native service confirms them.';
+      'Local correction, under your control. Settings are saved on this Mac.';
 
   @override
   String get manualHint =>
@@ -129,7 +129,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptyWords => 'No word exceptions yet.';
 
   @override
-  String get legacy => 'Imported legacy exception — edit explicitly to shorten';
+  String get legacy => 'Imported legacy exception — original preserved';
 
   @override
   String get chooseApp => 'Choose .app…';

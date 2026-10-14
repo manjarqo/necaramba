@@ -101,7 +101,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsIntro =>
-      'Локальные исправления под вашим контролем. Изменения вступают в силу после подтверждения нативной службой.';
+      'Локальные исправления под вашим контролем. Настройки сохраняются на этом Mac.';
 
   @override
   String get manualHint =>
@@ -130,8 +130,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get emptyWords => 'Исключений для слов пока нет.';
 
   @override
-  String get legacy =>
-      'Старое импортированное исключение — сокращайте только явно';
+  String get legacy => 'Старое импортированное исключение — оригинал сохранён';
 
   @override
   String get chooseApp => 'Выбрать .app…';

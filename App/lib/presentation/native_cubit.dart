@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../domain/entities/native_state.dart';
 import '../domain/repositories/native_repository.dart';
+import '../domain/repositories/window_interaction.dart';
 import '../domain/usecases/native_usecases.dart';
 
 class NativeViewState {
@@ -103,6 +104,21 @@ class NativeCubit extends Cubit<NativeViewState> {
       _emit(error: 'unavailable', pending: {});
     }
     return null;
+  }
+
+  void reportWindowFailure(Object error) {
+    _emit(error: error is NativeFailure ? error.code : 'unavailable');
+  }
+
+  Future<void> updateHeaderRegion(
+    WindowInteractionPort port,
+    HeaderDropRegion? region,
+  ) async {
+    try {
+      await port.updateHeaderDropRegion(region);
+    } catch (error) {
+      reportWindowFailure(error);
+    }
   }
 
   /// Drop handles originate exclusively from the native header overlay.
