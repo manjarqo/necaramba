@@ -17,3 +17,16 @@ final class LayoutConverterTests: XCTestCase {
         XCTAssertEqual(LayoutConverter.convert("A", mapping: .init(source: .init(rawValue: "a"), target: .init(rawValue: "b"), pairs: ["a":"xy"])), "A")
     }
 }
+
+extension LayoutConverterTests {
+    func testExplicitANSIAlphabetPhysicalMappingAndUnsupportedModifiers() {
+        let us = LayoutID(rawValue: "US"), ru = LayoutID(rawValue: "RU")
+        let map = LayoutMapping(source: us, target: ru, pairs: ["g":"п", "h":"р", "b":"и", "d":"в", "t":"е", "n":"т"])
+        let context = ContextToken(pid: 1, bundleID: "test", focusEpoch: 1, layoutEpoch: 1)
+        let keys: [UInt16] = [5, 4, 11, 2, 17, 45]
+        let events = keys.map { InputEvent(kind: .down, keyCode: $0, modifiers: [], timestampNanos: 1, layout: us, context: context, origin: .physical, text: "not used", isRepeat: false) }
+        XCTAssertEqual(LayoutConverter.convert(keys: events, to: ru, mappings: [map]), "привет")
+        let option = InputEvent(kind: .down, keyCode: 5, modifiers: [.option], timestampNanos: 1, layout: us, context: context, origin: .physical, text: "g", isRepeat: false)
+        XCTAssertNil(LayoutConverter.convert(keys: [option], to: ru, mappings: [map]))
+    }
+}
