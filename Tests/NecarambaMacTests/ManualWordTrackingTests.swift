@@ -22,6 +22,13 @@ final class ManualWordTrackingTests: XCTestCase {
     type("[jhjij", into: runtime, context: context)
     XCTAssertEqual(runtime.manualWord()?.text, "[jhjij")
   }
+  func testFirstWordAfterRuleInstallRemainsAvailableWithTrailingSpace() {
+    let (context, runtime) = fixture()
+    runtime.install(.init(modelVersion: 2))
+    type("ghbdtn ", into: runtime, context: context)
+    XCTAssertEqual(runtime.manualWord()?.text, "ghbdtn")
+    XCTAssertEqual(runtime.manualWord()?.delimiter, " ")
+  }
   func testForeignInputCannotLeavePhysicalSuffixEligible() {
     let (context, runtime) = fixture()
     type("ghbdtn", into: runtime, context: context)

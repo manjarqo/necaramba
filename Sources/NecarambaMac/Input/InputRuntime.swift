@@ -209,6 +209,17 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       deliver(.plainPaste(lease))
       return .suppressed(lease)
     }
+    // Manual conversion can use a newly observed word even while the automatic
+    // buffer waits for its first trustworthy boundary after a rule/context reset.
+    let manualBoundary: BufferedWord?
+    if event.kind == .down, event.modifiers.isSubset(of: [.shift, .capsLock]),
+      let delimiter = event.text, [" ", "\n", "\r", "\t"].contains(delimiter),
+      let first = tracked.first, first.context == event.context, first.layout == event.layout {
+      manualBoundary = .init(text: tracked.compactMap(\.text).joined(), events: tracked,
+        context: first.context, layout: first.layout, delimiter: delimiter)
+    } else {
+      manualBoundary = nil
+    }
     if event.kind == .down {
       if let text = event.text, text.count == 1,
         (text.unicodeScalars.allSatisfy({ CharacterSet.letters.contains($0) })
@@ -237,6 +248,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
         deliver(.boundary(word, snapshot, preferences))
       }
     }
+    if let manualBoundary { recentWord = manualBoundary }
     if let word = buffer.consume(event) {
       recentWord = word
       tracked.removeAll()
