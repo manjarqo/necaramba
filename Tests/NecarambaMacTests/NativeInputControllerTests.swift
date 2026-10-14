@@ -28,8 +28,10 @@ private final class FacadeContext: ContextRefreshing {
   func refresh() -> ContextToken? { token }
 }
 private final class FacadePermissions: PermissionReading {
+  var secure = false
+  var post = true
   func current() -> PermissionState {
-    .init(listen: true, post: true, ax: true, secureInput: false)
+    .init(listen: true, post: post, ax: true, secureInput: secure)
   }
   func request(_ kind: PermissionKind) { XCTFail("No permission request allowed") }
 }
@@ -68,5 +70,142 @@ extension NativeInputControllerTests {
     XCTAssertEqual(controller.plainPaste(in: original, clipboard: clipboard), .aborted)
     XCTAssertEqual(selection.reads, 0)
     XCTAssertEqual(clipboard.reads, 0)
+  }
+}
+
+private final class ManualLayouts: LayoutAccess {
+  var value = LayoutID(rawValue: "US")
+  func current() -> LayoutID? { value }
+  func supported() -> [LayoutID] { [.init(rawValue: "US"), .init(rawValue: "RU")] }
+  func select(_ id: LayoutID) -> Bool { value = id; return true }
+}
+private final class ManualEditor: SelectionAccess, ManualTrackedSuffixReplacing {
+  let context: FacadeContext
+  var text = "ghbdtn"
+  var selectionLength = 0
+  var emptyProxy = false
+  var fallbackCalls = 0
+  var replacementResult = ApplyResult.committed
+  init(_ context: FacadeContext) { self.context = context }
+  func selected(in token: ContextToken) -> SelectionEvidence? {
+    guard token == context.token else { return nil }
+    return .init(context: token, text: selectionLength == 0 ? "" : text,
+                 location: selectionLength == 0 ? text.utf16.count : 0, length: selectionLength)
+  }
+  func suffix(_ suffix: String, in token: ContextToken) -> SelectionEvidence? {
+    guard !emptyProxy, token == context.token, text.hasSuffix(suffix) else { return nil }
+    return .init(context: token, text: suffix, location: text.utf16.count - suffix.utf16.count,
+                 length: suffix.utf16.count)
+  }
+  func replace(_ evidence: SelectionEvidence, with replacement: String) -> ApplyResult {
+    guard evidence.context == context.token else { return .aborted }
+    guard replacementResult == .committed else { return replacementResult }
+    text = (text as NSString).replacingCharacters(
+      in: NSRange(location: evidence.location, length: evidence.length), with: replacement)
+    return .committed
+  }
+  func replaceTrackedSuffix(_ word: BufferedWord, with replacement: String) -> ApplyResult {
+    fallbackCalls += 1
+    guard emptyProxy, word.context == context.token, word.text == text,
+      word.events.count == 6 else { return .aborted }
+    text = replacement
+    return .dispatched
+  }
+}
+extension NativeInputControllerTests {
+  private func installedController(corpus: Bool = false) -> (NativeInputController, FacadeContext, ManualEditor) {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    let controller = NativeInputController(
+      layouts: ManualLayouts(), permissions: FacadePermissions(), corpusQualified: corpus,
+      editingContext: context, selectionAccess: editor)
+    let installed = expectation(description: "manual mapping installed")
+    controller.install(.init(modelVersion: 1,
+      lexicon: [.init(word: "привет", language: .russian, frequencyBand: 1)],
+      mappings: [.init(source: .init(rawValue: "US"), target: .init(rawValue: "RU"),
+        pairs: ["g": "п", "h": "р", "b": "и", "d": "в", "t": "е", "n": "т"])])) { _ in installed.fulfill() }
+    wait(for: [installed], timeout: 2)
+    return (controller, context, editor)
+  }
+  private func typeWord(_ controller: NativeInputController, context: FacadeContext) {
+    for (n, pair) in zip([5, 4, 11, 2, 17, 45], Array("ghbdtn")).enumerated() {
+      controller.runtime.accept(.init(kind: .down, keyCode: UInt16(pair.0), modifiers: [],
+        timestampNanos: UInt64(n), layout: .init(rawValue: "US"), context: context.token,
+        origin: .physical, text: String(pair.1), isRepeat: false))
+    }
+  }
+  func testEmptyProfilesStillAllowExplicitDoubleShiftForProvenTypedWord() {
+    let (controller, context, editor) = installedController()
+    let committed = expectation(description: "manual correction")
+    controller.onResult = { result in XCTAssertEqual(result, .committed); committed.fulfill() }
+    typeWord(controller, context: context)
+    for (index, down) in [true, false, true, false].enumerated() {
+      controller.runtime.accept(.init(kind: down ? .down : .up, keyCode: 56,
+        modifiers: down ? [.shift] : [], timestampNanos: UInt64(index + 1) * 40_000_000,
+        layout: .init(rawValue: "US"), context: context.token, origin: .physical,
+        text: nil, isRepeat: false))
+    }
+    wait(for: [committed], timeout: 1)
+    XCTAssertEqual(editor.text, "привет")
+  }
+  func testEmptyProfilesAllowExplicitSelectionConversion() {
+    let (controller, _, editor) = installedController()
+    editor.selectionLength = 6
+    XCTAssertEqual(controller.manualCorrection(), .committed)
+    XCTAssertEqual(editor.text, "привет")
+  }
+  func testCorpusQualificationDoesNotBypassMissingAutomaticProfile() {
+    let (controller, context, editor) = installedController(corpus: true)
+    typeWord(controller, context: context)
+    let drained = expectation(description: "commands drained")
+    DispatchQueue.main.async { drained.fulfill() }
+    wait(for: [drained], timeout: 1)
+    XCTAssertEqual(editor.text, "ghbdtn")
+  }
+}
+
+extension NativeInputControllerTests {
+  func testManualRoleQualificationDoesNotDependOnApplicationProfile() {
+    XCTAssertTrue(ContextMonitor.supportsManualRole("AXTextField"))
+    XCTAssertTrue(ContextMonitor.supportsManualRole("AXTextArea"))
+    XCTAssertFalse(ContextMonitor.supportsManualRole("AXWebArea"))
+    XCTAssertFalse(ContextMonitor.supportsManualRole("AXButton"))
+    XCTAssertFalse(ContextMonitor.supportsManualRole(""))
+  }
+  func testManualSelectionCannotBypassSecureInputOrPostPermission() {
+    for secure in [false, true] {
+      let context = FacadeContext()
+      let editor = ManualEditor(context)
+      editor.selectionLength = 6
+      let permissions = FacadePermissions()
+      permissions.secure = secure
+      permissions.post = secure
+      let controller = NativeInputController(layouts: ManualLayouts(), permissions: permissions,
+        editingContext: context, selectionAccess: editor)
+      XCTAssertEqual(controller.manualCorrection(), .aborted)
+      XCTAssertEqual(editor.text, "ghbdtn")
+    }
+  }
+}
+
+extension NativeInputControllerTests {
+  func testExplicitTrackedWordUsesEmptyProxyFallbackWithoutClaimingCommitOrUndo() {
+    let (controller, context, editor) = installedController()
+    editor.emptyProxy = true
+    typeWord(controller, context: context)
+    controller.onCommitted = { _, _ in XCTFail("Unverified dispatch must not record a correction") }
+    XCTAssertEqual(controller.manualCorrection(), .dispatched)
+    XCTAssertEqual(editor.text, "привет")
+    XCTAssertEqual(editor.fallbackCalls, 1)
+    XCTAssertNil(controller.runtime.manualWord())
+    XCTAssertEqual(controller.undoLast(), .aborted)
+  }
+  func testFailedProvenReplacementNeverRetriesViaTrackedFallback() {
+    let (controller, context, editor) = installedController()
+    typeWord(controller, context: context)
+    editor.replacementResult = .uncertain
+    XCTAssertEqual(controller.manualCorrection(), .uncertain)
+    XCTAssertEqual(editor.fallbackCalls, 0)
+    XCTAssertEqual(editor.text, "ghbdtn")
   }
 }

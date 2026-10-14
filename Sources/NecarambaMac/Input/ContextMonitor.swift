@@ -14,6 +14,7 @@ public final class ContextMonitor: ContextRefreshing {
   private var observedApp: AXUIElement?
   private var lastElement: AXUIElement?
   private var focusIdentity: String?
+  private var automaticToken: ContextToken?
   private var tokens: [(NotificationCenter, NSObjectProtocol)] = []
   private var active = false
 
@@ -27,6 +28,13 @@ public final class ContextMonitor: ContextRefreshing {
   }
   public func current() -> ContextToken? { state.current() }
   public func isSafe(_ token: ContextToken) -> Bool { state.isSafe(token) }
+  /// Static, recorded compatibility remains mandatory for automatic correction.
+  public func isAutomaticEligible(_ token: ContextToken) -> Bool {
+    state.isSafe(token) && automaticToken == token
+  }
+  public static func supportsManualRole(_ role: String) -> Bool {
+    role == kAXTextFieldRole || role == kAXTextAreaRole
+  }
   public func start() {
     precondition(Thread.isMainThread)
     guard !active else { return }
@@ -110,6 +118,7 @@ public final class ContextMonitor: ContextRefreshing {
   /// Explicit revalidation before an edit must be invoked on the main thread.
   @discardableResult public func refresh() -> ContextToken? {
     precondition(Thread.isMainThread)
+    automaticToken = nil
     let permission = permissions.current()
     guard !permission.secureInput, let app = NSWorkspace.shared.frontmostApplication,
       let bundleID = app.bundleIdentifier
@@ -143,8 +152,7 @@ public final class ContextMonitor: ContextRefreshing {
     let role = stringAttribute(element, kAXRoleAttribute)
     let subrole = stringAttribute(element, kAXSubroleAttribute)
     let allowed =
-      (role == kAXTextFieldRole || role == kAXTextAreaRole)
-      && subrole != kAXSecureTextFieldSubrole && qualifies(bundleID, role ?? "")
+      Self.supportsManualRole(role ?? "") && subrole != kAXSecureTextFieldSubrole
     if lastElement == nil || !CFEqual(lastElement, element) {
       focusIdentity = UUID().uuidString
       lastElement = element
@@ -152,7 +160,9 @@ public final class ContextMonitor: ContextRefreshing {
     state.update(
       pid: app.processIdentifier, bundleID: bundleID, focusID: focusIdentity,
       layout: layouts.current(), qualified: allowed)
-    return state.current()
+    let token = state.current()
+    if allowed && qualifies(bundleID, role ?? "") { automaticToken = token }
+    return token
   }
   private func stringAttribute(_ element: AXUIElement, _ key: String) -> String? {
     var value: CFTypeRef?

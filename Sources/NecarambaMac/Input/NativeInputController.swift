@@ -1,6 +1,9 @@
 import Foundation
 import NecarambaCore
 
+/// Main-thread scope keeps optional AX composition handling exclusive to explicit manual actions.
+private final class ManualActionScope { var active = false }
+
 /// Native composition facade. Invoke its lifecycle and manual actions on the main thread.
 public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsumer {
   public let context: ContextMonitor
@@ -20,6 +23,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   private var quarantined: ContextToken?
   private var preparationLease: ShortcutLease?
   private let corpusQualified: Bool
+  private let manualActionScope: ManualActionScope
   private var excluded: Set<String> = []
   private var appOverrides: [String: AppOverride] = [:]
   public var onResult: (ApplyResult) -> Void = { _ in }
@@ -34,6 +38,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     engineBuilder: RuleEngineBuilding = RuleEngineBuilder()
   ) {
     precondition(Thread.isMainThread)
+    let manualScope = ManualActionScope()
+    manualActionScope = manualScope
     self.layouts = layouts
     self.layoutCapture = layoutCapture ?? (layouts as? LayoutTableCapturing)
     self.engineBuilder = engineBuilder
@@ -50,7 +56,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     context = monitor
     editContext = editingContext ?? monitor
     let ax = AXSelectionAdapter(
-      context: editContext, qualifies: { profiles.qualifies(bundleID: $0, role: $1) })
+      context: editContext, qualifies: { _, role in ContextMonitor.supportsManualRole(role) },
+      allowMissingMarkedTextRange: { manualScope.active })
     self.selectionAccess = selectionAccess ?? ax
     selection = SelectionAdapter(selection: self.selectionAccess)
     replacement = ReplacementCoordinator(
@@ -161,7 +168,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       }
     case .boundary(let word, let snapshot, let prefs):
       guard snapshot.modelVersion == rules.modelVersion else { return }
-      guard corpusQualified, ready(word.context), appOverrides[word.context.bundleID] != .deny,
+      guard corpusQualified, ready(word.context), context.isAutomaticEligible(word.context),
+        appOverrides[word.context.bundleID] != .deny,
         prefs.autoEnabled
       else { return }
       if case .replace(let correction) = engine.decide(
@@ -207,6 +215,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   }
   public func manualCorrection() -> ApplyResult {
     precondition(Thread.isMainThread)
+    manualActionScope.active = true
+    defer { manualActionScope.active = false }
     guard let token = editContext.current(), ready(token), let current = layouts.current() else {
       return .aborted
     }
@@ -238,10 +248,30 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       let undone = undoLast()
       if undone != .aborted { return undone }
     }
-    guard let word = runtime.manualWord(), word.context == token,
+    guard let word = runtime.manualWord(), word.context == token, word.layout == current,
       let mapping = rules.mappings.first(where: { $0.source == word.layout })
     else { return .aborted }
     let text = LayoutConverter.convert(word.text, mapping: mapping)
+    guard text != word.text else { return .aborted }
+    if selectionAccess.suffix(word.text + word.delimiter, in: token) == nil,
+      let tracked = selectionAccess as? ManualTrackedSuffixReplacing
+    {
+      // Only explicit manual input can use a freshly proved empty AX proxy.
+      // This branch runs before any proven-range mutation, never as a retry.
+      let result = tracked.replaceTrackedSuffix(word, with: text + word.delimiter)
+      replacement.invalidate(.unknownInput)
+      if result == .dispatched {
+        guard VerifiedLayoutSwitcher(access: layouts).select(mapping.target) else {
+          quarantine(.uncertain, token: token)
+          return .uncertain
+        }
+        runtime.updateLayout(mapping.target)
+        _ = editContext.refresh()
+      } else if result == .uncertain {
+        quarantine(result, token: token)
+      }
+      return result
+    }
     let result = replacement.apply(
       .init(
         expected: token, original: word.text, replacement: text, sourceLayout: word.layout,
