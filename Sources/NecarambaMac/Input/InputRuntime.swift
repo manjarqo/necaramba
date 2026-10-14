@@ -195,7 +195,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     gestures.invalidate()
     repeatedManual = candidate
     automaticEvents.removeAll()
-    automaticTokenUnsafe = false
+    automaticTokenUnsafe = candidate.delimiter != " "
     return true
   }
   public func inputGeneration() -> UInt64 {

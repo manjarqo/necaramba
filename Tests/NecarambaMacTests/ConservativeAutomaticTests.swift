@@ -114,6 +114,19 @@ final class ConservativeAutomaticTests: XCTestCase {
     drain()
     XCTAssertEqual(fixture.editor.text, "привет ")
   }
+  func testManualCorrectionWithoutSpaceDoesNotExposeAppendedSuffixToAutomaticCorrection() {
+    let fixture = fixture(proxy: true)
+    feed("ghbdtn", fixture)
+    XCTAssertEqual(fixture.controller.manualCorrection(), .dispatched)
+    XCTAssertEqual(fixture.editor.text, "привет")
+    feed("руддщ ", fixture)
+    drain()
+    XCTAssertEqual(fixture.editor.text, "приветруддщ ")
+    XCTAssertTrue(fixture.editor.results.isEmpty)
+    feed("руддщ ", fixture)
+    drain()
+    XCTAssertEqual(fixture.editor.text, "приветруддщ hello ")
+  }
   private func drain() {
     let done = expectation(description: "boundary executor")
     DispatchQueue.main.async { done.fulfill() }
@@ -185,7 +198,7 @@ private final class AutoPermissions: PermissionReading {
   func current() -> PermissionState { .init(listen: true, post: true, ax: true, secureInput: false) }
   func request(_ kind: PermissionKind) { XCTFail("No TCC requests") }
 }
-private final class AutoEditor: SelectionAccess, AutomaticBoundarySuffixReplacing, ManualRepeatedSuffixReplacing {
+private final class AutoEditor: SelectionAccess, AutomaticBoundarySuffixReplacing, ManualRepeatedSuffixReplacing, ManualTrackedSuffixReplacing {
   let context: AutoContext
   let proxy: Bool
   let identity = UUID()
@@ -198,6 +211,12 @@ private final class AutoEditor: SelectionAccess, AutomaticBoundarySuffixReplacin
   }
   func suffix(_ suffix: String, in context: ContextToken) -> SelectionEvidence? { nil }
   func replace(_ evidence: SelectionEvidence, with text: String) -> ApplyResult { XCTFail("Use captured auto lease"); return .aborted }
+  func replaceTrackedSuffix(_ word: BufferedWord, with replacement: String) -> ApplyResult {
+    guard word.context == context.token, text.hasSuffix(word.text + word.delimiter) else { return .aborted }
+    text.removeLast(word.text.count + word.delimiter.count)
+    text += replacement
+    return .dispatched
+  }
   func replaceRepeatedSuffix(_ candidate: ManualRepeatCandidate, with replacement: String) -> ApplyResult {
     guard candidate.context == context.token, candidate.fieldIdentity == identity,
       text.hasSuffix(candidate.currentText + candidate.delimiter) else { return .aborted }
