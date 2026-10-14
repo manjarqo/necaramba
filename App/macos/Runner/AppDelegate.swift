@@ -18,6 +18,8 @@ struct NecarambaMain {
   private var item: NSStatusItem?
   private var settingsWindow: MainFlutterWindow?
   private var services: ApplicationServices?
+  private var input: NativeInputController?
+  private var lifecycle: LifecycleController?
   private var coordinator: NativeCommandCoordinator?
 
   func applicationDidFinishLaunching(_ notification: Notification) {
@@ -28,7 +30,7 @@ struct NecarambaMain {
       let defaults = UserDefaults.standard
       let applicationServices = try ApplicationServices(directory: directory, defaults: defaults,
         permissions: PermissionMonitor(), loginBackend: SystemLoginBackend(mainBundleID: id, defaults: defaults),
-        onPreferences: { [weak self] snapshot in self?.services?.sound.setEnabled(snapshot.soundEnabled) },
+        onPreferences: { [weak self] snapshot in self?.services?.sound.setEnabled(snapshot.soundEnabled); self?.input?.updatePreferences(snapshot) },
         defaultSoundURL: Bundle.main.url(forResource: "correction", withExtension: "wav"))
       services = applicationServices
       applicationServices.sound.setEnabled(applicationServices.preferences.snapshot.soundEnabled)
@@ -38,6 +40,14 @@ struct NecarambaMain {
           return try await applicationServices.execute(method, arguments: arguments)
         })
       coordinator = bridge
+      let input = NativeInputController(preferences: applicationServices.preferences.snapshot)
+      self.input = input
+      input.onToggleAuto = { [weak self] in self?.toggleAuto() }
+      applicationServices.onRulesChanged = { [weak self] in self?.publishRulePolicies() }
+      applicationServices.onChanged = { [weak bridge] in bridge?.publishChange() }
+      publishRulePolicies()
+      applicationServices.runtimeRunning = input.start()
+      let lifecycle = LifecycleController(runtime: input); lifecycle.start(); self.lifecycle = lifecycle
       bridge.onStateChanged = { [weak self] state in
         self?.settingsWindow?.publish(state)
         self?.updateMenu()
@@ -58,11 +68,19 @@ struct NecarambaMain {
       alert.runModal(); NSApp.terminate(nil)
     }
   }
+  private func publishRulePolicies() {
+    guard let services, let input else { return }
+    do {
+      input.updateWordPolicies(Set(try services.rules.words().map(\.normalized)))
+      input.updateAppPolicies(Dictionary(uniqueKeysWithValues:try services.rules.apps().map { ($0.bundleID, $0.mode == .allow ? AppOverride.allow : .deny) }))
+    } catch { services.modelState = "failed" }
+  }
+  func applicationWillTerminate(_ notification: Notification) { lifecycle?.stop(); input?.stop() }
   func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
   func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { openSettings(); return true }
   func applicationDidBecomeActive(_ notification: Notification) {
-    services?.login.refresh(); coordinator?.publishChange()
+    services?.login.refresh(); services?.runtimeRunning = input?.start() ?? false; coordinator?.publishChange()
   }
   @objc private func openSettings() {
     guard let services, let coordinator else { return }

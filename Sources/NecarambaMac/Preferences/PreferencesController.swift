@@ -22,6 +22,7 @@ public struct StoredPreferencesV1: Codable, Equatable, Sendable {
  public var snapshot: PreferencesSnapshot { settings.snapshot }
  public private(set) var recoveredInvalidStorage = false
  private let defaults: UserDefaults
+ private var persist: ((Data) throws -> Void)?
  private let publish: (PreferencesSnapshot) -> Void
  public init(defaults: UserDefaults, publish: @escaping (PreferencesSnapshot) -> Void) {
   self.defaults = defaults; self.publish = publish; settings = StoredPreferencesV1()
@@ -30,14 +31,27 @@ public struct StoredPreferencesV1: Codable, Equatable, Sendable {
    catch { recoveredInvalidStorage = true }
   }
  }
+ public convenience init(defaults: UserDefaults, storedData: Data?, persist: @escaping (Data) throws -> Void, publish: @escaping (PreferencesSnapshot) -> Void) throws {
+  self.init(defaults:defaults,publish:publish)
+  if let storedData { let decoded=try JSONDecoder().decode(StoredPreferencesV1.self,from:storedData); try decoded.validate(); settings=decoded }
+  self.persist=persist
+  if storedData == nil { try persist(JSONEncoder().encode(settings)) }
+ }
  public func replace(_ value: PreferencesSnapshot) throws {
   try replaceSettings(StoredPreferencesV1(snapshot:value,selectedColor:settings.selectedColor,loginPreferred:settings.loginPreferred,diagnosticsOptIn:settings.diagnosticsOptIn))
  }
  public func replaceSettings(_ value: StoredPreferencesV1) throws {
   try value.validate()
   let bytes = try JSONEncoder().encode(value)
-  defaults.set(bytes,forKey:"preferences.v1")
-  settings = value; publish(value.snapshot)
+  try persist?(bytes)
+  adoptValidated(value, bytes:bytes)
+ }
+ /// The caller has already committed these exact bytes in the shared database transaction.
+ func adoptCommittedSettings(_ value:StoredPreferencesV1) throws {
+  try value.validate(); adoptValidated(value,bytes:try JSONEncoder().encode(value))
+ }
+ private func adoptValidated(_ value:StoredPreferencesV1, bytes:Data) {
+  defaults.set(bytes,forKey:"preferences.v1"); settings=value; publish(value.snapshot)
  }
  public func setAuto(_ value: Bool) throws {
   let s = snapshot

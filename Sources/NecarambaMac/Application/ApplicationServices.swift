@@ -14,6 +14,8 @@ import NecarambaCore
     public let permissions: PermissionReading
     public var onRulesChanged: (() -> Void)?
     public var externalCommand: ((String, [String:Any]) async throws -> [String:Any])?
+    public var runtimeRunning = false
+    public var automaticQualified = false
     public var modelVersion: String = "0"
     public var modelState = "idle"
     public var modelLastChecked: String?
@@ -33,7 +35,8 @@ import NecarambaCore
         self.directory = directory; self.permissions = permissions
         try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
         rules = try SQLiteStore(url:directory.appendingPathComponent("rules.sqlite"))
-        preferences = PreferencesController(defaults:defaults,publish:onPreferences)
+        let store = rules
+        preferences = try PreferencesController(defaults:defaults,storedData:store.preferencesData(),persist:{ try store.savePreferences($0) },publish:onPreferences)
         sound = SoundStore(directory:directory.appendingPathComponent("Sounds"),defaultSoundURL:defaultSoundURL)
         header = try HeaderImageStore(directory:directory.appendingPathComponent("Appearance"))
         statistics = try StatisticsStore(directory:directory.appendingPathComponent("Statistics"))
@@ -43,7 +46,7 @@ import NecarambaCore
     }
     public func snapshot() -> [String:Any] {
         let p = permissions.current()
-        let status = p.secureInput ? "secureInput" : (!p.listen || !p.post ? "permissionRequired" : (preferences.snapshot.autoEnabled ? "active" : "off"))
+        let status = p.secureInput ? "secureInput" : (!p.listen || !p.post ? "permissionRequired" : (preferences.snapshot.autoEnabled && runtimeRunning && automaticQualified ? "active" : "off"))
         let words = wordRows
         let legacy = legacyRows
         func word(_ value:WordRule,_ legacy:Bool)->[String:Any] {
@@ -112,6 +115,20 @@ import NecarambaCore
         case "resetSound": try sound.reset()
         case "resetCounters":
             guard try boolean(a,"confirmed") else { throw NativeCommandFailure("cancelled") }; try statistics.reset()
+        case "exportRules":
+            let archive = ApplicationArchiveV1(rules:try JSONDecoder().decode(RuleArchiveV1.self,from:rules.exportArchive()),preferences:preferences.settings)
+            try await save(JSONEncoder().encode(archive),name:"necaramba-rules.json")
+        case "importRules":
+            guard let url=await choose(types:[.json]) else { throw NativeCommandFailure("cancelled") }
+            let file=try FileHandle(forReadingFrom:url); defer { try? file.close() }
+            let data=try file.read(upToCount:10*1024*1024+1) ?? Data()
+            guard data.count<=10*1024*1024 else { throw invalid() }
+            let archive=try JSONDecoder().decode(ApplicationArchiveV1.self,from:data)
+            guard archive.schemaVersion == 1,archive.rules.words.count+archive.rules.legacyWords.count<=10000,archive.rules.apps.count<=1000 else { throw invalid() }
+            try archive.preferences.validate()
+            try rules.importArchive(JSONEncoder().encode(archive.rules),preferences:JSONEncoder().encode(archive.preferences))
+            try preferences.adoptCommittedSettings(archive.preferences)
+            try refreshRules()
         case "exportDiagnostics":
             let p=permissions.current()
             let report:[String:Any] = ["version":Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "development",

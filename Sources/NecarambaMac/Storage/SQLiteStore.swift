@@ -19,6 +19,8 @@ public final class SQLiteStore: WordRuleStore, AppRuleStore {
     do {
       try migrate(url: url, extraSQL: migrationSQL)
       try execute("PRAGMA foreign_keys=ON")
+      try execute("CREATE TABLE IF NOT EXISTS application_preferences(id INTEGER PRIMARY KEY CHECK(id=1), payload BLOB NOT NULL)")
+      try validateColumns("application_preferences", expected: [("id","INTEGER",0,1),("payload","BLOB",1,0)])
       try execute("PRAGMA journal_mode=WAL")
       sqlite3_busy_timeout(db, 5000)
     } catch {
@@ -187,7 +189,8 @@ public final class SQLiteStore: WordRuleStore, AppRuleStore {
       }
     }
   }
-  public func importArchive(_ data: Data) throws {
+  public func importArchive(_ data: Data, preferences: Data? = nil) throws {
+    if let preferences { try JSONDecoder().decode(StoredPreferencesV1.self, from: preferences).validate() }
     let archive: RuleArchiveV1
     do { archive = try JSONDecoder().decode(RuleArchiveV1.self, from: data) } catch {
       throw StoreError.invalidArchive
@@ -212,13 +215,16 @@ public final class SQLiteStore: WordRuleStore, AppRuleStore {
     try queue.sync {
       try transaction {
         let existing = try readWords("word_rules") + readWords("legacy_word_rules")
-        guard names.isDisjoint(with: existing.map(\.normalized)),
+        guard existing.count + normal.count + legacy.count <= 10000,
+          try readApps().count + archive.apps.count <= 1000,
+          names.isDisjoint(with: existing.map(\.normalized)),
           ids.isDisjoint(with: existing.map(\.id)),
           bundles.isDisjoint(with: try readApps().map(\.bundleID))
         else { throw StoreError.invalidArchive }
         for w in normal { try insert(w, table: "word_rules") }
         for w in legacy { try insert(w, table: "legacy_word_rules") }
         for a in archive.apps { try insertApp(a, replace: false) }
+        if let preferences { try write("INSERT OR REPLACE INTO application_preferences(id,payload) VALUES(1,?)", [preferences]) }
       }
     }
   }

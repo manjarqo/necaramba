@@ -9,6 +9,7 @@ guard loginItems.lastPathComponent=="LoginItems",library.lastPathComponent=="Lib
 if NSRunningApplication.runningApplications(withBundleIdentifier:mainID).isEmpty {
  let configuration=NSWorkspace.OpenConfiguration()
  configuration.activates=false
+ configuration.arguments=["--background"]
  let semaphore=DispatchSemaphore(value:0)
  NSWorkspace.shared.openApplication(at:mainURL,configuration:configuration) { _,_ in semaphore.signal() }
  // Keep the process alive for asynchronous NSWorkspace completion without blocking its main queue.
