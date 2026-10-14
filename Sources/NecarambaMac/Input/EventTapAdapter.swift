@@ -182,16 +182,13 @@ public final class EventTapAdapter {
         now: DispatchTime.now().uptimeNanoseconds
       ) {
         let began = DispatchTime.now().uptimeNanoseconds
-        var posted = 0
-        for event in batch {
-          guard !IsSecureEventInputEnabled(), runtime.cachedInputContext()?.0 == evidence.context,
-            DispatchTime.now().uptimeNanoseconds - began < 10_000_000
-          else { return posted == 0 ? .aborted : .uncertain }
-          event.postToPid(evidence.context.pid)
-          posted += 1
-        }
+        return KeyBatchPosting.postPairs(
+          batch,
+          isSafe: {
+            !IsSecureEventInputEnabled() && runtime.cachedInputContext()?.0 == evidence.context
+              && DispatchTime.now().uptimeNanoseconds - began < 10_000_000
+          }, post: { $0.postToPid(evidence.context.pid) })
         // Delivery/readback is not proven by CGEvent.post. Qualified host evidence is still required.
-        return .committed
       }
       result = outcome.result
       self.release(outcome.replay, result: result)

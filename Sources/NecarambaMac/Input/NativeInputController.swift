@@ -193,13 +193,13 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       guard text != evidence.text else { return .aborted }
       let result = selectionAccess.replace(evidence, with: text)
       guard result == .committed else {
-        report(result, token: token)
+        quarantine(result, token: token)
         return result
       }
       guard VerifiedLayoutSwitcher(access: layouts).select(mapping.target),
         let after = context.refresh()
       else {
-        report(.uncertain, token: token)
+        quarantine(.uncertain, token: token)
         return .uncertain
       }
       runtime.updateLayout(mapping.target)
@@ -219,7 +219,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       .init(
         expected: token, original: word.text, replacement: text, sourceLayout: word.layout,
         targetLayout: mapping.target, delimiter: word.delimiter))
-    if result == .uncertain { report(result, token: token) }
+    if result == .uncertain { quarantine(result, token: token) }
     if result == .committed, let id = replacement.lastCommittedID { onCommitted(id, .manual) }
     if let layout = layouts.current() { runtime.updateLayout(layout) }
     return result
