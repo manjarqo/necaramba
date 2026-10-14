@@ -15,6 +15,7 @@ public struct CorpusManifest: Decodable, Sendable {
     public let files: [CorpusFile]
     public let sources: [Source]
     public let provenance: Provenance
+    public let generation: [Asset]?
     public let minimumTotal: Int
     public static func validateRelativePath(_ value: String) throws {
         let components = value.components(separatedBy: "/")
@@ -23,10 +24,11 @@ public struct CorpusManifest: Decodable, Sendable {
         }
     }
     public static func decode(_ data: Data) throws -> CorpusManifest {
-        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any], Set(object.keys) == Set(["schemaVersion", "corpusVersion", "rules", "files", "sources", "provenance", "minimumTotal"]) else { throw CorpusValidationError.invalid("Invalid manifest schema") }
+        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any], Set(object.keys) == Set(["schemaVersion", "corpusVersion", "rules", "files", "sources", "provenance", "minimumTotal"] + ((object["schemaVersion"] as? Int) == 2 ? ["generation"] : [])) else { throw CorpusValidationError.invalid("Invalid manifest schema") }
         func keys(_ value: Any?, _ expected: Set<String>) throws {
             guard let dictionary = value as? [String: Any], Set(dictionary.keys) == expected else { throw CorpusValidationError.invalid("Unknown/missing nested manifest fields") }
         }
+        for value in object["generation"] as? [Any] ?? [] { try keys(value, ["path", "sha256"]) }
         try keys(object["rules"], ["path", "sha256"])
         for value in object["files"] as? [Any] ?? [] { try keys(value, ["path", "sha256", "count", "split"]) }
         for value in object["sources"] as? [Any] ?? [] { try keys(value, ["id", "licensePath", "licenseSHA256", "description"]) }
@@ -35,14 +37,14 @@ public struct CorpusManifest: Decodable, Sendable {
             for value in provenance["files"] as? [Any] ?? [] { try keys(value, ["path", "url", "sha256"]) }
         }
         let manifest = try JSONDecoder().decode(CorpusManifest.self, from: data)
-        guard manifest.schemaVersion == 1, !manifest.corpusVersion.isEmpty, manifest.minimumTotal >= 10000, !manifest.sources.isEmpty,
+        guard [1, 2].contains(manifest.schemaVersion), (manifest.schemaVersion != 2 || !(manifest.generation ?? []).isEmpty), !manifest.corpusVersion.isEmpty, manifest.minimumTotal >= 10000, !manifest.sources.isEmpty,
               Set(manifest.sources.map(\.id)).count == manifest.sources.count,
               Set(manifest.files.map(\.split)) == Set([.train, .calibration, .holdout]),
               Set(manifest.files.map(\.path)).count == manifest.files.count,
               manifest.provenance.revision.count == 40, !manifest.provenance.files.isEmpty else { throw CorpusValidationError.invalid("Invalid manifest values") }
-        let paths = [manifest.rules.path] + manifest.files.map(\.path) + manifest.sources.map(\.licensePath) + manifest.provenance.files.map(\.path)
+        let paths = [manifest.rules.path] + manifest.files.map(\.path) + manifest.sources.map(\.licensePath) + manifest.provenance.files.map(\.path) + (manifest.generation ?? []).map(\.path)
         for path in paths { try validateRelativePath(path) }
-        let hashes = [manifest.rules.sha256] + manifest.files.map(\.sha256) + manifest.provenance.files.map(\.sha256) + manifest.sources.map(\.licenseSHA256)
+        let hashes = [manifest.rules.sha256] + manifest.files.map(\.sha256) + manifest.provenance.files.map(\.sha256) + manifest.sources.map(\.licenseSHA256) + (manifest.generation ?? []).map(\.sha256)
         guard hashes.allSatisfy({ $0.count == 64 && $0.allSatisfy { "0123456789abcdef".contains($0) } }), manifest.files.allSatisfy({ $0.count > 0 }), manifest.sources.allSatisfy({ !$0.id.isEmpty && !$0.description.isEmpty }) else { throw CorpusValidationError.invalid("Invalid manifest hash/count/license") }
         return manifest
     }
@@ -54,6 +56,9 @@ public struct CorpusManifest: Decodable, Sendable {
         for source in sources {
             guard digest(try read(source.licensePath)) == source.licenseSHA256 else { throw CorpusValidationError.invalid("Missing source license") }
         }
+        for asset in generation ?? [] {
+            guard digest(try read(asset.path)) == asset.sha256 else { throw CorpusValidationError.invalid("Generation provenance SHA256 mismatch: \(asset.path)") }
+        }
         var all: [CorpusCase] = []
         for file in files {
             let data = try read(file.path)
@@ -61,6 +66,9 @@ public struct CorpusManifest: Decodable, Sendable {
             let rows = try CorpusValidator.decodeJSONL(data)
             guard rows.count == file.count, rows.allSatisfy({ $0.split == file.split }) else { throw CorpusValidationError.invalid("Corpus count/split mismatch") }
             all += rows
+        }
+        if schemaVersion == 2 {
+            guard all.allSatisfy({ $0.language != nil && $0.caseShape != nil && $0.applicationCategory != nil && $0.hostScenarioID != nil }) else { throw CorpusValidationError.invalid("Schema 2 requires explicit synthetic scenario metadata") }
         }
         try CorpusValidator.validate(all)
         let licenses = Set(sources.map(\.id))

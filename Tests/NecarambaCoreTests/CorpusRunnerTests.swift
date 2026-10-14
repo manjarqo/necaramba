@@ -2,6 +2,53 @@ import XCTest
 import CryptoKit
 @testable import NecarambaCore
 final class CorpusRunnerTests: XCTestCase {
+    func testPerfectAggregateCannotPassWithoutRequiredStrataOrPhysicalEvidence() {
+        let rows = (0..<2000).map { n in
+            CorpusCase(id: "gate-\(n)", input: "input\(n)", layout: LayoutID(rawValue: "US"), expected: n < 1000 ? "fixed\(n)" : "input\(n)", shouldChange: n < 1000, split: .holdout, sourceLicense: "CC0-1.0", category: "layout", family: "family\(n)")
+        }
+        let report = QualityEvaluator.evaluate(rows) { $0.expected }
+        XCTAssertFalse(report.passed)
+        XCTAssertFalse(report.physicalDifferentialQualified)
+        XCTAssertTrue(report.failures.contains { $0.contains("feature.typo") })
+        XCTAssertTrue(report.failures.contains { $0.contains("language.russian") })
+        XCTAssertTrue(report.failures.contains { $0.contains("application.office") })
+        XCTAssertTrue(report.failures.contains { $0.contains("physical differential") })
+    }
+    func testRepeatedVariantsDoNotInflateIndependentCoverage() {
+        let rows = (0..<100).map { n in
+            CorpusCase(id: "variant-\(n)", input: "bad", layout: LayoutID(rawValue: "US"), expected: "good", shouldChange: true, split: .holdout, sourceLicense: "CC0-1.0", category: "typo", family: "one-family")
+        }
+        let report = QualityEvaluator.evaluate(rows) { $0.expected }
+        XCTAssertEqual(report.coverage["feature.typo"]?.independentFamilies, 1)
+        XCTAssertFalse(report.coverage["feature.typo"]?.passed ?? true)
+    }
+    func testReviewedCorpusQualifiesCoverageButCannotQualifyPhysicalEvidence() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let manifest = try CorpusManifest.decode(Data(contentsOf: root.appendingPathComponent("Corpora/ReviewV3/manifest.json")))
+        let rows = try manifest.validate(read: { try Data(contentsOf: root.appendingPathComponent($0)) }, digest: { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() })
+        let holdout = rows.filter { $0.split == .holdout }
+        let report = QualityEvaluator.evaluate(holdout) { $0.expected }
+        XCTAssertEqual(report.coverage["feature.typo"]?.independentFamilies, 12)
+        XCTAssertEqual(report.coverage["feature.yo"]?.independentFamilies, 12)
+        for omitted in ["typo", "yo", "doubleCaps"] {
+            let incomplete = QualityEvaluator.evaluate(holdout.filter { $0.category != omitted }, physicalDifferentialQualified: true) { $0.expected }
+            XCTAssertFalse(incomplete.passed)
+            XCTAssertTrue(incomplete.failures.contains { $0.contains("feature." + omitted) })
+        }
+        let noOffice = QualityEvaluator.evaluate(holdout.filter { $0.applicationCategory != .office }, physicalDifferentialQualified: true) { $0.expected }
+        XCTAssertFalse(noOffice.passed)
+        XCTAssertTrue(noOffice.failures.contains { $0.contains("application.office") })
+        XCTAssertTrue(report.coverage.values.allSatisfy(\.passed))
+        XCTAssertTrue(report.tokenQualityPassed)
+        XCTAssertFalse(report.passed)
+        XCTAssertEqual(report.failures, ["physical differential UNRUN or unqualified"])
+        XCTAssertTrue(QualityEvaluator.evaluate(holdout, physicalDifferentialQualified: true) { $0.expected }.passed)
+    }
+    func testSyntheticHostScenarioCannotClaimActualEditorIdentity() {
+        let row = CorpusCase(id: "host", input: "hello", layout: LayoutID(rawValue: "US"), expected: "hello", shouldChange: false, split: .holdout, sourceLicense: "CC0-1.0", category: "correct", family: "hello", language: .english, caseShape: .lowercase, applicationCategory: .editor, hostScenarioID: "com.apple.TextEdit")
+        XCTAssertThrowsError(try CorpusValidator.validate([row]))
+        XCTAssertFalse(QualityEvaluator.evaluate([row]) { $0.expected }.physicalDifferentialQualified)
+    }
     func testExactCorrectionsAndUndefinedDenominators() throws {
         let rows = (0..<199).map { CorpusCase(id: "p\($0)", input: "wrong\($0)", layout: LayoutID(rawValue: "US"), expected: "right\($0)", shouldChange: true, split: .holdout, sourceLicense: "CC0-1.0", category: "layout", family: "p\($0)") }
         let negative = CorpusCase(id: "negative", input: "correct", layout: LayoutID(rawValue: "US"), expected: "correct", shouldChange: false, split: .holdout, sourceLicense: "CC0-1.0", category: "plain", family: "negative")

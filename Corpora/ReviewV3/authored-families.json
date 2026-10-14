@@ -1,0 +1,6 @@
+{
+  "license": "CC0-1.0",
+  "provenance": "Independently authored spelling challenges for review v3, frozen without consulting predictions. Case variants share one declared family. These specify intended standalone common-word spellings, not contextual editing policy or natural typing gold labels.",
+  "typo": [["teh","the"],["recieve","receive"],["adress","address"],["wierd","weird"],["definately","definitely"],["seperate","separate"],["occured","occurred"],["untill","until"],["tommorow","tomorrow"],["beggining","beginning"],["beleive","believe"],["langauge","language"]],
+  "yo": [["елка","ёлка"],["ежик","ёжик"],["береза","берёза"],["желтый","жёлтый"],["зеленый","зелёный"],["черный","чёрный"],["дешевый","дешёвый"],["серьезный","серьёзный"],["актер","актёр"],["шофер","шофёр"],["самолет","самолёт"],["веревка","верёвка"]]
+}

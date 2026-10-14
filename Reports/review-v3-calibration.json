@@ -1,0 +1,3499 @@
+{
+  "corpusTotal" : 25259,
+  "corpusVersion" : "independent-v3-reviewed-coverage",
+  "counts" : {
+    "falseChanges" : 0,
+    "falseNegative" : 436,
+    "falsePositive" : 0,
+    "noChange" : 4800,
+    "total" : 8400,
+    "trueNegative" : 4800,
+    "truePositive" : 3164
+  },
+  "coverage" : {
+    "application.browser" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 1680
+    },
+    "application.chat" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 1680
+    },
+    "application.editor" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 1680
+    },
+    "application.office" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 1680
+    },
+    "application.terminal" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 1680
+    },
+    "case.doubleCaps" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 20,
+      "passed" : true,
+      "samples" : 1200
+    },
+    "case.lowercase" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 3668
+    },
+    "case.mixed" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 1200
+    },
+    "case.title" : {
+      "independentFamilies" : 1132,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 1132
+    },
+    "case.uppercase" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 1200
+    },
+    "feature.doubleCaps" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 20,
+      "passed" : true,
+      "samples" : 1200
+    },
+    "feature.layout" : {
+      "independentFamilies" : 1200,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 2400
+    },
+    "feature.typo" : {
+      "independentFamilies" : 0,
+      "minimumIndependentFamilies" : 10,
+      "passed" : false,
+      "samples" : 0
+    },
+    "feature.yo" : {
+      "independentFamilies" : 0,
+      "minimumIndependentFamilies" : 10,
+      "passed" : false,
+      "samples" : 0
+    },
+    "language.english" : {
+      "independentFamilies" : 460,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 3220
+    },
+    "language.russian" : {
+      "independentFamilies" : 740,
+      "minimumIndependentFamilies" : 100,
+      "passed" : true,
+      "samples" : 5180
+    }
+  },
+  "evaluationMode" : "token-only synthetic replay; physical-input/editor differential unrun",
+  "failures" : [
+    "layout recall undefined or below 0.95",
+    "coverage feature.yo: 0 independent families < 10",
+    "coverage feature.typo: 0 independent families < 10",
+    "physical differential UNRUN or unqualified"
+  ],
+  "falseChangeInterval" : {
+    "lower" : 0,
+    "upper" : 0.0007996933121192006
+  },
+  "falseChangeRate" : 0,
+  "falseNegative" : 436,
+  "falsePositive" : 0,
+  "hostScenarios" : {
+    "synthetic.browser.token-only" : 1680,
+    "synthetic.chat.token-only" : 1680,
+    "synthetic.editor.token-only" : 1680,
+    "synthetic.office.token-only" : 1680,
+    "synthetic.terminal.token-only" : 1680
+  },
+  "layoutRecall" : 0.81833333333333336,
+  "layoutRecallInterval" : {
+    "lower" : 0.80240254480180007,
+    "upper" : 0.83324665937205233
+  },
+  "mismatches" : [
+    {
+      "actual" : "ktc[jp",
+      "category" : "layout.russian",
+      "expected" : "лесхоз",
+      "id" : "review-v3-8460",
+      "input" : "ktc[jp"
+    },
+    {
+      "actual" : "Ktc[jp",
+      "category" : "layout.title.russian",
+      "expected" : "Лесхоз",
+      "id" : "review-v3-8461",
+      "input" : "Ktc[jp"
+    },
+    {
+      "actual" : "rfhjnf;",
+      "category" : "layout.russian",
+      "expected" : "каротаж",
+      "id" : "review-v3-8467",
+      "input" : "rfhjnf;"
+    },
+    {
+      "actual" : "Rfhjnf;",
+      "category" : "layout.title.russian",
+      "expected" : "Каротаж",
+      "id" : "review-v3-8468",
+      "input" : "Rfhjnf;"
+    },
+    {
+      "actual" : "gjyf,tuen",
+      "category" : "layout.russian",
+      "expected" : "понабегут",
+      "id" : "review-v3-8516",
+      "input" : "gjyf,tuen"
+    },
+    {
+      "actual" : "Gjyf,tuen",
+      "category" : "layout.title.russian",
+      "expected" : "Понабегут",
+      "id" : "review-v3-8517",
+      "input" : "Gjyf,tuen"
+    },
+    {
+      "actual" : "gj,fuhjdtdibq",
+      "category" : "layout.russian",
+      "expected" : "побагровевший",
+      "id" : "review-v3-8523",
+      "input" : "gj,fuhjdtdibq"
+    },
+    {
+      "actual" : "Gj,fuhjdtdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Побагровевший",
+      "id" : "review-v3-8524",
+      "input" : "Gj,fuhjdtdibq"
+    },
+    {
+      "actual" : "jnz;tktdibq",
+      "category" : "layout.russian",
+      "expected" : "отяжелевший",
+      "id" : "review-v3-8600",
+      "input" : "jnz;tktdibq"
+    },
+    {
+      "actual" : "Jnz;tktdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Отяжелевший",
+      "id" : "review-v3-8601",
+      "input" : "Jnz;tktdibq"
+    },
+    {
+      "actual" : "'kbvbybhjdfybt",
+      "category" : "layout.russian",
+      "expected" : "элиминирование",
+      "id" : "review-v3-8656",
+      "input" : "'kbvbybhjdfybt"
+    },
+    {
+      "actual" : "\"kbvbybhjdfybt",
+      "category" : "layout.title.russian",
+      "expected" : "Элиминирование",
+      "id" : "review-v3-8657",
+      "input" : "\"kbvbybhjdfybt"
+    },
+    {
+      "actual" : ",tvjkm",
+      "category" : "layout.russian",
+      "expected" : "бемоль",
+      "id" : "review-v3-8754",
+      "input" : ",tvjkm"
+    },
+    {
+      "actual" : "<tvjkm",
+      "category" : "layout.title.russian",
+      "expected" : "Бемоль",
+      "id" : "review-v3-8755",
+      "input" : "<tvjkm"
+    },
+    {
+      "actual" : ",exbdibq",
+      "category" : "layout.russian",
+      "expected" : "бучивший",
+      "id" : "review-v3-8845",
+      "input" : ",exbdibq"
+    },
+    {
+      "actual" : "<exbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Бучивший",
+      "id" : "review-v3-8846",
+      "input" : "<exbdibq"
+    },
+    {
+      "actual" : "rj'hwbnbdysq",
+      "category" : "layout.russian",
+      "expected" : "коэрцитивный",
+      "id" : "review-v3-8859",
+      "input" : "rj'hwbnbdysq"
+    },
+    {
+      "actual" : "Rj'hwbnbdysq",
+      "category" : "layout.title.russian",
+      "expected" : "Коэрцитивный",
+      "id" : "review-v3-8860",
+      "input" : "Rj'hwbnbdysq"
+    },
+    {
+      "actual" : "vj;yj",
+      "category" : "layout.russian",
+      "expected" : "можно",
+      "id" : "review-v3-8894",
+      "input" : "vj;yj"
+    },
+    {
+      "actual" : "Vj;yj",
+      "category" : "layout.title.russian",
+      "expected" : "Можно",
+      "id" : "review-v3-8895",
+      "input" : "Vj;yj"
+    },
+    {
+      "actual" : "t;txfcysq",
+      "category" : "layout.russian",
+      "expected" : "ежечасный",
+      "id" : "review-v3-8936",
+      "input" : "t;txfcysq"
+    },
+    {
+      "actual" : "T;txfcysq",
+      "category" : "layout.title.russian",
+      "expected" : "Ежечасный",
+      "id" : "review-v3-8937",
+      "input" : "T;txfcysq"
+    },
+    {
+      "actual" : "p.pz",
+      "category" : "layout.russian",
+      "expected" : "зюзя",
+      "id" : "review-v3-8950",
+      "input" : "p.pz"
+    },
+    {
+      "actual" : "P.pz",
+      "category" : "layout.title.russian",
+      "expected" : "Зюзя",
+      "id" : "review-v3-8951",
+      "input" : "P.pz"
+    },
+    {
+      "actual" : "dth,f",
+      "category" : "layout.russian",
+      "expected" : "верба",
+      "id" : "review-v3-8971",
+      "input" : "dth,f"
+    },
+    {
+      "actual" : "Dth,f",
+      "category" : "layout.title.russian",
+      "expected" : "Верба",
+      "id" : "review-v3-8972",
+      "input" : "Dth,f"
+    },
+    {
+      "actual" : "jlfk;bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "одалживавший",
+      "id" : "review-v3-8978",
+      "input" : "jlfk;bdfdibq"
+    },
+    {
+      "actual" : "Jlfk;bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Одалживавший",
+      "id" : "review-v3-8979",
+      "input" : "Jlfk;bdfdibq"
+    },
+    {
+      "actual" : "nj[fhcrbq",
+      "category" : "layout.russian",
+      "expected" : "тохарский",
+      "id" : "review-v3-9006",
+      "input" : "nj[fhcrbq"
+    },
+    {
+      "actual" : "Nj[fhcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Тохарский",
+      "id" : "review-v3-9007",
+      "input" : "Nj[fhcrbq"
+    },
+    {
+      "actual" : "bv,twbkmyjcnm",
+      "category" : "layout.russian",
+      "expected" : "имбецильность",
+      "id" : "review-v3-9027",
+      "input" : "bv,twbkmyjcnm"
+    },
+    {
+      "actual" : "Bv,twbkmyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Имбецильность",
+      "id" : "review-v3-9028",
+      "input" : "Bv,twbkmyjcnm"
+    },
+    {
+      "actual" : ",tlth",
+      "category" : "layout.russian",
+      "expected" : "бедер",
+      "id" : "review-v3-9055",
+      "input" : ",tlth"
+    },
+    {
+      "actual" : "<tlth",
+      "category" : "layout.title.russian",
+      "expected" : "Бедер",
+      "id" : "review-v3-9056",
+      "input" : "<tlth"
+    },
+    {
+      "actual" : ",hbl;",
+      "category" : "layout.russian",
+      "expected" : "бридж",
+      "id" : "review-v3-9076",
+      "input" : ",hbl;"
+    },
+    {
+      "actual" : "<hbl;",
+      "category" : "layout.title.russian",
+      "expected" : "Бридж",
+      "id" : "review-v3-9077",
+      "input" : "<hbl;"
+    },
+    {
+      "actual" : "zrf.obq",
+      "category" : "layout.russian",
+      "expected" : "якающий",
+      "id" : "review-v3-9118",
+      "input" : "zrf.obq"
+    },
+    {
+      "actual" : "Zrf.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Якающий",
+      "id" : "review-v3-9119",
+      "input" : "Zrf.obq"
+    },
+    {
+      "actual" : "ie,byrf",
+      "category" : "layout.russian",
+      "expected" : "шубинка",
+      "id" : "review-v3-9174",
+      "input" : "ie,byrf"
+    },
+    {
+      "actual" : "Ie,byrf",
+      "category" : "layout.title.russian",
+      "expected" : "Шубинка",
+      "id" : "review-v3-9175",
+      "input" : "Ie,byrf"
+    },
+    {
+      "actual" : "ht,jhlysq",
+      "category" : "layout.russian",
+      "expected" : "ребордный",
+      "id" : "review-v3-9188",
+      "input" : "ht,jhlysq"
+    },
+    {
+      "actual" : "Ht,jhlysq",
+      "category" : "layout.title.russian",
+      "expected" : "Ребордный",
+      "id" : "review-v3-9189",
+      "input" : "Ht,jhlysq"
+    },
+    {
+      "actual" : "dz;tncz",
+      "category" : "layout.russian",
+      "expected" : "вяжется",
+      "id" : "review-v3-9265",
+      "input" : "dz;tncz"
+    },
+    {
+      "actual" : "Dz;tncz",
+      "category" : "layout.title.russian",
+      "expected" : "Вяжется",
+      "id" : "review-v3-9266",
+      "input" : "Dz;tncz"
+    },
+    {
+      "actual" : "kj,pfdibq",
+      "category" : "layout.russian",
+      "expected" : "лобзавший",
+      "id" : "review-v3-9293",
+      "input" : "kj,pfdibq"
+    },
+    {
+      "actual" : "Kj,pfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Лобзавший",
+      "id" : "review-v3-9294",
+      "input" : "Kj,pfdibq"
+    },
+    {
+      "actual" : "kj;m",
+      "category" : "layout.russian",
+      "expected" : "ложь",
+      "id" : "review-v3-9370",
+      "input" : "kj;m"
+    },
+    {
+      "actual" : "Kj;m",
+      "category" : "layout.title.russian",
+      "expected" : "Ложь",
+      "id" : "review-v3-9371",
+      "input" : "Kj;m"
+    },
+    {
+      "actual" : ",futn",
+      "category" : "layout.russian",
+      "expected" : "багет",
+      "id" : "review-v3-9377",
+      "input" : ",futn"
+    },
+    {
+      "actual" : "<futn",
+      "category" : "layout.title.russian",
+      "expected" : "Багет",
+      "id" : "review-v3-9378",
+      "input" : "<futn"
+    },
+    {
+      "actual" : "ytcnf,bkmyjcnm",
+      "category" : "layout.russian",
+      "expected" : "нестабильность",
+      "id" : "review-v3-9454",
+      "input" : "ytcnf,bkmyjcnm"
+    },
+    {
+      "actual" : "Ytcnf,bkmyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Нестабильность",
+      "id" : "review-v3-9455",
+      "input" : "Ytcnf,bkmyjcnm"
+    },
+    {
+      "actual" : "bp]z,tlybxfdibqcz",
+      "category" : "layout.russian",
+      "expected" : "изъябедничавшийся",
+      "id" : "review-v3-9482",
+      "input" : "bp]z,tlybxfdibqcz"
+    },
+    {
+      "actual" : "Bp]z,tlybxfdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Изъябедничавшийся",
+      "id" : "review-v3-9483",
+      "input" : "Bp]z,tlybxfdibqcz"
+    },
+    {
+      "actual" : "fujhfaj,bz",
+      "category" : "layout.russian",
+      "expected" : "агорафобия",
+      "id" : "review-v3-9496",
+      "input" : "fujhfaj,bz"
+    },
+    {
+      "actual" : "Fujhfaj,bz",
+      "category" : "layout.title.russian",
+      "expected" : "Агорафобия",
+      "id" : "review-v3-9497",
+      "input" : "Fujhfaj,bz"
+    },
+    {
+      "actual" : "'ynfkmgbz",
+      "category" : "layout.russian",
+      "expected" : "энтальпия",
+      "id" : "review-v3-9503",
+      "input" : "'ynfkmgbz"
+    },
+    {
+      "actual" : "\"ynfkmgbz",
+      "category" : "layout.title.russian",
+      "expected" : "Энтальпия",
+      "id" : "review-v3-9504",
+      "input" : "\"ynfkmgbz"
+    },
+    {
+      "actual" : ",bqcrbq",
+      "category" : "layout.russian",
+      "expected" : "бийский",
+      "id" : "review-v3-9531",
+      "input" : ",bqcrbq"
+    },
+    {
+      "actual" : "<bqcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Бийский",
+      "id" : "review-v3-9532",
+      "input" : "<bqcrbq"
+    },
+    {
+      "actual" : "dthkb,h",
+      "category" : "layout.russian",
+      "expected" : "верлибр",
+      "id" : "review-v3-9545",
+      "input" : "dthkb,h"
+    },
+    {
+      "actual" : "Dthkb,h",
+      "category" : "layout.title.russian",
+      "expected" : "Верлибр",
+      "id" : "review-v3-9546",
+      "input" : "Dthkb,h"
+    },
+    {
+      "actual" : "jn,ercbhjdfdibq",
+      "category" : "layout.russian",
+      "expected" : "отбуксировавший",
+      "id" : "review-v3-9601",
+      "input" : "jn,ercbhjdfdibq"
+    },
+    {
+      "actual" : "Jn,ercbhjdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Отбуксировавший",
+      "id" : "review-v3-9602",
+      "input" : "Jn,ercbhjdfdibq"
+    },
+    {
+      "actual" : ",eqcndj",
+      "category" : "layout.russian",
+      "expected" : "буйство",
+      "id" : "review-v3-9650",
+      "input" : ",eqcndj"
+    },
+    {
+      "actual" : "<eqcndj",
+      "category" : "layout.title.russian",
+      "expected" : "Буйство",
+      "id" : "review-v3-9651",
+      "input" : "<eqcndj"
+    },
+    {
+      "actual" : ",thrkbtdcrbq",
+      "category" : "layout.russian",
+      "expected" : "берклиевский",
+      "id" : "review-v3-9664",
+      "input" : ",thrkbtdcrbq"
+    },
+    {
+      "actual" : "<thrkbtdcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Берклиевский",
+      "id" : "review-v3-9665",
+      "input" : "<thrkbtdcrbq"
+    },
+    {
+      "actual" : "j,cnfdbdibq",
+      "category" : "layout.russian",
+      "expected" : "обставивший",
+      "id" : "review-v3-9797",
+      "input" : "j,cnfdbdibq"
+    },
+    {
+      "actual" : "J,cnfdbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обставивший",
+      "id" : "review-v3-9798",
+      "input" : "J,cnfdbdibq"
+    },
+    {
+      "actual" : "juht,mt",
+      "category" : "layout.russian",
+      "expected" : "огребье",
+      "id" : "review-v3-9804",
+      "input" : "juht,mt"
+    },
+    {
+      "actual" : "Juht,mt",
+      "category" : "layout.title.russian",
+      "expected" : "Огребье",
+      "id" : "review-v3-9805",
+      "input" : "Juht,mt"
+    },
+    {
+      "actual" : "gtgkj;tktpj,tnjyysq",
+      "category" : "layout.russian",
+      "expected" : "пепложелезобетонный",
+      "id" : "review-v3-9811",
+      "input" : "gtgkj;tktpj,tnjyysq"
+    },
+    {
+      "actual" : "Gtgkj;tktpj,tnjyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Пепложелезобетонный",
+      "id" : "review-v3-9812",
+      "input" : "Gtgkj;tktpj,tnjyysq"
+    },
+    {
+      "actual" : "herj,bnmt",
+      "category" : "layout.russian",
+      "expected" : "рукобитье",
+      "id" : "review-v3-9839",
+      "input" : "herj,bnmt"
+    },
+    {
+      "actual" : "Herj,bnmt",
+      "category" : "layout.title.russian",
+      "expected" : "Рукобитье",
+      "id" : "review-v3-9840",
+      "input" : "Herj,bnmt"
+    },
+    {
+      "actual" : ";bnybwf",
+      "category" : "layout.russian",
+      "expected" : "житница",
+      "id" : "review-v3-9846",
+      "input" : ";bnybwf"
+    },
+    {
+      "actual" : ":bnybwf",
+      "category" : "layout.title.russian",
+      "expected" : "Житница",
+      "id" : "review-v3-9847",
+      "input" : ":bnybwf"
+    },
+    {
+      "actual" : ",bfnkjy",
+      "category" : "layout.russian",
+      "expected" : "биатлон",
+      "id" : "review-v3-9895",
+      "input" : ",bfnkjy"
+    },
+    {
+      "actual" : "<bfnkjy",
+      "category" : "layout.title.russian",
+      "expected" : "Биатлон",
+      "id" : "review-v3-9896",
+      "input" : "<bfnkjy"
+    },
+    {
+      "actual" : ",jkjvtnh",
+      "category" : "layout.russian",
+      "expected" : "болометр",
+      "id" : "review-v3-9909",
+      "input" : ",jkjvtnh"
+    },
+    {
+      "actual" : "<jkjvtnh",
+      "category" : "layout.title.russian",
+      "expected" : "Болометр",
+      "id" : "review-v3-9910",
+      "input" : "<jkjvtnh"
+    },
+    {
+      "actual" : ";tkfdibq",
+      "category" : "layout.russian",
+      "expected" : "желавший",
+      "id" : "review-v3-9951",
+      "input" : ";tkfdibq"
+    },
+    {
+      "actual" : ":tkfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Желавший",
+      "id" : "review-v3-9952",
+      "input" : ":tkfdibq"
+    },
+    {
+      "actual" : "rdt,trcrbq",
+      "category" : "layout.russian",
+      "expected" : "квебекский",
+      "id" : "review-v3-10007",
+      "input" : "rdt,trcrbq"
+    },
+    {
+      "actual" : "Rdt,trcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Квебекский",
+      "id" : "review-v3-10008",
+      "input" : "Rdt,trcrbq"
+    },
+    {
+      "actual" : "h;fdtdibq",
+      "category" : "layout.russian",
+      "expected" : "ржавевший",
+      "id" : "review-v3-10042",
+      "input" : "h;fdtdibq"
+    },
+    {
+      "actual" : "H;fdtdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Ржавевший",
+      "id" : "review-v3-10043",
+      "input" : "H;fdtdibq"
+    },
+    {
+      "actual" : "n.vtytw",
+      "category" : "layout.russian",
+      "expected" : "тюменец",
+      "id" : "review-v3-10105",
+      "input" : "n.vtytw"
+    },
+    {
+      "actual" : "N.vtytw",
+      "category" : "layout.title.russian",
+      "expected" : "Тюменец",
+      "id" : "review-v3-10106",
+      "input" : "N.vtytw"
+    },
+    {
+      "actual" : "[fycrbq",
+      "category" : "layout.russian",
+      "expected" : "ханский",
+      "id" : "review-v3-10147",
+      "input" : "[fycrbq"
+    },
+    {
+      "actual" : "{fycrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Ханский",
+      "id" : "review-v3-10148",
+      "input" : "{fycrbq"
+    },
+    {
+      "actual" : "'hjutyysq",
+      "category" : "layout.russian",
+      "expected" : "эрогенный",
+      "id" : "review-v3-10182",
+      "input" : "'hjutyysq"
+    },
+    {
+      "actual" : "\"hjutyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Эрогенный",
+      "id" : "review-v3-10183",
+      "input" : "\"hjutyysq"
+    },
+    {
+      "actual" : "yt'cntnbxyjcnm",
+      "category" : "layout.russian",
+      "expected" : "неэстетичность",
+      "id" : "review-v3-10203",
+      "input" : "yt'cntnbxyjcnm"
+    },
+    {
+      "actual" : "Yt'cntnbxyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Неэстетичность",
+      "id" : "review-v3-10204",
+      "input" : "Yt'cntnbxyjcnm"
+    },
+    {
+      "actual" : "htj'ywtafkjuhfabz",
+      "category" : "layout.russian",
+      "expected" : "реоэнцефалография",
+      "id" : "review-v3-10210",
+      "input" : "htj'ywtafkjuhfabz"
+    },
+    {
+      "actual" : "Htj'ywtafkjuhfabz",
+      "category" : "layout.title.russian",
+      "expected" : "Реоэнцефалография",
+      "id" : "review-v3-10211",
+      "input" : "Htj'ywtafkjuhfabz"
+    },
+    {
+      "actual" : ",kby",
+      "category" : "layout.russian",
+      "expected" : "блин",
+      "id" : "review-v3-10217",
+      "input" : ",kby"
+    },
+    {
+      "actual" : "<kby",
+      "category" : "layout.title.russian",
+      "expected" : "Блин",
+      "id" : "review-v3-10218",
+      "input" : "<kby"
+    },
+    {
+      "actual" : ",bkm,jrt",
+      "category" : "layout.russian",
+      "expected" : "бильбоке",
+      "id" : "review-v3-10287",
+      "input" : ",bkm,jrt"
+    },
+    {
+      "actual" : "<bkm,jrt",
+      "category" : "layout.title.russian",
+      "expected" : "Бильбоке",
+      "id" : "review-v3-10288",
+      "input" : "<bkm,jrt"
+    },
+    {
+      "actual" : ",f,crbq",
+      "category" : "layout.russian",
+      "expected" : "бабский",
+      "id" : "review-v3-10406",
+      "input" : ",f,crbq"
+    },
+    {
+      "actual" : "<f,crbq",
+      "category" : "layout.title.russian",
+      "expected" : "Бабский",
+      "id" : "review-v3-10407",
+      "input" : "<f,crbq"
+    },
+    {
+      "actual" : "ds;hfdibq",
+      "category" : "layout.russian",
+      "expected" : "выжравший",
+      "id" : "review-v3-10469",
+      "input" : "ds;hfdibq"
+    },
+    {
+      "actual" : "Ds;hfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Выжравший",
+      "id" : "review-v3-10470",
+      "input" : "Ds;hfdibq"
+    },
+    {
+      "actual" : "rfvytlhj,bkrf",
+      "category" : "layout.russian",
+      "expected" : "камнедробилка",
+      "id" : "review-v3-10518",
+      "input" : "rfvytlhj,bkrf"
+    },
+    {
+      "actual" : "Rfvytlhj,bkrf",
+      "category" : "layout.title.russian",
+      "expected" : "Камнедробилка",
+      "id" : "review-v3-10519",
+      "input" : "Rfvytlhj,bkrf"
+    },
+    {
+      "actual" : ",fujh",
+      "category" : "layout.russian",
+      "expected" : "багор",
+      "id" : "review-v3-10539",
+      "input" : ",fujh"
+    },
+    {
+      "actual" : "<fujh",
+      "category" : "layout.title.russian",
+      "expected" : "Багор",
+      "id" : "review-v3-10540",
+      "input" : "<fujh"
+    },
+    {
+      "actual" : "ye;ytqibq",
+      "category" : "layout.russian",
+      "expected" : "нужнейший",
+      "id" : "review-v3-10574",
+      "input" : "ye;ytqibq"
+    },
+    {
+      "actual" : "Ye;ytqibq",
+      "category" : "layout.title.russian",
+      "expected" : "Нужнейший",
+      "id" : "review-v3-10575",
+      "input" : "Ye;ytqibq"
+    },
+    {
+      "actual" : "c.pthty",
+      "category" : "layout.russian",
+      "expected" : "сюзерен",
+      "id" : "review-v3-10581",
+      "input" : "c.pthty"
+    },
+    {
+      "actual" : "C.pthty",
+      "category" : "layout.title.russian",
+      "expected" : "Сюзерен",
+      "id" : "review-v3-10582",
+      "input" : "C.pthty"
+    },
+    {
+      "actual" : "ghjj,hfp",
+      "category" : "layout.russian",
+      "expected" : "прообраз",
+      "id" : "review-v3-10595",
+      "input" : "ghjj,hfp"
+    },
+    {
+      "actual" : "Ghjj,hfp",
+      "category" : "layout.title.russian",
+      "expected" : "Прообраз",
+      "id" : "review-v3-10596",
+      "input" : "Ghjj,hfp"
+    },
+    {
+      "actual" : "ls,f",
+      "category" : "layout.russian",
+      "expected" : "дыба",
+      "id" : "review-v3-10623",
+      "input" : "ls,f"
+    },
+    {
+      "actual" : "Ls,f",
+      "category" : "layout.title.russian",
+      "expected" : "Дыба",
+      "id" : "review-v3-10624",
+      "input" : "Ls,f"
+    },
+    {
+      "actual" : "j,rjktncz",
+      "category" : "layout.russian",
+      "expected" : "обколется",
+      "id" : "review-v3-10637",
+      "input" : "j,rjktncz"
+    },
+    {
+      "actual" : "J,rjktncz",
+      "category" : "layout.title.russian",
+      "expected" : "Обколется",
+      "id" : "review-v3-10638",
+      "input" : "J,rjktncz"
+    },
+    {
+      "actual" : "ckj;f",
+      "category" : "layout.russian",
+      "expected" : "сложа",
+      "id" : "review-v3-10658",
+      "input" : "ckj;f"
+    },
+    {
+      "actual" : "Ckj;f",
+      "category" : "layout.title.russian",
+      "expected" : "Сложа",
+      "id" : "review-v3-10659",
+      "input" : "Ckj;f"
+    },
+    {
+      "actual" : "gb[fdibq",
+      "category" : "layout.russian",
+      "expected" : "пихавший",
+      "id" : "review-v3-10679",
+      "input" : "gb[fdibq"
+    },
+    {
+      "actual" : "Gb[fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Пихавший",
+      "id" : "review-v3-10680",
+      "input" : "Gb[fdibq"
+    },
+    {
+      "actual" : "j[fhfrnthbpjdfdibq",
+      "category" : "layout.russian",
+      "expected" : "охарактеризовавший",
+      "id" : "review-v3-10735",
+      "input" : "j[fhfrnthbpjdfdibq"
+    },
+    {
+      "actual" : "J[fhfrnthbpjdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Охарактеризовавший",
+      "id" : "review-v3-10736",
+      "input" : "J[fhfrnthbpjdfdibq"
+    },
+    {
+      "actual" : "c]t[fdibq",
+      "category" : "layout.russian",
+      "expected" : "съехавший",
+      "id" : "review-v3-10749",
+      "input" : "c]t[fdibq"
+    },
+    {
+      "actual" : "C]t[fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Съехавший",
+      "id" : "review-v3-10750",
+      "input" : "C]t[fdibq"
+    },
+    {
+      "actual" : "'gbgkfnajhvtyysq",
+      "category" : "layout.russian",
+      "expected" : "эпиплатформенный",
+      "id" : "review-v3-10777",
+      "input" : "'gbgkfnajhvtyysq"
+    },
+    {
+      "actual" : "\"gbgkfnajhvtyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Эпиплатформенный",
+      "id" : "review-v3-10778",
+      "input" : "\"gbgkfnajhvtyysq"
+    },
+    {
+      "actual" : ",jhn",
+      "category" : "layout.russian",
+      "expected" : "борт",
+      "id" : "review-v3-10833",
+      "input" : ",jhn"
+    },
+    {
+      "actual" : "<jhn",
+      "category" : "layout.title.russian",
+      "expected" : "Борт",
+      "id" : "review-v3-10834",
+      "input" : "<jhn"
+    },
+    {
+      "actual" : "rke,",
+      "category" : "layout.russian",
+      "expected" : "клуб",
+      "id" : "review-v3-10847",
+      "input" : "rke,"
+    },
+    {
+      "actual" : "Rke,",
+      "category" : "layout.title.russian",
+      "expected" : "Клуб",
+      "id" : "review-v3-10848",
+      "input" : "Rke,"
+    },
+    {
+      "actual" : "pfe;tyysq",
+      "category" : "layout.russian",
+      "expected" : "зауженный",
+      "id" : "review-v3-10903",
+      "input" : "pfe;tyysq"
+    },
+    {
+      "actual" : "Pfe;tyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Зауженный",
+      "id" : "review-v3-10904",
+      "input" : "Pfe;tyysq"
+    },
+    {
+      "actual" : "kby.xtcnm",
+      "category" : "layout.russian",
+      "expected" : "линючесть",
+      "id" : "review-v3-10924",
+      "input" : "kby.xtcnm"
+    },
+    {
+      "actual" : "Kby.xtcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Линючесть",
+      "id" : "review-v3-10925",
+      "input" : "Kby.xtcnm"
+    },
+    {
+      "actual" : "uk.xysq",
+      "category" : "layout.russian",
+      "expected" : "глючный",
+      "id" : "review-v3-10931",
+      "input" : "uk.xysq"
+    },
+    {
+      "actual" : "Uk.xysq",
+      "category" : "layout.title.russian",
+      "expected" : "Глючный",
+      "id" : "review-v3-10932",
+      "input" : "Uk.xysq"
+    },
+    {
+      "actual" : "cbv,bjp",
+      "category" : "layout.russian",
+      "expected" : "симбиоз",
+      "id" : "review-v3-11008",
+      "input" : "cbv,bjp"
+    },
+    {
+      "actual" : "Cbv,bjp",
+      "category" : "layout.title.russian",
+      "expected" : "Симбиоз",
+      "id" : "review-v3-11009",
+      "input" : "Cbv,bjp"
+    },
+    {
+      "actual" : "rjkkf,jhfwbjybpv",
+      "category" : "layout.russian",
+      "expected" : "коллаборационизм",
+      "id" : "review-v3-11022",
+      "input" : "rjkkf,jhfwbjybpv"
+    },
+    {
+      "actual" : "Rjkkf,jhfwbjybpv",
+      "category" : "layout.title.russian",
+      "expected" : "Коллаборационизм",
+      "id" : "review-v3-11023",
+      "input" : "Rjkkf,jhfwbjybpv"
+    },
+    {
+      "actual" : "hs[ktybt",
+      "category" : "layout.russian",
+      "expected" : "рыхление",
+      "id" : "review-v3-11064",
+      "input" : "hs[ktybt"
+    },
+    {
+      "actual" : "Hs[ktybt",
+      "category" : "layout.title.russian",
+      "expected" : "Рыхление",
+      "id" : "review-v3-11065",
+      "input" : "Hs[ktybt"
+    },
+    {
+      "actual" : "utj[bvbr",
+      "category" : "layout.russian",
+      "expected" : "геохимик",
+      "id" : "review-v3-11071",
+      "input" : "utj[bvbr"
+    },
+    {
+      "actual" : "Utj[bvbr",
+      "category" : "layout.title.russian",
+      "expected" : "Геохимик",
+      "id" : "review-v3-11072",
+      "input" : "Utj[bvbr"
+    },
+    {
+      "actual" : "ghb;fdibq",
+      "category" : "layout.russian",
+      "expected" : "прижавший",
+      "id" : "review-v3-11085",
+      "input" : "ghb;fdibq"
+    },
+    {
+      "actual" : "Ghb;fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Прижавший",
+      "id" : "review-v3-11086",
+      "input" : "Ghb;fdibq"
+    },
+    {
+      "actual" : "nfh[fy",
+      "category" : "layout.russian",
+      "expected" : "тархан",
+      "id" : "review-v3-11092",
+      "input" : "nfh[fy"
+    },
+    {
+      "actual" : "Nfh[fy",
+      "category" : "layout.title.russian",
+      "expected" : "Тархан",
+      "id" : "review-v3-11093",
+      "input" : "Nfh[fy"
+    },
+    {
+      "actual" : "jrf;b",
+      "category" : "layout.russian",
+      "expected" : "окажи",
+      "id" : "review-v3-11106",
+      "input" : "jrf;b"
+    },
+    {
+      "actual" : "Jrf;b",
+      "category" : "layout.title.russian",
+      "expected" : "Окажи",
+      "id" : "review-v3-11107",
+      "input" : "Jrf;b"
+    },
+    {
+      "actual" : "kjajnhb[b",
+      "category" : "layout.russian",
+      "expected" : "лофотрихи",
+      "id" : "review-v3-11162",
+      "input" : "kjajnhb[b"
+    },
+    {
+      "actual" : "Kjajnhb[b",
+      "category" : "layout.title.russian",
+      "expected" : "Лофотрихи",
+      "id" : "review-v3-11163",
+      "input" : "Kjajnhb[b"
+    },
+    {
+      "actual" : "c,jbdibq",
+      "category" : "layout.russian",
+      "expected" : "сбоивший",
+      "id" : "review-v3-11197",
+      "input" : "c,jbdibq"
+    },
+    {
+      "actual" : "C,jbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Сбоивший",
+      "id" : "review-v3-11198",
+      "input" : "C,jbdibq"
+    },
+    {
+      "actual" : ",hfuf",
+      "category" : "layout.russian",
+      "expected" : "брага",
+      "id" : "review-v3-11204",
+      "input" : ",hfuf"
+    },
+    {
+      "actual" : "<hfuf",
+      "category" : "layout.title.russian",
+      "expected" : "Брага",
+      "id" : "review-v3-11205",
+      "input" : "<hfuf"
+    },
+    {
+      "actual" : "c,jknbdibq",
+      "category" : "layout.russian",
+      "expected" : "сболтивший",
+      "id" : "review-v3-11211",
+      "input" : "c,jknbdibq"
+    },
+    {
+      "actual" : "C,jknbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Сболтивший",
+      "id" : "review-v3-11212",
+      "input" : "C,jknbdibq"
+    },
+    {
+      "actual" : "gfe;by",
+      "category" : "layout.russian",
+      "expected" : "паужин",
+      "id" : "review-v3-11246",
+      "input" : "gfe;by"
+    },
+    {
+      "actual" : "Gfe;by",
+      "category" : "layout.title.russian",
+      "expected" : "Паужин",
+      "id" : "review-v3-11247",
+      "input" : "Gfe;by"
+    },
+    {
+      "actual" : "j,ks;ysq",
+      "category" : "layout.russian",
+      "expected" : "облыжный",
+      "id" : "review-v3-11274",
+      "input" : "j,ks;ysq"
+    },
+    {
+      "actual" : "J,ks;ysq",
+      "category" : "layout.title.russian",
+      "expected" : "Облыжный",
+      "id" : "review-v3-11275",
+      "input" : "J,ks;ysq"
+    },
+    {
+      "actual" : "tgfh[bfkmysq",
+      "category" : "layout.russian",
+      "expected" : "епархиальный",
+      "id" : "review-v3-11337",
+      "input" : "tgfh[bfkmysq"
+    },
+    {
+      "actual" : "Tgfh[bfkmysq",
+      "category" : "layout.title.russian",
+      "expected" : "Епархиальный",
+      "id" : "review-v3-11338",
+      "input" : "Tgfh[bfkmysq"
+    },
+    {
+      "actual" : "fl].yrn",
+      "category" : "layout.russian",
+      "expected" : "адъюнкт",
+      "id" : "review-v3-11358",
+      "input" : "fl].yrn"
+    },
+    {
+      "actual" : "Fl].yrn",
+      "category" : "layout.title.russian",
+      "expected" : "Адъюнкт",
+      "id" : "review-v3-11359",
+      "input" : "Fl].yrn"
+    },
+    {
+      "actual" : ";bpytltzntkmyjcnm",
+      "category" : "layout.russian",
+      "expected" : "жизнедеятельность",
+      "id" : "review-v3-11435",
+      "input" : ";bpytltzntkmyjcnm"
+    },
+    {
+      "actual" : ":bpytltzntkmyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Жизнедеятельность",
+      "id" : "review-v3-11436",
+      "input" : ":bpytltzntkmyjcnm"
+    },
+    {
+      "actual" : ",'qcbr",
+      "category" : "layout.russian",
+      "expected" : "бэйсик",
+      "id" : "review-v3-11463",
+      "input" : ",'qcbr"
+    },
+    {
+      "actual" : "<'qcbr",
+      "category" : "layout.title.russian",
+      "expected" : "Бэйсик",
+      "id" : "review-v3-11464",
+      "input" : "<'qcbr"
+    },
+    {
+      "actual" : "ikb[",
+      "category" : "layout.russian",
+      "expected" : "шлих",
+      "id" : "review-v3-11470",
+      "input" : "ikb["
+    },
+    {
+      "actual" : "Ikb[",
+      "category" : "layout.title.russian",
+      "expected" : "Шлих",
+      "id" : "review-v3-11471",
+      "input" : "Ikb["
+    },
+    {
+      "actual" : "dbc.kmrf",
+      "category" : "layout.russian",
+      "expected" : "висюлька",
+      "id" : "review-v3-11477",
+      "input" : "dbc.kmrf"
+    },
+    {
+      "actual" : "Dbc.kmrf",
+      "category" : "layout.title.russian",
+      "expected" : "Висюлька",
+      "id" : "review-v3-11478",
+      "input" : "Dbc.kmrf"
+    },
+    {
+      "actual" : "vt[vfcnthcrbt",
+      "category" : "layout.russian",
+      "expected" : "мехмастерские",
+      "id" : "review-v3-11603",
+      "input" : "vt[vfcnthcrbt"
+    },
+    {
+      "actual" : "Vt[vfcnthcrbt",
+      "category" : "layout.title.russian",
+      "expected" : "Мехмастерские",
+      "id" : "review-v3-11604",
+      "input" : "Vt[vfcnthcrbt"
+    },
+    {
+      "actual" : "cce;fdibq",
+      "category" : "layout.russian",
+      "expected" : "ссужавший",
+      "id" : "review-v3-11680",
+      "input" : "cce;fdibq"
+    },
+    {
+      "actual" : "Cce;fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Ссужавший",
+      "id" : "review-v3-11681",
+      "input" : "Cce;fdibq"
+    },
+    {
+      "actual" : "ytbcrf;tyysq",
+      "category" : "layout.russian",
+      "expected" : "неискаженный",
+      "id" : "review-v3-11701",
+      "input" : "ytbcrf;tyysq"
+    },
+    {
+      "actual" : "Ytbcrf;tyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Неискаженный",
+      "id" : "review-v3-11702",
+      "input" : "Ytbcrf;tyysq"
+    },
+    {
+      "actual" : ",bjaf,hbrf",
+      "category" : "layout.russian",
+      "expected" : "биофабрика",
+      "id" : "review-v3-11708",
+      "input" : ",bjaf,hbrf"
+    },
+    {
+      "actual" : "<bjaf,hbrf",
+      "category" : "layout.title.russian",
+      "expected" : "Биофабрика",
+      "id" : "review-v3-11709",
+      "input" : "<bjaf,hbrf"
+    },
+    {
+      "actual" : "elhe;bdibq",
+      "category" : "layout.russian",
+      "expected" : "удруживший",
+      "id" : "review-v3-11743",
+      "input" : "elhe;bdibq"
+    },
+    {
+      "actual" : "Elhe;bdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Удруживший",
+      "id" : "review-v3-11744",
+      "input" : "Elhe;bdibq"
+    },
+    {
+      "actual" : "[eleobq",
+      "category" : "layout.russian",
+      "expected" : "худущий",
+      "id" : "review-v3-11827",
+      "input" : "[eleobq"
+    },
+    {
+      "actual" : "{eleobq",
+      "category" : "layout.title.russian",
+      "expected" : "Худущий",
+      "id" : "review-v3-11828",
+      "input" : "{eleobq"
+    },
+    {
+      "actual" : "ytc[jlyjcnm",
+      "category" : "layout.russian",
+      "expected" : "несходность",
+      "id" : "review-v3-11834",
+      "input" : "ytc[jlyjcnm"
+    },
+    {
+      "actual" : "Ytc[jlyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Несходность",
+      "id" : "review-v3-11835",
+      "input" : "Ytc[jlyjcnm"
+    },
+    {
+      "actual" : ",h.cctktw",
+      "category" : "layout.russian",
+      "expected" : "брюсселец",
+      "id" : "review-v3-11869",
+      "input" : ",h.cctktw"
+    },
+    {
+      "actual" : "<h.cctktw",
+      "category" : "layout.title.russian",
+      "expected" : "Брюсселец",
+      "id" : "review-v3-11870",
+      "input" : "<h.cctktw"
+    },
+    {
+      "actual" : "ke,zyjq",
+      "category" : "layout.russian",
+      "expected" : "лубяной",
+      "id" : "review-v3-11960",
+      "input" : "ke,zyjq"
+    },
+    {
+      "actual" : "Ke,zyjq",
+      "category" : "layout.title.russian",
+      "expected" : "Лубяной",
+      "id" : "review-v3-11961",
+      "input" : "Ke,zyjq"
+    },
+    {
+      "actual" : "hs,tirf",
+      "category" : "layout.russian",
+      "expected" : "рыбешка",
+      "id" : "review-v3-11974",
+      "input" : "hs,tirf"
+    },
+    {
+      "actual" : "Hs,tirf",
+      "category" : "layout.title.russian",
+      "expected" : "Рыбешка",
+      "id" : "review-v3-11975",
+      "input" : "Hs,tirf"
+    },
+    {
+      "actual" : "bp;fhbdibq",
+      "category" : "layout.russian",
+      "expected" : "изжаривший",
+      "id" : "review-v3-12009",
+      "input" : "bp;fhbdibq"
+    },
+    {
+      "actual" : "Bp;fhbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Изжаривший",
+      "id" : "review-v3-12010",
+      "input" : "Bp;fhbdibq"
+    },
+    {
+      "actual" : "bydjk.wbjyysq",
+      "category" : "layout.russian",
+      "expected" : "инволюционный",
+      "id" : "review-v3-12065",
+      "input" : "bydjk.wbjyysq"
+    },
+    {
+      "actual" : "Bydjk.wbjyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Инволюционный",
+      "id" : "review-v3-12066",
+      "input" : "Bydjk.wbjyysq"
+    },
+    {
+      "actual" : ",fdfhtw",
+      "category" : "layout.russian",
+      "expected" : "баварец",
+      "id" : "review-v3-12072",
+      "input" : ",fdfhtw"
+    },
+    {
+      "actual" : "<fdfhtw",
+      "category" : "layout.title.russian",
+      "expected" : "Баварец",
+      "id" : "review-v3-12073",
+      "input" : "<fdfhtw"
+    },
+    {
+      "actual" : "jnrf;b",
+      "category" : "layout.russian",
+      "expected" : "откажи",
+      "id" : "review-v3-12093",
+      "input" : "jnrf;b"
+    },
+    {
+      "actual" : "Jnrf;b",
+      "category" : "layout.title.russian",
+      "expected" : "Откажи",
+      "id" : "review-v3-12094",
+      "input" : "Jnrf;b"
+    },
+    {
+      "actual" : "l;tcgbkbn",
+      "category" : "layout.russian",
+      "expected" : "джеспилит",
+      "id" : "review-v3-12142",
+      "input" : "l;tcgbkbn"
+    },
+    {
+      "actual" : "L;tcgbkbn",
+      "category" : "layout.title.russian",
+      "expected" : "Джеспилит",
+      "id" : "review-v3-12143",
+      "input" : "L;tcgbkbn"
+    },
+    {
+      "actual" : "xe[jytw",
+      "category" : "layout.russian",
+      "expected" : "чухонец",
+      "id" : "review-v3-12247",
+      "input" : "xe[jytw"
+    },
+    {
+      "actual" : "Xe[jytw",
+      "category" : "layout.title.russian",
+      "expected" : "Чухонец",
+      "id" : "review-v3-12248",
+      "input" : "Xe[jytw"
+    },
+    {
+      "actual" : ",juj,jhtw",
+      "category" : "layout.russian",
+      "expected" : "богоборец",
+      "id" : "review-v3-12261",
+      "input" : ",juj,jhtw"
+    },
+    {
+      "actual" : "<juj,jhtw",
+      "category" : "layout.title.russian",
+      "expected" : "Богоборец",
+      "id" : "review-v3-12262",
+      "input" : "<juj,jhtw"
+    },
+    {
+      "actual" : ",b[hjvfn",
+      "category" : "layout.russian",
+      "expected" : "бихромат",
+      "id" : "review-v3-12268",
+      "input" : ",b[hjvfn"
+    },
+    {
+      "actual" : "<b[hjvfn",
+      "category" : "layout.title.russian",
+      "expected" : "Бихромат",
+      "id" : "review-v3-12269",
+      "input" : "<b[hjvfn"
+    },
+    {
+      "actual" : "dct[",
+      "category" : "layout.russian",
+      "expected" : "всех",
+      "id" : "review-v3-12296",
+      "input" : "dct["
+    },
+    {
+      "actual" : "Dct[",
+      "category" : "layout.title.russian",
+      "expected" : "Всех",
+      "id" : "review-v3-12297",
+      "input" : "Dct["
+    },
+    {
+      "actual" : "cgt[e",
+      "category" : "layout.russian",
+      "expected" : "спеху",
+      "id" : "review-v3-12345",
+      "input" : "cgt[e"
+    },
+    {
+      "actual" : "Cgt[e",
+      "category" : "layout.title.russian",
+      "expected" : "Спеху",
+      "id" : "review-v3-12346",
+      "input" : "Cgt[e"
+    },
+    {
+      "actual" : "j,[f;bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "обхаживавший",
+      "id" : "review-v3-12359",
+      "input" : "j,[f;bdfdibq"
+    },
+    {
+      "actual" : "J,[f;bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обхаживавший",
+      "id" : "review-v3-12360",
+      "input" : "J,[f;bdfdibq"
+    },
+    {
+      "actual" : "ytnz[",
+      "category" : "layout.russian",
+      "expected" : "нетях",
+      "id" : "review-v3-12380",
+      "input" : "ytnz["
+    },
+    {
+      "actual" : "Ytnz[",
+      "category" : "layout.title.russian",
+      "expected" : "Нетях",
+      "id" : "review-v3-12381",
+      "input" : "Ytnz["
+    },
+    {
+      "actual" : "f,hfpbd",
+      "category" : "layout.russian",
+      "expected" : "абразив",
+      "id" : "review-v3-12394",
+      "input" : "f,hfpbd"
+    },
+    {
+      "actual" : "F,hfpbd",
+      "category" : "layout.title.russian",
+      "expected" : "Абразив",
+      "id" : "review-v3-12395",
+      "input" : "F,hfpbd"
+    },
+    {
+      "actual" : "'ytwrbq",
+      "category" : "layout.russian",
+      "expected" : "энецкий",
+      "id" : "review-v3-12408",
+      "input" : "'ytwrbq"
+    },
+    {
+      "actual" : "\"ytwrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Энецкий",
+      "id" : "review-v3-12409",
+      "input" : "\"ytwrbq"
+    },
+    {
+      "actual" : ";tvxeu",
+      "category" : "layout.russian",
+      "expected" : "жемчуг",
+      "id" : "review-v3-12422",
+      "input" : ";tvxeu"
+    },
+    {
+      "actual" : ":tvxeu",
+      "category" : "layout.title.russian",
+      "expected" : "Жемчуг",
+      "id" : "review-v3-12423",
+      "input" : ":tvxeu"
+    },
+    {
+      "actual" : "ds,ehtyysq",
+      "category" : "layout.russian",
+      "expected" : "выбуренный",
+      "id" : "review-v3-12429",
+      "input" : "ds,ehtyysq"
+    },
+    {
+      "actual" : "Ds,ehtyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Выбуренный",
+      "id" : "review-v3-12430",
+      "input" : "Ds,ehtyysq"
+    },
+    {
+      "actual" : "gs;fobqcz",
+      "category" : "layout.russian",
+      "expected" : "пыжащийся",
+      "id" : "review-v3-12450",
+      "input" : "gs;fobqcz"
+    },
+    {
+      "actual" : "Gs;fobqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Пыжащийся",
+      "id" : "review-v3-12451",
+      "input" : "Gs;fobqcz"
+    },
+    {
+      "actual" : "ve;kfy",
+      "category" : "layout.russian",
+      "expected" : "мужлан",
+      "id" : "review-v3-12478",
+      "input" : "ve;kfy"
+    },
+    {
+      "actual" : "Ve;kfy",
+      "category" : "layout.title.russian",
+      "expected" : "Мужлан",
+      "id" : "review-v3-12479",
+      "input" : "Ve;kfy"
+    },
+    {
+      "actual" : "abl;bqcrbq",
+      "category" : "layout.russian",
+      "expected" : "фиджийский",
+      "id" : "review-v3-12513",
+      "input" : "abl;bqcrbq"
+    },
+    {
+      "actual" : "Abl;bqcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Фиджийский",
+      "id" : "review-v3-12514",
+      "input" : "Abl;bqcrbq"
+    },
+    {
+      "actual" : "ym.rfckcrbq",
+      "category" : "layout.russian",
+      "expected" : "ньюкаслский",
+      "id" : "review-v3-12597",
+      "input" : "ym.rfckcrbq"
+    },
+    {
+      "actual" : "Ym.rfckcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Ньюкаслский",
+      "id" : "review-v3-12598",
+      "input" : "Ym.rfckcrbq"
+    },
+    {
+      "actual" : "jxe[fdibqcz",
+      "category" : "layout.russian",
+      "expected" : "очухавшийся",
+      "id" : "review-v3-12632",
+      "input" : "jxe[fdibqcz"
+    },
+    {
+      "actual" : "Jxe[fdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Очухавшийся",
+      "id" : "review-v3-12633",
+      "input" : "Jxe[fdibqcz"
+    },
+    {
+      "actual" : ",bkkbjy",
+      "category" : "layout.russian",
+      "expected" : "биллион",
+      "id" : "review-v3-12646",
+      "input" : ",bkkbjy"
+    },
+    {
+      "actual" : "<bkkbjy",
+      "category" : "layout.title.russian",
+      "expected" : "Биллион",
+      "id" : "review-v3-12647",
+      "input" : "<bkkbjy"
+    },
+    {
+      "actual" : "vbrj,frnthbz",
+      "category" : "layout.russian",
+      "expected" : "микобактерия",
+      "id" : "review-v3-12653",
+      "input" : "vbrj,frnthbz"
+    },
+    {
+      "actual" : "Vbrj,frnthbz",
+      "category" : "layout.title.russian",
+      "expected" : "Микобактерия",
+      "id" : "review-v3-12654",
+      "input" : "Vbrj,frnthbz"
+    },
+    {
+      "actual" : "rfg.ijy",
+      "category" : "layout.russian",
+      "expected" : "капюшон",
+      "id" : "review-v3-12660",
+      "input" : "rfg.ijy"
+    },
+    {
+      "actual" : "Rfg.ijy",
+      "category" : "layout.title.russian",
+      "expected" : "Капюшон",
+      "id" : "review-v3-12661",
+      "input" : "Rfg.ijy"
+    },
+    {
+      "actual" : ".;fyby",
+      "category" : "layout.russian",
+      "expected" : "южанин",
+      "id" : "review-v3-12688",
+      "input" : ".;fyby"
+    },
+    {
+      "actual" : ">;fyby",
+      "category" : "layout.title.russian",
+      "expected" : "Южанин",
+      "id" : "review-v3-12689",
+      "input" : ">;fyby"
+    },
+    {
+      "actual" : "ekm.",
+      "category" : "layout.russian",
+      "expected" : "улью",
+      "id" : "review-v3-12709",
+      "input" : "ekm."
+    },
+    {
+      "actual" : "Ekm.",
+      "category" : "layout.title.russian",
+      "expected" : "Улью",
+      "id" : "review-v3-12710",
+      "input" : "Ekm."
+    },
+    {
+      "actual" : "[frth",
+      "category" : "layout.russian",
+      "expected" : "хакер",
+      "id" : "review-v3-12723",
+      "input" : "[frth"
+    },
+    {
+      "actual" : "{frth",
+      "category" : "layout.title.russian",
+      "expected" : "Хакер",
+      "id" : "review-v3-12724",
+      "input" : "{frth"
+    },
+    {
+      "actual" : "crjh,tdibq",
+      "category" : "layout.russian",
+      "expected" : "скорбевший",
+      "id" : "review-v3-12821",
+      "input" : "crjh,tdibq"
+    },
+    {
+      "actual" : "Crjh,tdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Скорбевший",
+      "id" : "review-v3-12822",
+      "input" : "Crjh,tdibq"
+    },
+    {
+      "actual" : "gj;ju",
+      "category" : "layout.russian",
+      "expected" : "пожог",
+      "id" : "review-v3-12835",
+      "input" : "gj;ju"
+    },
+    {
+      "actual" : "Gj;ju",
+      "category" : "layout.title.russian",
+      "expected" : "Пожог",
+      "id" : "review-v3-12836",
+      "input" : "Gj;ju"
+    },
+    {
+      "actual" : "ecf;tyysq",
+      "category" : "layout.russian",
+      "expected" : "усаженный",
+      "id" : "review-v3-12849",
+      "input" : "ecf;tyysq"
+    },
+    {
+      "actual" : "Ecf;tyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Усаженный",
+      "id" : "review-v3-12850",
+      "input" : "Ecf;tyysq"
+    },
+    {
+      "actual" : "ce,jh,bnfkmysq",
+      "category" : "layout.russian",
+      "expected" : "суборбитальный",
+      "id" : "review-v3-12870",
+      "input" : "ce,jh,bnfkmysq"
+    },
+    {
+      "actual" : "Ce,jh,bnfkmysq",
+      "category" : "layout.title.russian",
+      "expected" : "Суборбитальный",
+      "id" : "review-v3-12871",
+      "input" : "Ce,jh,bnfkmysq"
+    },
+    {
+      "actual" : "yt[dfnrf",
+      "category" : "layout.russian",
+      "expected" : "нехватка",
+      "id" : "review-v3-12884",
+      "input" : "yt[dfnrf"
+    },
+    {
+      "actual" : "Yt[dfnrf",
+      "category" : "layout.title.russian",
+      "expected" : "Нехватка",
+      "id" : "review-v3-12885",
+      "input" : "Yt[dfnrf"
+    },
+    {
+      "actual" : "lt,kjrflf",
+      "category" : "layout.russian",
+      "expected" : "деблокада",
+      "id" : "review-v3-13010",
+      "input" : "lt,kjrflf"
+    },
+    {
+      "actual" : "Lt,kjrflf",
+      "category" : "layout.title.russian",
+      "expected" : "Деблокада",
+      "id" : "review-v3-13011",
+      "input" : "Lt,kjrflf"
+    },
+    {
+      "actual" : "[bfpv",
+      "category" : "layout.russian",
+      "expected" : "хиазм",
+      "id" : "review-v3-13024",
+      "input" : "[bfpv"
+    },
+    {
+      "actual" : "{bfpv",
+      "category" : "layout.title.russian",
+      "expected" : "Хиазм",
+      "id" : "review-v3-13025",
+      "input" : "{bfpv"
+    },
+    {
+      "actual" : ";fhxt",
+      "category" : "layout.russian",
+      "expected" : "жарче",
+      "id" : "review-v3-13031",
+      "input" : ";fhxt"
+    },
+    {
+      "actual" : ":fhxt",
+      "category" : "layout.title.russian",
+      "expected" : "Жарче",
+      "id" : "review-v3-13032",
+      "input" : ":fhxt"
+    },
+    {
+      "actual" : "rjy]trnehf",
+      "category" : "layout.russian",
+      "expected" : "конъектура",
+      "id" : "review-v3-13045",
+      "input" : "rjy]trnehf"
+    },
+    {
+      "actual" : "Rjy]trnehf",
+      "category" : "layout.title.russian",
+      "expected" : "Конъектура",
+      "id" : "review-v3-13046",
+      "input" : "Rjy]trnehf"
+    },
+    {
+      "actual" : "r.ht",
+      "category" : "layout.russian",
+      "expected" : "кюре",
+      "id" : "review-v3-13129",
+      "input" : "r.ht"
+    },
+    {
+      "actual" : "R.ht",
+      "category" : "layout.title.russian",
+      "expected" : "Кюре",
+      "id" : "review-v3-13130",
+      "input" : "R.ht"
+    },
+    {
+      "actual" : "yt,hfccrbq",
+      "category" : "layout.russian",
+      "expected" : "небрасский",
+      "id" : "review-v3-13150",
+      "input" : "yt,hfccrbq"
+    },
+    {
+      "actual" : "Yt,hfccrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Небрасский",
+      "id" : "review-v3-13151",
+      "input" : "Yt,hfccrbq"
+    },
+    {
+      "actual" : ";ybwf",
+      "category" : "layout.russian",
+      "expected" : "жница",
+      "id" : "review-v3-13206",
+      "input" : ";ybwf"
+    },
+    {
+      "actual" : ":ybwf",
+      "category" : "layout.title.russian",
+      "expected" : "Жница",
+      "id" : "review-v3-13207",
+      "input" : ":ybwf"
+    },
+    {
+      "actual" : "yf,j,",
+      "category" : "layout.russian",
+      "expected" : "набоб",
+      "id" : "review-v3-13213",
+      "input" : "yf,j,"
+    },
+    {
+      "actual" : "Yf,j,",
+      "category" : "layout.title.russian",
+      "expected" : "Набоб",
+      "id" : "review-v3-13214",
+      "input" : "Yf,j,"
+    },
+    {
+      "actual" : "vjh;",
+      "category" : "layout.russian",
+      "expected" : "морж",
+      "id" : "review-v3-13248",
+      "input" : "vjh;"
+    },
+    {
+      "actual" : "Vjh;",
+      "category" : "layout.title.russian",
+      "expected" : "Морж",
+      "id" : "review-v3-13249",
+      "input" : "Vjh;"
+    },
+    {
+      "actual" : "'rkjuf",
+      "category" : "layout.russian",
+      "expected" : "эклога",
+      "id" : "review-v3-13255",
+      "input" : "'rkjuf"
+    },
+    {
+      "actual" : "\"rkjuf",
+      "category" : "layout.title.russian",
+      "expected" : "Эклога",
+      "id" : "review-v3-13256",
+      "input" : "\"rkjuf"
+    },
+    {
+      "actual" : "pk.xrf",
+      "category" : "layout.russian",
+      "expected" : "злючка",
+      "id" : "review-v3-13283",
+      "input" : "pk.xrf"
+    },
+    {
+      "actual" : "Pk.xrf",
+      "category" : "layout.title.russian",
+      "expected" : "Злючка",
+      "id" : "review-v3-13284",
+      "input" : "Pk.xrf"
+    },
+    {
+      "actual" : "'dlbfkbn",
+      "category" : "layout.russian",
+      "expected" : "эвдиалит",
+      "id" : "review-v3-13325",
+      "input" : "'dlbfkbn"
+    },
+    {
+      "actual" : "\"dlbfkbn",
+      "category" : "layout.title.russian",
+      "expected" : "Эвдиалит",
+      "id" : "review-v3-13326",
+      "input" : "\"dlbfkbn"
+    },
+    {
+      "actual" : "pfhj,tdibq",
+      "category" : "layout.russian",
+      "expected" : "заробевший",
+      "id" : "review-v3-13346",
+      "input" : "pfhj,tdibq"
+    },
+    {
+      "actual" : "Pfhj,tdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Заробевший",
+      "id" : "review-v3-13347",
+      "input" : "Pfhj,tdibq"
+    },
+    {
+      "actual" : "e;ujhjlcrbq",
+      "category" : "layout.russian",
+      "expected" : "ужгородский",
+      "id" : "review-v3-13353",
+      "input" : "e;ujhjlcrbq"
+    },
+    {
+      "actual" : "E;ujhjlcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Ужгородский",
+      "id" : "review-v3-13354",
+      "input" : "E;ujhjlcrbq"
+    },
+    {
+      "actual" : "f[yedibq",
+      "category" : "layout.russian",
+      "expected" : "ахнувший",
+      "id" : "review-v3-13381",
+      "input" : "f[yedibq"
+    },
+    {
+      "actual" : "F[yedibq",
+      "category" : "layout.title.russian",
+      "expected" : "Ахнувший",
+      "id" : "review-v3-13382",
+      "input" : "F[yedibq"
+    },
+    {
+      "actual" : ",trjy",
+      "category" : "layout.russian",
+      "expected" : "бекон",
+      "id" : "review-v3-13409",
+      "input" : ",trjy"
+    },
+    {
+      "actual" : "<trjy",
+      "category" : "layout.title.russian",
+      "expected" : "Бекон",
+      "id" : "review-v3-13410",
+      "input" : "<trjy"
+    },
+    {
+      "actual" : "j[fkmybr",
+      "category" : "layout.russian",
+      "expected" : "охальник",
+      "id" : "review-v3-13535",
+      "input" : "j[fkmybr"
+    },
+    {
+      "actual" : "J[fkmybr",
+      "category" : "layout.title.russian",
+      "expected" : "Охальник",
+      "id" : "review-v3-13536",
+      "input" : "J[fkmybr"
+    },
+    {
+      "actual" : "le'n",
+      "category" : "layout.russian",
+      "expected" : "дуэт",
+      "id" : "review-v3-13549",
+      "input" : "le'n"
+    },
+    {
+      "actual" : "Le'n",
+      "category" : "layout.title.russian",
+      "expected" : "Дуэт",
+      "id" : "review-v3-13550",
+      "input" : "Le'n"
+    },
+    {
+      "actual" : "pfc]tvrf",
+      "category" : "layout.russian",
+      "expected" : "засъемка",
+      "id" : "review-v3-13640",
+      "input" : "pfc]tvrf"
+    },
+    {
+      "actual" : "Pfc]tvrf",
+      "category" : "layout.title.russian",
+      "expected" : "Засъемка",
+      "id" : "review-v3-13641",
+      "input" : "Pfc]tvrf"
+    },
+    {
+      "actual" : "j,syltdtdibq",
+      "category" : "layout.russian",
+      "expected" : "обындевевший",
+      "id" : "review-v3-13696",
+      "input" : "j,syltdtdibq"
+    },
+    {
+      "actual" : "J,syltdtdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обындевевший",
+      "id" : "review-v3-13697",
+      "input" : "J,syltdtdibq"
+    },
+    {
+      "actual" : "yfcj,fxbdibqcz",
+      "category" : "layout.russian",
+      "expected" : "насобачившийся",
+      "id" : "review-v3-13710",
+      "input" : "yfcj,fxbdibqcz"
+    },
+    {
+      "actual" : "Yfcj,fxbdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Насобачившийся",
+      "id" : "review-v3-13711",
+      "input" : "Yfcj,fxbdibqcz"
+    },
+    {
+      "actual" : "'ltv",
+      "category" : "layout.russian",
+      "expected" : "эдем",
+      "id" : "review-v3-13724",
+      "input" : "'ltv"
+    },
+    {
+      "actual" : "\"ltv",
+      "category" : "layout.title.russian",
+      "expected" : "Эдем",
+      "id" : "review-v3-13725",
+      "input" : "\"ltv"
+    },
+    {
+      "actual" : ";jgf",
+      "category" : "layout.russian",
+      "expected" : "жопа",
+      "id" : "review-v3-13843",
+      "input" : ";jgf"
+    },
+    {
+      "actual" : ":jgf",
+      "category" : "layout.title.russian",
+      "expected" : "Жопа",
+      "id" : "review-v3-13844",
+      "input" : ":jgf"
+    },
+    {
+      "actual" : "df,br",
+      "category" : "layout.russian",
+      "expected" : "вабик",
+      "id" : "review-v3-13934",
+      "input" : "df,br"
+    },
+    {
+      "actual" : "Df,br",
+      "category" : "layout.title.russian",
+      "expected" : "Вабик",
+      "id" : "review-v3-13935",
+      "input" : "Df,br"
+    },
+    {
+      "actual" : ",fk,tc",
+      "category" : "layout.russian",
+      "expected" : "балбес",
+      "id" : "review-v3-13941",
+      "input" : ",fk,tc"
+    },
+    {
+      "actual" : "<fk,tc",
+      "category" : "layout.title.russian",
+      "expected" : "Балбес",
+      "id" : "review-v3-13942",
+      "input" : "<fk,tc"
+    },
+    {
+      "actual" : ";fnrf",
+      "category" : "layout.russian",
+      "expected" : "жатка",
+      "id" : "review-v3-13976",
+      "input" : ";fnrf"
+    },
+    {
+      "actual" : ":fnrf",
+      "category" : "layout.title.russian",
+      "expected" : "Жатка",
+      "id" : "review-v3-13977",
+      "input" : ":fnrf"
+    },
+    {
+      "actual" : "'n.l",
+      "category" : "layout.russian",
+      "expected" : "этюд",
+      "id" : "review-v3-14025",
+      "input" : "'n.l"
+    },
+    {
+      "actual" : "\"n.l",
+      "category" : "layout.title.russian",
+      "expected" : "Этюд",
+      "id" : "review-v3-14026",
+      "input" : "\"n.l"
+    },
+    {
+      "actual" : "etp;fdibq",
+      "category" : "layout.russian",
+      "expected" : "уезжавший",
+      "id" : "review-v3-14067",
+      "input" : "etp;fdibq"
+    },
+    {
+      "actual" : "Etp;fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Уезжавший",
+      "id" : "review-v3-14068",
+      "input" : "Etp;fdibq"
+    },
+    {
+      "actual" : "f,lbrfwbz",
+      "category" : "layout.russian",
+      "expected" : "абдикация",
+      "id" : "review-v3-14088",
+      "input" : "f,lbrfwbz"
+    },
+    {
+      "actual" : "F,lbrfwbz",
+      "category" : "layout.title.russian",
+      "expected" : "Абдикация",
+      "id" : "review-v3-14089",
+      "input" : "F,lbrfwbz"
+    },
+    {
+      "actual" : "gf[nf",
+      "category" : "layout.russian",
+      "expected" : "пахта",
+      "id" : "review-v3-14116",
+      "input" : "gf[nf"
+    },
+    {
+      "actual" : "Gf[nf",
+      "category" : "layout.title.russian",
+      "expected" : "Пахта",
+      "id" : "review-v3-14117",
+      "input" : "Gf[nf"
+    },
+    {
+      "actual" : ",eqhtg",
+      "category" : "layout.russian",
+      "expected" : "буйреп",
+      "id" : "review-v3-14123",
+      "input" : ",eqhtg"
+    },
+    {
+      "actual" : "<eqhtg",
+      "category" : "layout.title.russian",
+      "expected" : "Буйреп",
+      "id" : "review-v3-14124",
+      "input" : "<eqhtg"
+    },
+    {
+      "actual" : ",jnekbpv",
+      "category" : "layout.russian",
+      "expected" : "ботулизм",
+      "id" : "review-v3-14312",
+      "input" : ",jnekbpv"
+    },
+    {
+      "actual" : "<jnekbpv",
+      "category" : "layout.title.russian",
+      "expected" : "Ботулизм",
+      "id" : "review-v3-14313",
+      "input" : "<jnekbpv"
+    },
+    {
+      "actual" : "pfib,",
+      "category" : "layout.russian",
+      "expected" : "зашиб",
+      "id" : "review-v3-14431",
+      "input" : "pfib,"
+    },
+    {
+      "actual" : "Pfib,",
+      "category" : "layout.title.russian",
+      "expected" : "Зашиб",
+      "id" : "review-v3-14432",
+      "input" : "Pfib,"
+    },
+    {
+      "actual" : ",fnhfr",
+      "category" : "layout.russian",
+      "expected" : "батрак",
+      "id" : "review-v3-14452",
+      "input" : ",fnhfr"
+    },
+    {
+      "actual" : "<fnhfr",
+      "category" : "layout.title.russian",
+      "expected" : "Батрак",
+      "id" : "review-v3-14453",
+      "input" : "<fnhfr"
+    },
+    {
+      "actual" : "pfc.c.rfdibq",
+      "category" : "layout.russian",
+      "expected" : "засюсюкавший",
+      "id" : "review-v3-14480",
+      "input" : "pfc.c.rfdibq"
+    },
+    {
+      "actual" : "Pfc.c.rfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Засюсюкавший",
+      "id" : "review-v3-14481",
+      "input" : "Pfc.c.rfdibq"
+    },
+    {
+      "actual" : "kj,,b",
+      "category" : "layout.russian",
+      "expected" : "лобби",
+      "id" : "review-v3-14571",
+      "input" : "kj,,b"
+    },
+    {
+      "actual" : "Kj,,b",
+      "category" : "layout.title.russian",
+      "expected" : "Лобби",
+      "id" : "review-v3-14572",
+      "input" : "Kj,,b"
+    },
+    {
+      "actual" : "ce,cdtnjdjq",
+      "category" : "layout.russian",
+      "expected" : "субсветовой",
+      "id" : "review-v3-14578",
+      "input" : "ce,cdtnjdjq"
+    },
+    {
+      "actual" : "Ce,cdtnjdjq",
+      "category" : "layout.title.russian",
+      "expected" : "Субсветовой",
+      "id" : "review-v3-14579",
+      "input" : "Ce,cdtnjdjq"
+    },
+    {
+      "actual" : "l;jyfnfy",
+      "category" : "layout.russian",
+      "expected" : "джонатан",
+      "id" : "review-v3-14676",
+      "input" : "l;jyfnfy"
+    },
+    {
+      "actual" : "L;jyfnfy",
+      "category" : "layout.title.russian",
+      "expected" : "Джонатан",
+      "id" : "review-v3-14677",
+      "input" : "L;jyfnfy"
+    },
+    {
+      "actual" : "'gcbkjy",
+      "category" : "layout.russian",
+      "expected" : "эпсилон",
+      "id" : "review-v3-14711",
+      "input" : "'gcbkjy"
+    },
+    {
+      "actual" : "\"gcbkjy",
+      "category" : "layout.title.russian",
+      "expected" : "Эпсилон",
+      "id" : "review-v3-14712",
+      "input" : "\"gcbkjy"
+    },
+    {
+      "actual" : ",hsr",
+      "category" : "layout.russian",
+      "expected" : "брык",
+      "id" : "review-v3-14767",
+      "input" : ",hsr"
+    },
+    {
+      "actual" : "<hsr",
+      "category" : "layout.title.russian",
+      "expected" : "Брык",
+      "id" : "review-v3-14768",
+      "input" : "<hsr"
+    },
+    {
+      "actual" : "clf.obq",
+      "category" : "layout.russian",
+      "expected" : "сдающий",
+      "id" : "review-v3-14809",
+      "input" : "clf.obq"
+    },
+    {
+      "actual" : "Clf.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Сдающий",
+      "id" : "review-v3-14810",
+      "input" : "Clf.obq"
+    },
+    {
+      "actual" : ",fnbfkmysq",
+      "category" : "layout.russian",
+      "expected" : "батиальный",
+      "id" : "review-v3-14823",
+      "input" : ",fnbfkmysq"
+    },
+    {
+      "actual" : "<fnbfkmysq",
+      "category" : "layout.title.russian",
+      "expected" : "Батиальный",
+      "id" : "review-v3-14824",
+      "input" : "<fnbfkmysq"
+    },
+    {
+      "actual" : "rfu','iybr",
+      "category" : "layout.russian",
+      "expected" : "кагэбэшник",
+      "id" : "review-v3-14851",
+      "input" : "rfu','iybr"
+    },
+    {
+      "actual" : "Rfu','iybr",
+      "category" : "layout.title.russian",
+      "expected" : "Кагэбэшник",
+      "id" : "review-v3-14852",
+      "input" : "Rfu','iybr"
+    },
+    {
+      "actual" : "[kz,ftn",
+      "category" : "layout.russian",
+      "expected" : "хлябает",
+      "id" : "review-v3-14893",
+      "input" : "[kz,ftn"
+    },
+    {
+      "actual" : "{kz,ftn",
+      "category" : "layout.title.russian",
+      "expected" : "Хлябает",
+      "id" : "review-v3-14894",
+      "input" : "{kz,ftn"
+    },
+    {
+      "actual" : "pjjnt[ybr",
+      "category" : "layout.russian",
+      "expected" : "зоотехник",
+      "id" : "review-v3-14907",
+      "input" : "pjjnt[ybr"
+    },
+    {
+      "actual" : "Pjjnt[ybr",
+      "category" : "layout.title.russian",
+      "expected" : "Зоотехник",
+      "id" : "review-v3-14908",
+      "input" : "Pjjnt[ybr"
+    },
+    {
+      "actual" : "ehj;fq",
+      "category" : "layout.russian",
+      "expected" : "урожай",
+      "id" : "review-v3-14970",
+      "input" : "ehj;fq"
+    },
+    {
+      "actual" : "Ehj;fq",
+      "category" : "layout.title.russian",
+      "expected" : "Урожай",
+      "id" : "review-v3-14971",
+      "input" : "Ehj;fq"
+    },
+    {
+      "actual" : ",fczobq",
+      "category" : "layout.russian",
+      "expected" : "басящий",
+      "id" : "review-v3-14977",
+      "input" : ",fczobq"
+    },
+    {
+      "actual" : "<fczobq",
+      "category" : "layout.title.russian",
+      "expected" : "Басящий",
+      "id" : "review-v3-14978",
+      "input" : "<fczobq"
+    },
+    {
+      "actual" : "ljt[fdibq",
+      "category" : "layout.russian",
+      "expected" : "доехавший",
+      "id" : "review-v3-15075",
+      "input" : "ljt[fdibq"
+    },
+    {
+      "actual" : "Ljt[fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Доехавший",
+      "id" : "review-v3-15076",
+      "input" : "Ljt[fdibq"
+    },
+    {
+      "actual" : "e,brdbcn",
+      "category" : "layout.russian",
+      "expected" : "убиквист",
+      "id" : "review-v3-15082",
+      "input" : "e,brdbcn"
+    },
+    {
+      "actual" : "E,brdbcn",
+      "category" : "layout.title.russian",
+      "expected" : "Убиквист",
+      "id" : "review-v3-15083",
+      "input" : "E,brdbcn"
+    },
+    {
+      "actual" : "cb,fhbn",
+      "category" : "layout.russian",
+      "expected" : "сибарит",
+      "id" : "review-v3-15159",
+      "input" : "cb,fhbn"
+    },
+    {
+      "actual" : "Cb,fhbn",
+      "category" : "layout.title.russian",
+      "expected" : "Сибарит",
+      "id" : "review-v3-15160",
+      "input" : "Cb,fhbn"
+    },
+    {
+      "actual" : "kf,bfkbpfwbz",
+      "category" : "layout.russian",
+      "expected" : "лабиализация",
+      "id" : "review-v3-15264",
+      "input" : "kf,bfkbpfwbz"
+    },
+    {
+      "actual" : "Kf,bfkbpfwbz",
+      "category" : "layout.title.russian",
+      "expected" : "Лабиализация",
+      "id" : "review-v3-15265",
+      "input" : "Kf,bfkbpfwbz"
+    },
+    {
+      "actual" : "pe,br",
+      "category" : "layout.russian",
+      "expected" : "зубик",
+      "id" : "review-v3-15383",
+      "input" : "pe,br"
+    },
+    {
+      "actual" : "Pe,br",
+      "category" : "layout.title.russian",
+      "expected" : "Зубик",
+      "id" : "review-v3-15384",
+      "input" : "Pe,br"
+    },
+    {
+      "actual" : "cnf,bkbpfnjh",
+      "category" : "layout.russian",
+      "expected" : "стабилизатор",
+      "id" : "review-v3-15439",
+      "input" : "cnf,bkbpfnjh"
+    },
+    {
+      "actual" : "Cnf,bkbpfnjh",
+      "category" : "layout.title.russian",
+      "expected" : "Стабилизатор",
+      "id" : "review-v3-15440",
+      "input" : "Cnf,bkbpfnjh"
+    },
+    {
+      "actual" : "f,hjufwbz",
+      "category" : "layout.russian",
+      "expected" : "аброгация",
+      "id" : "review-v3-15446",
+      "input" : "f,hjufwbz"
+    },
+    {
+      "actual" : "F,hjufwbz",
+      "category" : "layout.title.russian",
+      "expected" : "Аброгация",
+      "id" : "review-v3-15447",
+      "input" : "F,hjufwbz"
+    },
+    {
+      "actual" : "d]tlfdibqcz",
+      "category" : "layout.russian",
+      "expected" : "въедавшийся",
+      "id" : "review-v3-15516",
+      "input" : "d]tlfdibqcz"
+    },
+    {
+      "actual" : "D]tlfdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Въедавшийся",
+      "id" : "review-v3-15517",
+      "input" : "D]tlfdibqcz"
+    },
+    {
+      "actual" : ";fhtyysq",
+      "category" : "layout.russian",
+      "expected" : "жаренный",
+      "id" : "review-v3-15530",
+      "input" : ";fhtyysq"
+    },
+    {
+      "actual" : ":fhtyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Жаренный",
+      "id" : "review-v3-15531",
+      "input" : ":fhtyysq"
+    },
+    {
+      "actual" : ";heobq",
+      "category" : "layout.russian",
+      "expected" : "жрущий",
+      "id" : "review-v3-15537",
+      "input" : ";heobq"
+    },
+    {
+      "actual" : ":heobq",
+      "category" : "layout.title.russian",
+      "expected" : "Жрущий",
+      "id" : "review-v3-15538",
+      "input" : ":heobq"
+    },
+    {
+      "actual" : "vfh;f",
+      "category" : "layout.russian",
+      "expected" : "маржа",
+      "id" : "review-v3-15593",
+      "input" : "vfh;f"
+    },
+    {
+      "actual" : "Vfh;f",
+      "category" : "layout.title.russian",
+      "expected" : "Маржа",
+      "id" : "review-v3-15594",
+      "input" : "Vfh;f"
+    },
+    {
+      "actual" : "[djqybr",
+      "category" : "layout.russian",
+      "expected" : "хвойник",
+      "id" : "review-v3-15677",
+      "input" : "[djqybr"
+    },
+    {
+      "actual" : "{djqybr",
+      "category" : "layout.title.russian",
+      "expected" : "Хвойник",
+      "id" : "review-v3-15678",
+      "input" : "{djqybr"
+    },
+    {
+      "actual" : "crt,",
+      "category" : "layout.russian",
+      "expected" : "скеб",
+      "id" : "review-v3-15691",
+      "input" : "crt,"
+    },
+    {
+      "actual" : "Crt,",
+      "category" : "layout.title.russian",
+      "expected" : "Скеб",
+      "id" : "review-v3-15692",
+      "input" : "Crt,"
+    },
+    {
+      "actual" : ",jypf",
+      "category" : "layout.russian",
+      "expected" : "бонза",
+      "id" : "review-v3-15698",
+      "input" : ",jypf"
+    },
+    {
+      "actual" : "<jypf",
+      "category" : "layout.title.russian",
+      "expected" : "Бонза",
+      "id" : "review-v3-15699",
+      "input" : "<jypf"
+    },
+    {
+      "actual" : "[j,,b",
+      "category" : "layout.russian",
+      "expected" : "хобби",
+      "id" : "review-v3-15705",
+      "input" : "[j,,b"
+    },
+    {
+      "actual" : "{j,,b",
+      "category" : "layout.title.russian",
+      "expected" : "Хобби",
+      "id" : "review-v3-15706",
+      "input" : "{j,,b"
+    },
+    {
+      "actual" : "j,ensq",
+      "category" : "layout.russian",
+      "expected" : "обутый",
+      "id" : "review-v3-15754",
+      "input" : "j,ensq"
+    },
+    {
+      "actual" : "J,ensq",
+      "category" : "layout.title.russian",
+      "expected" : "Обутый",
+      "id" : "review-v3-15755",
+      "input" : "J,ensq"
+    },
+    {
+      "actual" : ",jxrf",
+      "category" : "layout.russian",
+      "expected" : "бочка",
+      "id" : "review-v3-15782",
+      "input" : ",jxrf"
+    },
+    {
+      "actual" : "<jxrf",
+      "category" : "layout.title.russian",
+      "expected" : "Бочка",
+      "id" : "review-v3-15783",
+      "input" : "<jxrf"
+    },
+    {
+      "actual" : "ceuhj,",
+      "category" : "layout.russian",
+      "expected" : "сугроб",
+      "id" : "review-v3-15901",
+      "input" : "ceuhj,"
+    },
+    {
+      "actual" : "Ceuhj,",
+      "category" : "layout.title.russian",
+      "expected" : "Сугроб",
+      "id" : "review-v3-15902",
+      "input" : "Ceuhj,"
+    },
+    {
+      "actual" : "j[vehtybt",
+      "category" : "layout.russian",
+      "expected" : "охмурение",
+      "id" : "review-v3-15985",
+      "input" : "j[vehtybt"
+    },
+    {
+      "actual" : "J[vehtybt",
+      "category" : "layout.title.russian",
+      "expected" : "Охмурение",
+      "id" : "review-v3-15986",
+      "input" : "J[vehtybt"
+    },
+    {
+      "actual" : "nhb'lh",
+      "category" : "layout.russian",
+      "expected" : "триэдр",
+      "id" : "review-v3-16027",
+      "input" : "nhb'lh"
+    },
+    {
+      "actual" : "Nhb'lh",
+      "category" : "layout.title.russian",
+      "expected" : "Триэдр",
+      "id" : "review-v3-16028",
+      "input" : "Nhb'lh"
+    },
+    {
+      "actual" : "[fjc",
+      "category" : "layout.russian",
+      "expected" : "хаос",
+      "id" : "review-v3-16034",
+      "input" : "[fjc"
+    },
+    {
+      "actual" : "{fjc",
+      "category" : "layout.title.russian",
+      "expected" : "Хаос",
+      "id" : "review-v3-16035",
+      "input" : "{fjc"
+    },
+    {
+      "actual" : "utyinf,",
+      "category" : "layout.russian",
+      "expected" : "генштаб",
+      "id" : "review-v3-16069",
+      "input" : "utyinf,"
+    },
+    {
+      "actual" : "Utyinf,",
+      "category" : "layout.title.russian",
+      "expected" : "Генштаб",
+      "id" : "review-v3-16070",
+      "input" : "Utyinf,"
+    },
+    {
+      "actual" : "lj;bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "доживавший",
+      "id" : "review-v3-16104",
+      "input" : "lj;bdfdibq"
+    },
+    {
+      "actual" : "Lj;bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Доживавший",
+      "id" : "review-v3-16105",
+      "input" : "Lj;bdfdibq"
+    },
+    {
+      "actual" : "'cgthfynbcn",
+      "category" : "layout.russian",
+      "expected" : "эсперантист",
+      "id" : "review-v3-16132",
+      "input" : "'cgthfynbcn"
+    },
+    {
+      "actual" : "\"cgthfynbcn",
+      "category" : "layout.title.russian",
+      "expected" : "Эсперантист",
+      "id" : "review-v3-16133",
+      "input" : "\"cgthfynbcn"
+    },
+    {
+      "actual" : "cnt;rf",
+      "category" : "layout.russian",
+      "expected" : "стежка",
+      "id" : "review-v3-16160",
+      "input" : "cnt;rf"
+    },
+    {
+      "actual" : "Cnt;rf",
+      "category" : "layout.title.russian",
+      "expected" : "Стежка",
+      "id" : "review-v3-16161",
+      "input" : "Cnt;rf"
+    },
+    {
+      "actual" : "jukj,tkm",
+      "category" : "layout.russian",
+      "expected" : "оглобель",
+      "id" : "review-v3-16279",
+      "input" : "jukj,tkm"
+    },
+    {
+      "actual" : "Jukj,tkm",
+      "category" : "layout.title.russian",
+      "expected" : "Оглобель",
+      "id" : "review-v3-16280",
+      "input" : "Jukj,tkm"
+    },
+    {
+      "actual" : "uj,jbcn",
+      "category" : "layout.russian",
+      "expected" : "гобоист",
+      "id" : "review-v3-16286",
+      "input" : "uj,jbcn"
+    },
+    {
+      "actual" : "Uj,jbcn",
+      "category" : "layout.title.russian",
+      "expected" : "Гобоист",
+      "id" : "review-v3-16287",
+      "input" : "Uj,jbcn"
+    },
+    {
+      "actual" : ";bdibq",
+      "category" : "layout.russian",
+      "expected" : "живший",
+      "id" : "review-v3-16377",
+      "input" : ";bdibq"
+    },
+    {
+      "actual" : ":bdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Живший",
+      "id" : "review-v3-16378",
+      "input" : ":bdibq"
+    },
+    {
+      "actual" : "crf,htpyjcnm",
+      "category" : "layout.russian",
+      "expected" : "скабрезность",
+      "id" : "review-v3-16433",
+      "input" : "crf,htpyjcnm"
+    },
+    {
+      "actual" : "Crf,htpyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Скабрезность",
+      "id" : "review-v3-16434",
+      "input" : "Crf,htpyjcnm"
+    },
+    {
+      "actual" : "db[jh",
+      "category" : "layout.russian",
+      "expected" : "вихор",
+      "id" : "review-v3-16447",
+      "input" : "db[jh"
+    },
+    {
+      "actual" : "Db[jh",
+      "category" : "layout.title.russian",
+      "expected" : "Вихор",
+      "id" : "review-v3-16448",
+      "input" : "Db[jh"
+    },
+    {
+      "actual" : "igf;bcn",
+      "category" : "layout.russian",
+      "expected" : "шпажист",
+      "id" : "review-v3-16545",
+      "input" : "igf;bcn"
+    },
+    {
+      "actual" : "Igf;bcn",
+      "category" : "layout.title.russian",
+      "expected" : "Шпажист",
+      "id" : "review-v3-16546",
+      "input" : "Igf;bcn"
+    },
+    {
+      "actual" : "lj;lfdibqcz",
+      "category" : "layout.russian",
+      "expected" : "дождавшийся",
+      "id" : "review-v3-16566",
+      "input" : "lj;lfdibqcz"
+    },
+    {
+      "actual" : "Lj;lfdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Дождавшийся",
+      "id" : "review-v3-16567",
+      "input" : "Lj;lfdibqcz"
+    },
+    {
+      "actual" : ",scnhtqibq",
+      "category" : "layout.russian",
+      "expected" : "быстрейший",
+      "id" : "review-v3-16573",
+      "input" : ",scnhtqibq"
+    },
+    {
+      "actual" : "<scnhtqibq",
+      "category" : "layout.title.russian",
+      "expected" : "Быстрейший",
+      "id" : "review-v3-16574",
+      "input" : "<scnhtqibq"
+    },
+    {
+      "actual" : "cfy,fn",
+      "category" : "layout.russian",
+      "expected" : "санбат",
+      "id" : "review-v3-16608",
+      "input" : "cfy,fn"
+    },
+    {
+      "actual" : "Cfy,fn",
+      "category" : "layout.title.russian",
+      "expected" : "Санбат",
+      "id" : "review-v3-16609",
+      "input" : "Cfy,fn"
+    },
+    {
+      "actual" : "'hufnbdysq",
+      "category" : "layout.russian",
+      "expected" : "эргативный",
+      "id" : "review-v3-16664",
+      "input" : "'hufnbdysq"
+    },
+    {
+      "actual" : "\"hufnbdysq",
+      "category" : "layout.title.russian",
+      "expected" : "Эргативный",
+      "id" : "review-v3-16665",
+      "input" : "\"hufnbdysq"
+    },
+    {
+      "actual" : ",bvjktrekzhysq",
+      "category" : "layout.russian",
+      "expected" : "бимолекулярный",
+      "id" : "review-v3-16671",
+      "input" : ",bvjktrekzhysq"
+    },
+    {
+      "actual" : "<bvjktrekzhysq",
+      "category" : "layout.title.russian",
+      "expected" : "Бимолекулярный",
+      "id" : "review-v3-16672",
+      "input" : "<bvjktrekzhysq"
+    },
+    {
+      "actual" : ",jpt",
+      "category" : "layout.russian",
+      "expected" : "бозе",
+      "id" : "review-v3-16748",
+      "input" : ",jpt"
+    },
+    {
+      "actual" : "<jpt",
+      "category" : "layout.title.russian",
+      "expected" : "Бозе",
+      "id" : "review-v3-16749",
+      "input" : "<jpt"
+    },
+    {
+      "actual" : "xb;jdsq",
+      "category" : "layout.russian",
+      "expected" : "чижовый",
+      "id" : "review-v3-16755",
+      "input" : "xb;jdsq"
+    },
+    {
+      "actual" : "Xb;jdsq",
+      "category" : "layout.title.russian",
+      "expected" : "Чижовый",
+      "id" : "review-v3-16756",
+      "input" : "Xb;jdsq"
+    },
+    {
+      "actual" : "fk,fytw",
+      "category" : "layout.russian",
+      "expected" : "албанец",
+      "id" : "review-v3-16762",
+      "input" : "fk,fytw"
+    },
+    {
+      "actual" : "Fk,fytw",
+      "category" : "layout.title.russian",
+      "expected" : "Албанец",
+      "id" : "review-v3-16763",
+      "input" : "Fk,fytw"
+    },
+    {
+      "actual" : "uel;fhjd",
+      "category" : "layout.russian",
+      "expected" : "гуджаров",
+      "id" : "review-v3-16790",
+      "input" : "uel;fhjd"
+    },
+    {
+      "actual" : "Uel;fhjd",
+      "category" : "layout.title.russian",
+      "expected" : "Гуджаров",
+      "id" : "review-v3-16791",
+      "input" : "Uel;fhjd"
+    }
+  ],
+  "modelVersion" : 1,
+  "passed" : false,
+  "perCategory" : {
+    "acronym.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 460,
+      "total" : 460,
+      "trueNegative" : 460,
+      "truePositive" : 0
+    },
+    "acronym.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 740,
+      "total" : 740,
+      "trueNegative" : 740,
+      "truePositive" : 0
+    },
+    "case.mixed.guard" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 1200,
+      "total" : 1200,
+      "trueNegative" : 1200,
+      "truePositive" : 0
+    },
+    "correct.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 460,
+      "total" : 460,
+      "trueNegative" : 460,
+      "truePositive" : 0
+    },
+    "correct.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 740,
+      "total" : 740,
+      "trueNegative" : 740,
+      "truePositive" : 0
+    },
+    "doubleCaps" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 1200,
+      "trueNegative" : 0,
+      "truePositive" : 1200
+    },
+    "guard.code" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.email" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.mixed" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.number" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.path" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.url" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "layout.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 460,
+      "trueNegative" : 0,
+      "truePositive" : 460
+    },
+    "layout.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 218,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 740,
+      "trueNegative" : 0,
+      "truePositive" : 522
+    },
+    "layout.title.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 460,
+      "trueNegative" : 0,
+      "truePositive" : 460
+    },
+    "layout.title.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 218,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 740,
+      "trueNegative" : 0,
+      "truePositive" : 522
+    },
+    "typo" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 0,
+      "trueNegative" : 0,
+      "truePositive" : 0
+    },
+    "yo" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 0,
+      "trueNegative" : 0,
+      "truePositive" : 0
+    }
+  },
+  "perStratum" : {
+    "application.browser" : {
+      "falseChanges" : 0,
+      "falseNegative" : 89,
+      "falsePositive" : 0,
+      "noChange" : 960,
+      "total" : 1680,
+      "trueNegative" : 960,
+      "truePositive" : 631
+    },
+    "application.chat" : {
+      "falseChanges" : 0,
+      "falseNegative" : 87,
+      "falsePositive" : 0,
+      "noChange" : 960,
+      "total" : 1680,
+      "trueNegative" : 960,
+      "truePositive" : 633
+    },
+    "application.editor" : {
+      "falseChanges" : 0,
+      "falseNegative" : 89,
+      "falsePositive" : 0,
+      "noChange" : 960,
+      "total" : 1680,
+      "trueNegative" : 960,
+      "truePositive" : 631
+    },
+    "application.office" : {
+      "falseChanges" : 0,
+      "falseNegative" : 85,
+      "falsePositive" : 0,
+      "noChange" : 960,
+      "total" : 1680,
+      "trueNegative" : 960,
+      "truePositive" : 635
+    },
+    "application.terminal" : {
+      "falseChanges" : 0,
+      "falseNegative" : 86,
+      "falsePositive" : 0,
+      "noChange" : 960,
+      "total" : 1680,
+      "trueNegative" : 960,
+      "truePositive" : 634
+    },
+    "case.doubleCaps" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 1200,
+      "trueNegative" : 0,
+      "truePositive" : 1200
+    },
+    "case.lowercase" : {
+      "falseChanges" : 0,
+      "falseNegative" : 286,
+      "falsePositive" : 0,
+      "noChange" : 2400,
+      "total" : 3668,
+      "trueNegative" : 2400,
+      "truePositive" : 982
+    },
+    "case.mixed" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 1200,
+      "total" : 1200,
+      "trueNegative" : 1200,
+      "truePositive" : 0
+    },
+    "case.title" : {
+      "falseChanges" : 0,
+      "falseNegative" : 150,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 1132,
+      "trueNegative" : 0,
+      "truePositive" : 982
+    },
+    "case.uppercase" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 1200,
+      "total" : 1200,
+      "trueNegative" : 1200,
+      "truePositive" : 0
+    },
+    "feature.doubleCaps" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 1200,
+      "trueNegative" : 0,
+      "truePositive" : 1200
+    },
+    "feature.layout" : {
+      "falseChanges" : 0,
+      "falseNegative" : 436,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 2400,
+      "trueNegative" : 0,
+      "truePositive" : 1964
+    },
+    "language.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 1840,
+      "total" : 3220,
+      "trueNegative" : 1840,
+      "truePositive" : 1380
+    },
+    "language.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 436,
+      "falsePositive" : 0,
+      "noChange" : 2960,
+      "total" : 5180,
+      "trueNegative" : 2960,
+      "truePositive" : 1784
+    }
+  },
+  "physicalDifferentialEvidence" : "UNRUN; no host actions permitted or performed",
+  "physicalDifferentialQualified" : false,
+  "precision" : 1,
+  "precisionInterval" : {
+    "lower" : 0.99878731310302904,
+    "upper" : 1
+  },
+  "recall" : 0.87888888888888894,
+  "releaseReady" : false,
+  "rulesSHA256" : "c5b8ffaae684f053cb57203bc364115fec413224f659d0bbac8b9b2d1b04a133",
+  "split" : "calibration",
+  "tokenQualityPassed" : false,
+  "total" : 8400,
+  "truePositive" : 3164
+}

@@ -26,7 +26,7 @@ func run() throws -> Int32 {
     let engine = LinguisticEngine(snapshot: snapshot)
     let rows = all.filter { $0.split == split }
     let report = QualityEvaluator.evaluate(rows) { row in
-        let word = BufferedWord(text: row.input, events: [], context: ContextToken(pid: 0, bundleID: "synthetic.corpus", focusEpoch: 1, layoutEpoch: 1), layout: row.layout, delimiter: " ")
+        let word = BufferedWord(text: row.input, events: [], context: ContextToken(pid: 0, bundleID: row.hostScenarioID ?? "synthetic.unspecified.token-only", focusEpoch: 1, layoutEpoch: 1), layout: row.layout, delimiter: " ")
         switch engine.decide(word: word, preferences: .defaults, excludedWords: []) {
         case .unchanged: return row.input
         case .replace(let correction): return correction.replacement
@@ -39,7 +39,10 @@ func run() throws -> Int32 {
     object["corpusVersion"] = manifest.corpusVersion; object["split"] = split.rawValue
     object["rulesSHA256"] = manifest.rules.sha256; object["modelVersion"] = snapshot.modelVersion
     object["evaluationMode"] = "token-only synthetic replay; physical-input/editor differential unrun"
-    object["releaseReady"] = false
+    // This token-only tool cannot provide physical/editor differential qualification.
+    object["releaseReady"] = report.passed
+    object["hostScenarios"] = Dictionary(grouping: rows, by: { $0.hostScenarioID ?? "synthetic.unspecified.token-only" }).mapValues(\.count)
+    object["physicalDifferentialEvidence"] = "UNRUN; no host actions permitted or performed"
     object["corpusTotal"] = all.count
     let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
     let destination = URL(fileURLWithPath: output)

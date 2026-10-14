@@ -1,0 +1,101 @@
+{
+  "corpusVersion": "independent-v3-reviewed-coverage",
+  "files": [
+    {
+      "count": 8400,
+      "path": "Corpora/ReviewV3/train.jsonl",
+      "sha256": "433e62d1b08b27a01b549881fff3894e73971cdd752af5519cada72ca4550c1d",
+      "split": "train"
+    },
+    {
+      "count": 8400,
+      "path": "Corpora/ReviewV3/calibration.jsonl",
+      "sha256": "6e083aeae6b734d176bf4048c163cb2ae74d68ac9b1b208b07b4ee60368f0bb9",
+      "split": "calibration"
+    },
+    {
+      "count": 8459,
+      "path": "Corpora/ReviewV3/holdout.jsonl",
+      "sha256": "3c006b0d5af2884411749413abbdd4a266fd3394b904971fbd5b3bb1205409b9",
+      "split": "holdout"
+    }
+  ],
+  "generation": [
+    {
+      "path": "Corpora/generate_review_v3.py",
+      "sha256": "38dcc1a4f2fad28db7e6c288a6ff543b8d031299e9737a81bb24f504d6bbb6dd"
+    },
+    {
+      "path": "Corpora/ReviewV3/authored-families.json",
+      "sha256": "4715ab40778aaa8530baa5977b6b70782033a5b3a3107b5bfddcda23ac29a696"
+    },
+    {
+      "path": "Corpora/manifest.json",
+      "sha256": "82146d99dbed725ead48df619e3b8eb6fab625f68b5749a2632700a4292662f1"
+    },
+    {
+      "path": "Corpora/train.jsonl",
+      "sha256": "fe0bcd44999034515fc01488eee114c1d0a2f304cef48af8e21abc0fe6a8eb12"
+    },
+    {
+      "path": "Corpora/calibration.jsonl",
+      "sha256": "1a50e95179e46c2ebdf49f9297bb9f4eb9f2771c201d74694f216b8d66c43734"
+    },
+    {
+      "path": "Corpora/holdout.jsonl",
+      "sha256": "3fd5deced0c4f1b042cc685a09dce206c0de2ff6a9ab7129119be33780f1ff8a"
+    }
+  ],
+  "minimumTotal": 10000,
+  "provenance": {
+    "files": [
+      {
+        "path": "Corpora/Sources/en/en_US.dic",
+        "sha256": "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647",
+        "url": "https://raw.githubusercontent.com/LibreOffice/dictionaries/67032ee957631908098a72edf48dc81cac27e369/en/en_US.dic"
+      },
+      {
+        "path": "Corpora/Sources/en/README_en_US.txt",
+        "sha256": "168b4c01cb841f766a72f310b065c04d09cff46376c37a81d799593ce751c371",
+        "url": "https://raw.githubusercontent.com/LibreOffice/dictionaries/67032ee957631908098a72edf48dc81cac27e369/en/README_en_US.txt"
+      },
+      {
+        "path": "Corpora/Sources/ru_RU/ru_RU.dic",
+        "sha256": "f6047416a0204adbecf3a451b874ec8a97ee37e2cbc714466ef04d8dbcc0d6fc",
+        "url": "https://raw.githubusercontent.com/LibreOffice/dictionaries/67032ee957631908098a72edf48dc81cac27e369/ru_RU/ru_RU.dic"
+      },
+      {
+        "path": "Corpora/Sources/ru_RU/README_ru_RU.txt",
+        "sha256": "262af2f6ad70a61e5ee1332ff44fa8ee50edca819cf33207d8ad6ba6a0c9be52",
+        "url": "https://raw.githubusercontent.com/LibreOffice/dictionaries/67032ee957631908098a72edf48dc81cac27e369/ru_RU/README_ru_RU.txt"
+      }
+    ],
+    "repository": "https://github.com/LibreOffice/dictionaries",
+    "revision": "67032ee957631908098a72edf48dc81cac27e369"
+  },
+  "rules": {
+    "path": "Resources/Rules/independent-v1.json",
+    "sha256": "c5b8ffaae684f053cb57203bc364115fec413224f659d0bbac8b9b2d1b04a133"
+  },
+  "schemaVersion": 2,
+  "sources": [
+    {
+      "description": "SCOWL-derived en_US Hunspell base words; all upstream notices retained",
+      "id": "LicenseRef-SCOWL",
+      "licensePath": "Corpora/Sources/en/README_en_US.txt",
+      "licenseSHA256": "168b4c01cb841f766a72f310b065c04d09cff46376c37a81d799593ce751c371"
+    },
+    {
+      "description": "Russian Hunspell base words; modified selection marked",
+      "id": "LicenseRef-Lebedev-BSD",
+      "licensePath": "Corpora/Sources/ru_RU/README_ru_RU.txt",
+      "licenseSHA256": "262af2f6ad70a61e5ee1332ff44fa8ee50edca819cf33207d8ad6ba6a0c9be52"
+    },
+    {
+      "description": "Own synthetic transformations, guards, and narrow exact rules",
+      "id": "CC0-1.0",
+      "licensePath": "Corpora/LICENSE.synthetic",
+      "licenseSHA256": "71f11b88d1bf31a7d149b20eecc80a4b753d782d54432e13399fc9ec3a19ea1d"
+    }
+  ]
+}
