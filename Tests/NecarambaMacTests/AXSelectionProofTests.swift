@@ -192,6 +192,55 @@ final class AXSelectionProofTests: XCTestCase {
     }
   }
 
+  func testThreeExplicitProxyRepeatsKeepPhysicalLineageAndDeleteCurrentText() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.value = ""
+    reader.range = NSRange(location: 0, length: 0)
+    let original = word(token)
+    var removed: [String] = []
+    adapter.execute = { evidence, _, selected, preflight in
+      XCTAssertFalse(selected)
+      guard preflight() else { return .aborted }
+      removed.append(evidence.text)
+      return .committed
+    }
+    XCTAssertEqual(adapter.replaceTrackedSuffix(original, with: "длиннее "), .dispatched)
+    for (current, replacement) in [("длиннее", "word "), ("word", "длиннее "), ("длиннее", "word ")] {
+      let candidate = ManualRepeatCandidate(original: original, currentText: current,
+        context: token, layout: .init(rawValue: current == "word" ? "US" : "RU"),
+        delimiter: " ", fieldIdentity: reader.id)
+      XCTAssertEqual(adapter.replaceRepeatedSuffix(candidate, with: replacement), .dispatched)
+      XCTAssertEqual(candidate.original.events.map(\.text), ["w", "o", "r", "d"])
+    }
+    XCTAssertEqual(removed, ["word ", "длиннее ", "word ", "длиннее "])
+  }
+
+  func testProxyRepeatRejectsChangedContextAndMissingOrDifferentIdentity() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.value = ""
+    reader.range = NSRange(location: 0, length: 0)
+    adapter.execute = { _, _, _, _ in XCTFail("Stale repeat must not mutate"); return .committed }
+    let changed = ContextToken(pid: token.pid, bundleID: token.bundleID,
+      focusEpoch: token.focusEpoch + 1, layoutEpoch: token.layoutEpoch)
+    for (context, identity) in [(changed, Optional(reader.id)), (token, nil), (token, Optional(UUID()))] {
+      let candidate = ManualRepeatCandidate(original: word(token), currentText: "длиннее",
+        context: context, layout: .init(rawValue: "RU"), delimiter: " ", fieldIdentity: identity)
+      XCTAssertEqual(adapter.replaceRepeatedSuffix(candidate, with: "word "), .aborted)
+    }
+  }
+
+  func testProxyRepeatPartialMutationIsUncertainWithoutRetry() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.value = ""
+    reader.range = NSRange(location: 0, length: 0)
+    var attempts = 0
+    adapter.execute = { _, _, _, _ in attempts += 1; return .uncertain }
+    let candidate = ManualRepeatCandidate(original: word(token), currentText: "длиннее",
+      context: token, layout: .init(rawValue: "RU"), delimiter: " ", fieldIdentity: reader.id)
+    XCTAssertEqual(adapter.replaceRepeatedSuffix(candidate, with: "word "), .uncertain)
+    XCTAssertEqual(attempts, 1)
+  }
+
   private func word(_ token: ContextToken, origin: EventOrigin = .physical) -> BufferedWord {
     let layout = LayoutID(rawValue: "US")
     let events = "word".map { character in

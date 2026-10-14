@@ -253,45 +253,61 @@ enum AXCompositionProof {
 
 extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
   public func replaceTrackedSuffix(_ word: BufferedWord, with text: String) -> ApplyResult {
-    // Some terminal widgets expose only an empty AX input proxy. An explicit command
-    // may use physically tracked input there, but AX cannot prove the real suffix.
-    // Dispatch is deliberately distinct from a verified edit (no undo/statistics).
+    guard hasPhysicalLineage(word) else {
+      trace("ax.tracked.physicalProofRejected"); return .aborted
+    }
+    return replaceEmptyProxySuffix(
+      word.text + word.delimiter, in: word.context, identity: nil, with: text)
+  }
+
+  private func hasPhysicalLineage(_ word: BufferedWord) -> Bool {
     let original = word.text + word.delimiter
-    guard manualCommandActive(), !word.text.isEmpty, !word.events.isEmpty,
-      word.events.count <= 128, original.count <= 128, original.utf16.count <= 512,
-      !text.isEmpty, text.count <= 128, text.utf16.count <= 512,
-      word.events.allSatisfy({
+    return !word.text.isEmpty && !word.events.isEmpty
+      && word.events.count <= 128 && original.count <= 128 && original.utf16.count <= 512
+      && word.events.allSatisfy({
         $0.origin == .physical && $0.kind == .down && $0.context == word.context
           && $0.layout == word.layout && $0.modifiers.isSubset(of: [.shift, .capsLock])
           && $0.text?.count == 1
-      }), word.events.compactMap(\.text).joined() == word.text,
-      word.delimiter.allSatisfy({ "!? ".contains($0) })
-    else { trace("ax.tracked.physicalProofRejected"); return .aborted }
+      }) && word.events.compactMap(\.text).joined() == word.text
+      && word.delimiter.allSatisfy({ "!? ".contains($0) })
+  }
+
+  private func replaceEmptyProxySuffix(
+    _ original: String, in context: ContextToken, identity: UUID?, with text: String
+  ) -> ApplyResult {
+    // An empty terminal AX proxy cannot prove its suffix. Explicit dispatch keeps
+    // that uncertainty even when a prior explicit command supplied the current text.
+    guard manualCommandActive(), !original.isEmpty, original.count <= 128,
+      original.utf16.count <= 512, !text.isEmpty, text.count <= 128, text.utf16.count <= 512
+    else { trace("ax.tracked.boundsOrScopeRejected"); return .aborted }
     guard let generation = inputGeneration?() else {
       trace("ax.tracked.generationMissing"); return .aborted
     }
-    guard let before = snapshot(word.context, generation: generation) else {
+    guard let before = snapshot(context, generation: generation) else {
       trace("ax.tracked.snapshotMissing"); return .aborted
+    }
+    guard identity == nil || before.identity == identity else {
+      trace("ax.tracked.identityRejected"); return .aborted
     }
     trace("ax.tracked.nonemptyValue", detail: before.value.isEmpty ? 0 : 1)
     trace("ax.tracked.rangeZero", detail: before.range == NSRange(location: 0, length: 0) ? 1 : 0)
     guard before.value.isEmpty, before.range == NSRange(location: 0, length: 0) else { return .aborted }
     guard let execute else { trace("ax.tracked.executeMissing"); return .aborted }
     func valid() -> Bool {
-      guard manualCommandActive(), let current = snapshot(word.context, generation: generation)
+      guard manualCommandActive(), let current = snapshot(context, generation: generation)
       else { return false }
       return current.identity == before.identity && current.value.isEmpty
         && current.range == NSRange(location: 0, length: 0)
     }
     let evidence = SelectionEvidence(
-      context: word.context, text: original, location: 0, length: original.utf16.count,
+      context: context, text: original, location: 0, length: original.utf16.count,
       identity: before.identity, inputGeneration: generation, mode: .suffix)
     guard valid() else { trace("ax.tracked.preflightRejected"); return .aborted }
     trace("ax.tracked.execute.begin")
     let result = execute(evidence, text, false, valid)
     traceMutation(result)
     guard result == .committed else { return result }
-    guard let after = snapshot(word.context, generation: generation),
+    guard let after = snapshot(context, generation: generation),
       after.identity == before.identity
     else { return .uncertain }
     if after.value == text && after.range == NSRange(location: text.utf16.count, length: 0) {
@@ -300,5 +316,22 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
     }
     return after.value.isEmpty && after.range == NSRange(location: 0, length: 0)
       ? .dispatched : .uncertain
+  }
+}
+
+extension AXSelectionAdapter: ManualRepeatedSuffixReplacing {
+  public func replaceRepeatedSuffix(_ candidate: ManualRepeatCandidate, with text: String) -> ApplyResult {
+    // The original events remain the actual physical lineage. Never relabel the
+    // transformed suffix as physically observed input to reuse the first-edit path.
+    guard hasPhysicalLineage(candidate.original), !candidate.currentText.isEmpty,
+      candidate.delimiter == candidate.original.delimiter,
+      candidate.context.pid == candidate.original.context.pid,
+      candidate.context.bundleID == candidate.original.context.bundleID,
+      candidate.context.focusEpoch == candidate.original.context.focusEpoch,
+      let identity = candidate.fieldIdentity
+    else { trace("ax.repeat.lineageOrContextRejected"); return .aborted }
+    return replaceEmptyProxySuffix(
+      candidate.currentText + candidate.delimiter, in: candidate.context,
+      identity: identity, with: text)
   }
 }
