@@ -37,3 +37,11 @@ Evidence: initial `swift test --filter 'NativeCommandCoordinatorTests|Applicatio
 The macOS 12 legacy login API cannot query registration, so `SystemLoginBackend.status()` remains `unavailable` even after a successful `SMLoginItemSetEnabled`. If persisting the matching preference fails, `ApplicationServices` now publishes `partialFailure` for any previously unknown status even when the before/after status strings match. It leaves the old preference intact and publishes a new state revision through `onChanged`; no real login item was used in the test.
 
 RED: `swift test --filter testUnknownLoginStatusAfterOSActionPublishesPartialFailure` failed with the underlying `persistence` error from the old branch. GREEN: `swift test --filter 'NativeCommandCoordinatorTests|ApplicationServicesTests'` passed 12 selected Mac tests with zero failures. This is a fake-backend unit check, not macOS 12 device qualification.
+
+## Integrated verification after review fixes
+
+Startup regression cleared on the local arm64 macOS27.0.1 host after commit `a466558`: Release60.1MB app remained running, the Rules screen displayed active version1 and current status. TIS data is captured on main; only immutable tables and index compilation cross to the background queue. Closing and reopening settings rendered the Flutter UI again; the second engine accessibility tree was incomplete, so accessibility lifecycle acceptance remains open for final review. No TCC grant or login registration was performed.
+
+Integrated suite at `5d0061d`:100 Mac +63 Core tests PASS; Flutter36 tests PASS and analyzer clean. Subsequent unknown-login-status fix has its focused regression. Runner test host/module names were aligned to the actual Necaramba product; `xcodebuild test` then passed all3 bounded-drop tests on the local arm64 host. ReplayRunner passed exact ordered pass-through for100000 events and ownership replay for100000 events. Release CLI regression fixtures5 PASS; these synthetic reports are not release qualification evidence.
+
+These checks clear the observed startup trap and scoped integration findings. They do not qualify automatic corrections, real editor mutation, macOS12/Intel behavior, production signing, purchase services or release performance budgets.
