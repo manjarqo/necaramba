@@ -41,27 +41,39 @@ public final class SystemAXSelectionReader: AXSelectionReading {
   }
   public func read(in token: ContextToken, deadline: TimeInterval) -> AXTextSnapshot? {
     precondition(Thread.isMainThread)
+    func trace(_ reason: String, detail: Int = 0) {
+      if allowMissingMarkedTextRange() { InputDiagnostics.event(reason, detail: detail) }
+    }
     func budget(_ element: AXUIElement) -> Bool {
       let remaining = deadline - ProcessInfo.processInfo.systemUptime
-      guard remaining > 0 else { return false }
+      guard remaining > 0 else { trace("ax.readDeadlineExceeded"); return false }
       return AXUIElementSetMessagingTimeout(element, Float(min(0.05, remaining))) == .success
     }
     guard !IsSecureEventInputEnabled(), context.isSafe(token),
       NSWorkspace.shared.frontmostApplication?.processIdentifier == token.pid
-    else { return nil }
+    else { trace("ax.unsafeContext"); return nil }
     let app = AXUIElementCreateApplication(token.pid)
     guard budget(app) else { return nil }
     var focused: CFTypeRef?
-    guard
-      AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &focused)
-        == .success,
+    let focusStatus = AXUIElementCopyAttributeValue(
+      app, kAXFocusedUIElementAttribute as CFString, &focused)
+    trace("ax.readFocus", detail: Int(focusStatus.rawValue))
+    guard focusStatus == .success,
       let focused, CFGetTypeID(focused) == AXUIElementGetTypeID()
-    else { return nil }
+    else { trace("ax.invalidFocus"); return nil }
     let element = unsafeBitCast(focused, to: AXUIElement.self)
     func readAttribute(_ name: String) -> (AXError, CFTypeRef?) {
       guard budget(element) else { return (.cannotComplete, nil) }
       var value: CFTypeRef?
       let status = AXUIElementCopyAttributeValue(element, name as CFString, &value)
+      switch name {
+      case kAXRoleAttribute: trace("ax.readRole", detail: Int(status.rawValue))
+      case kAXSubroleAttribute: trace("ax.readSubrole", detail: Int(status.rawValue))
+      case kAXValueAttribute: trace("ax.readValue", detail: Int(status.rawValue))
+      case kAXSelectedTextRangeAttribute: trace("ax.readSelectedRange", detail: Int(status.rawValue))
+      case "AXMarkedTextRange": trace("ax.readMarkedRange", detail: Int(status.rawValue))
+      default: break
+      }
       return (status, value)
     }
     func attribute(_ name: String) -> CFTypeRef? {
@@ -72,26 +84,29 @@ public final class SystemAXSelectionReader: AXSelectionReading {
       attribute(kAXSubroleAttribute) as? String != kAXSecureTextFieldSubrole,
       let text = attribute(kAXValueAttribute) as? String, text.utf8.count <= 1024 * 1024,
       let raw = attribute(kAXSelectedTextRangeAttribute), CFGetTypeID(raw) == AXValueGetTypeID()
-    else { return nil }
+    else { trace("ax.invalidFieldMetadata"); return nil }
     let (markedStatus, marked) = readAttribute("AXMarkedTextRange")
     var markedRange: CFRange?
     if markedStatus == .success {
-      guard let marked, CFGetTypeID(marked) == AXValueGetTypeID() else { return nil }
+      guard let marked, CFGetTypeID(marked) == AXValueGetTypeID()
+      else { trace("ax.malformedMarkedRange"); return nil }
       var decoded = CFRange()
       guard AXValueGetValue(unsafeBitCast(marked, to: AXValue.self), .cfRange, &decoded)
-      else { return nil }
+      else { trace("ax.malformedMarkedRange"); return nil }
       markedRange = decoded
     }
+    let directLayout = Self.isDirectKeyboardLayout()
+    trace("ax.compositionDirectLayout", detail: directLayout ? 1 : 0)
     guard AXCompositionProof.permits(
       markedRange: markedRange,
       attributeUnavailable: markedStatus == .attributeUnsupported || markedStatus == .noValue,
-      manual: allowMissingMarkedTextRange(), directKeyboardLayout: Self.isDirectKeyboardLayout())
-    else { return nil }
+      manual: allowMissingMarkedTextRange(), directKeyboardLayout: directLayout)
+    else { trace("ax.compositionRejected"); return nil }
     var range = CFRange()
     guard AXValueGetValue(unsafeBitCast(raw, to: AXValue.self), .cfRange, &range),
       range.location >= 0, range.length >= 0,
       range.location <= text.utf16.count, range.length <= text.utf16.count - range.location
-    else { return nil }
+    else { trace("ax.malformedSelectedRange"); return nil }
     guard ProcessInfo.processInfo.systemUptime <= deadline else { return nil }
     if retained == nil || !CFEqual(retained!.element, element) { retained = (UUID(), element) }
     return AXTextSnapshot(
@@ -143,6 +158,17 @@ public final class AXSelectionAdapter: SelectionAccess {
     else { return nil }
     return value
   }
+  private func trace(_ reason: String, detail: Int = 0) {
+    if manualCommandActive() { InputDiagnostics.event(reason, detail: detail) }
+  }
+  private func traceMutation(_ result: ApplyResult) {
+    switch result {
+    case .committed: trace("ax.mutation.committed")
+    case .dispatched: trace("ax.mutation.dispatched")
+    case .aborted: trace("ax.mutation.aborted")
+    case .uncertain: trace("ax.mutation.uncertain")
+    }
+  }
   public func selected(in token: ContextToken) -> SelectionEvidence? {
     guard let generation = inputGeneration?(), let value = snapshot(token, generation: generation)
     else { return nil }
@@ -187,7 +213,9 @@ public final class AXSelectionAdapter: SelectionAccess {
     guard valid(), let before else { return .aborted }
     let expectedValue = (before.value as NSString).replacingCharacters(in: range, with: text)
     let expectedRange = NSRange(location: evidence.location + text.utf16.count, length: 0)
+    trace("ax.execute.begin")
     let result = execute(evidence, text, selected, valid)
+    traceMutation(result)
     guard result == .committed else { return result }
     // Posting is asynchronous. Read only: never repeat a mutation or attempt rollback.
     // Sleep outside the tap without pumping the UI runloop (which could reenter commands).
@@ -237,10 +265,18 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
           && $0.layout == word.layout && $0.modifiers.isSubset(of: [.shift, .capsLock])
           && $0.text?.count == 1
       }), word.events.compactMap(\.text).joined() == word.text,
-      word.delimiter.allSatisfy({ "!? ".contains($0) }),
-      let generation = inputGeneration?(), let before = snapshot(word.context, generation: generation),
-      before.value.isEmpty, before.range == NSRange(location: 0, length: 0), let execute
-    else { return .aborted }
+      word.delimiter.allSatisfy({ "!? ".contains($0) })
+    else { trace("ax.tracked.physicalProofRejected"); return .aborted }
+    guard let generation = inputGeneration?() else {
+      trace("ax.tracked.generationMissing"); return .aborted
+    }
+    guard let before = snapshot(word.context, generation: generation) else {
+      trace("ax.tracked.snapshotMissing"); return .aborted
+    }
+    trace("ax.tracked.nonemptyValue", detail: before.value.isEmpty ? 0 : 1)
+    trace("ax.tracked.rangeZero", detail: before.range == NSRange(location: 0, length: 0) ? 1 : 0)
+    guard before.value.isEmpty, before.range == NSRange(location: 0, length: 0) else { return .aborted }
+    guard let execute else { trace("ax.tracked.executeMissing"); return .aborted }
     func valid() -> Bool {
       guard manualCommandActive(), let current = snapshot(word.context, generation: generation)
       else { return false }
@@ -250,8 +286,10 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
     let evidence = SelectionEvidence(
       context: word.context, text: original, location: 0, length: original.utf16.count,
       identity: before.identity, inputGeneration: generation, mode: .suffix)
-    guard valid() else { return .aborted }
+    guard valid() else { trace("ax.tracked.preflightRejected"); return .aborted }
+    trace("ax.tracked.execute.begin")
     let result = execute(evidence, text, false, valid)
+    traceMutation(result)
     guard result == .committed else { return result }
     guard let after = snapshot(word.context, generation: generation),
       after.identity == before.identity
