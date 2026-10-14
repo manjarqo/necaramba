@@ -12,6 +12,7 @@ public final class ContextMonitor: ContextRefreshing {
   private let qualifies: (String, String) -> Bool
   private let chromiumActivation = ChromiumAccessibilityActivation()
   private let focusPolling = FocusRefreshPolling()
+  private var overlayPoll: Timer?
   private var observer: AXObserver?
   private var observedApp: AXUIElement?
   private var lastElement: AXUIElement?
@@ -84,6 +85,8 @@ public final class ContextMonitor: ContextRefreshing {
     tokens.append((center, token))
   }
   private func detach() {
+    overlayPoll?.invalidate()
+    overlayPoll = nil
     chromiumActivation.stop()
     focusPolling.stop()
     if let observer {
@@ -181,45 +184,39 @@ public final class ContextMonitor: ContextRefreshing {
     precondition(Thread.isMainThread)
     automaticToken = nil
     let permission = permissions.current()
-    guard !permission.secureInput, let app = NSWorkspace.shared.frontmostApplication,
-      let bundleID = app.bundleIdentifier
-    else {
-      diagnose("context.refresh.secureOrApplicationMissing", detail: permission.secureInput ? 1 : 0)
+    guard !permission.secureInput, permission.ax else {
+      diagnose("context.refresh.secureOrPermissionMissing")
       state.invalidate(.unknownInput)
       return nil
     }
-    guard permission.ax, let observedApp else {
-      diagnose("context.refresh.permissionOrObserverMissing", detail: permission.ax ? 1 : 0)
-      state.update(
-        pid: app.processIdentifier, bundleID: bundleID, focusID: nil, layout: layouts.current(),
-        qualified: false)
-      return nil
-    }
-    var observedPID: pid_t = 0
-    guard AXUIElementGetPid(observedApp, &observedPID) == .success,
-      observedPID == app.processIdentifier
-    else {
-      diagnose("context.refresh.observedProcessMismatch")
-      state.invalidate(.focusChanged)
-      return nil
-    }
-    var value: CFTypeRef?
-    let focusedStatus = AXUIElementCopyAttributeValue(
-      observedApp, kAXFocusedUIElementAttribute as CFString, &value)
-    guard focusedStatus == .success,
-      let value, CFGetTypeID(value) == AXUIElementGetTypeID()
-    else {
-      diagnose("context.refresh.focusUnavailable", detail: Int(focusedStatus.rawValue))
-      diagnoseSystemFocus(expectedPID: app.processIdentifier)
+    let resolved = AXFocusedElementResolver.system.resolve(
+      deadline: ProcessInfo.processInfo.systemUptime + 0.1)
+    guard let focus = resolved.focus else {
+      diagnose("context.refresh.systemFocusUnavailable", detail: Int(resolved.status.rawValue))
       state.invalidate(.unknownInput)
       return nil
     }
-    let element = unsafeBitCast(value, to: AXUIElement.self)
+    let element = focus.element
+    let bundleID = focus.bundleID
+    // Search overlays can own keyboard focus without becoming the workspace's
+    // frontmost app. Continue observing that app, but poll while the overlay owns
+    // focus so its field changes and dismissal cannot leave a stale token.
+    let overlay = focus.pid != NSWorkspace.shared.frontmostApplication?.processIdentifier
+    if overlay && overlayPoll == nil && active {
+      InputDiagnostics.event("context.systemFocus.overlayOwner")
+      let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
+        self?.refreshObservedFocus()
+      }
+      overlayPoll = timer
+      RunLoop.main.add(timer, forMode: .common)
+    } else if !overlay {
+      overlayPoll?.invalidate()
+      overlayPoll = nil
+    }
     let role = stringAttribute(element, kAXRoleAttribute)
     let subrole = stringAttribute(element, kAXSubroleAttribute)
     let allowed =
       Self.supportsManualRole(role ?? "") && subrole != kAXSecureTextFieldSubrole
-    if !allowed { diagnoseSystemFocus(expectedPID: app.processIdentifier) }
     let elementChanged = lastElement == nil || !CFEqual(lastElement, element)
     if elementChanged {
       InputDiagnostics.event("context.refresh.elementChanged", detail: lastElement == nil ? 0 : 1)
@@ -228,7 +225,7 @@ public final class ContextMonitor: ContextRefreshing {
     }
     let before = state.publishedCurrent()
     state.update(
-      pid: app.processIdentifier, bundleID: bundleID, focusID: focusIdentity,
+      pid: focus.pid, bundleID: bundleID, focusID: focusIdentity,
       layout: layouts.current(), qualified: allowed)
     let token = state.publishedCurrent()
     if before != token {
@@ -258,22 +255,6 @@ public final class ContextMonitor: ContextRefreshing {
     diagnose(roleReason, detail: (token == nil ? 0 : 1) | (subrole == kAXSecureTextFieldSubrole ? 2 : 0))
     if allowed && qualifies(bundleID, role ?? "") { automaticToken = token }
     return token
-  }
-  /// Static diagnostics only: no AX values, titles, bundle IDs or input text are logged.
-  private func diagnoseSystemFocus(expectedPID: pid_t) {
-    let system = AXUIElementCreateSystemWide()
-    AXUIElementSetMessagingTimeout(system, 0.05)
-    var value: CFTypeRef?
-    let status = AXUIElementCopyAttributeValue(system, kAXFocusedUIElementAttribute as CFString, &value)
-    guard status == .success, let value, CFGetTypeID(value) == AXUIElementGetTypeID() else {
-      diagnose("context.systemFocus.unavailable", detail: Int(status.rawValue)); return
-    }
-    let element = unsafeBitCast(value, to: AXUIElement.self)
-    var pid: pid_t = 0
-    guard AXUIElementGetPid(element, &pid) == .success else { return }
-    let bundle = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier ?? ""
-    diagnose(bundle.hasPrefix("com.apple.Spotlight") ? "context.systemFocus.spotlight" : "context.systemFocus.other",
-      detail: pid == expectedPID ? 0 : 1)
   }
   private func stringAttribute(_ element: AXUIElement, _ key: String) -> String? {
     var value: CFTypeRef?

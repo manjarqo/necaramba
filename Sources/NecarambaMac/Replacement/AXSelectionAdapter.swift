@@ -69,7 +69,6 @@ public final class SystemAXSelectionReader: AXSelectionReading {
     }
     func stillSafe() -> Bool {
       !IsSecureEventInputEnabled() && context.isSafe(token)
-        && NSWorkspace.shared.frontmostApplication?.processIdentifier == token.pid
     }
     func budget(_ element: AXUIElement) -> Bool {
       let remaining = deadline - ProcessInfo.processInfo.systemUptime
@@ -81,21 +80,13 @@ public final class SystemAXSelectionReader: AXSelectionReading {
       return .transient(identity: identity, value: value)
     }
     guard stillSafe() else { trace("ax.unsafeContext"); return .rejected }
-    let app = AXUIElementCreateApplication(token.pid)
-    guard budget(app) else { return .rejected }
-    var focused: CFTypeRef?
-    let focusStatus = AXUIElementCopyAttributeValue(
-      app, kAXFocusedUIElementAttribute as CFString, &focused)
-    trace("ax.readFocus", detail: Int(focusStatus.rawValue))
-    if focusStatus == .cannotComplete {
-      // No identity is claimed while focus lookup is unavailable. This can only
-      // suspend read-only verification; preparation still receives no snapshot.
-      return transient(identity: nil)
+    let resolved = AXFocusedElementResolver.system.resolve(expectedPID: token.pid, deadline: deadline)
+    trace("ax.readFocus", detail: Int(resolved.status.rawValue))
+    if resolved.status == .cannotComplete { return transient(identity: nil) }
+    guard let focus = resolved.focus, focus.bundleID == token.bundleID else {
+      trace("ax.invalidFocus"); return .rejected
     }
-    guard focusStatus == .success,
-      let focused, CFGetTypeID(focused) == AXUIElementGetTypeID()
-    else { trace("ax.invalidFocus"); return .rejected }
-    let element = unsafeBitCast(focused, to: AXUIElement.self)
+    let element = focus.element
     // Record every positively observed identity, even when a later attribute times out.
     if retained == nil || !CFEqual(retained!.element, element) { retained = (UUID(), element) }
     let identity = retained!.id
@@ -157,6 +148,12 @@ public final class SystemAXSelectionReader: AXSelectionReading {
       range.location >= 0, range.length >= 0,
       range.location <= 1024 * 1024, range.length <= 1024 * 1024
     else { trace("ax.malformedSelectedRange"); return .rejected }
+    guard stillSafe(), ProcessInfo.processInfo.systemUptime <= deadline else { return .rejected }
+    let finalFocus = AXFocusedElementResolver.system.resolve(expectedPID: token.pid, deadline: deadline)
+    guard let finalElement = finalFocus.focus?.element, CFEqual(finalElement, element) else {
+      if finalFocus.status == .cannotComplete { return transient(identity: identity) }
+      trace("ax.focusChangedDuringRead"); return .rejected
+    }
     guard stillSafe(), ProcessInfo.processInfo.systemUptime <= deadline else { return .rejected }
     // Value and range are independent AX calls. They may describe different instants
     // of this posted batch; only read() and a final exact proof treat them as one state.
