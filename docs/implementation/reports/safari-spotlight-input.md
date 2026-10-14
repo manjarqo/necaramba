@@ -47,3 +47,7 @@ Implemented follow-up:
 - Chrome alone requests AXEnhancedUserInterface. A cancellable 2.2-second callback refreshes focus or retries observer subscription on the existing app reference, without detaching or discarding unchanged field identity. It never disables accessibility shared with other clients.
 
 Integrated verification after follow-up: 203 Mac + 65 Core = 268 Swift tests passed. New tests exercise transport timeouts, independently cached caret/value, permanent rejection, bounded no-repost behavior, Chrome activation cancellation and focus-driven layout synchronization. Physical compatibility remains pending; unit tests are not device qualification.
+
+Release follow-up: `flutter build macos --release` succeeded (61.0 MB); deep/strict codesign verification passed with the same Apple Development requirement, and `lipo` reports x86_64 and arm64. Relaunched PID 62334 reached Active without onboarding.
+
+Live Chrome observation: the installed browser returned AXError.notImplemented (-25208) for the best-effort AXEnhancedUserInterface request. Therefore activation is not claimed to have succeeded on this Chrome build. A new local-only test page (`/tmp/necaramba-input-check/index.html`) nevertheless exposes its input and textarea through CUA, and the runtime publishes an editable textfield token. This confirms local field discovery, not physical conversion. Browser-specific custom editors and repeated physical conversion still require user confirmation.
