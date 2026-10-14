@@ -1,7 +1,7 @@
 import Cocoa
 import FlutterMacOS
 import XCTest
-@testable import Runner
+@testable import Necaramba
 
 class RunnerTests: XCTestCase {
 
