@@ -1,0 +1,12 @@
+{
+  "modelVersion": 1,
+  "lexicon": [
+    {"word":"привет","language":"russian","frequencyBand":5},
+    {"word":"the","language":"english","frequencyBand":5},
+    {"word":"ёлка","language":"russian","frequencyBand":5}
+  ],
+  "typos": [{"source":"teh","target":"the","caseSensitive":false}],
+  "yoRules": [{"source":"елка","target":"ёлка","caseSensitive":false}],
+  "protectedTokens": ["API", "все"],
+  "mappings": [{"source":"US","target":"RU","pairs":{"g":"п","h":"р","b":"и","d":"в","t":"е","n":"т"}}]
+}

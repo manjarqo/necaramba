@@ -33,12 +33,17 @@ public struct LinguisticEngine: Sendable {
         var candidate = word.text
         var targetLayout = word.layout
         var kinds: [CorrectionKind] = []
+        if !word.events.isEmpty && !word.events.allSatisfy({ $0.context == word.context && $0.layout == word.layout }) {
+            return .unchanged(.unsupportedLayout)
+        }
+        var physicalSupported = word.events.isEmpty
         var candidates: [(String, LayoutID)] = []
         for mapping in snapshot.mappings where mapping.source == word.layout {
             let converted: String?
             if word.events.isEmpty { converted = LayoutConverter.convert(word.text, mapping: mapping) }
             else if physicalMappings.isEmpty { converted = LayoutConverter.convert(keys: word.events, to: mapping.target, mappings: snapshot.mappings) }
             else { converted = LayoutConverter.convert(keys: word.events, to: mapping.target, physicalMappings: physicalMappings) }
+            if converted != nil { physicalSupported = true }
             if let converted, converted != word.text, index.isKnown(converted), !protected(converted) { candidates.append((converted, mapping.target)) }
         }
         if candidates.count > 1 || (index.isKnown(word.text) && !candidates.isEmpty) { return .unchanged(.ambiguous) }
@@ -58,7 +63,10 @@ public struct LinguisticEngine: Sendable {
             candidate = yo; kinds.append(.yo)
         }
         guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
-        guard !kinds.isEmpty else { return .unchanged(index.isKnown(word.text) ? .correct : .ambiguous) }
+        guard !kinds.isEmpty else {
+            if index.isKnown(word.text) { return .unchanged(.correct) }
+            return .unchanged(physicalSupported ? .ambiguous : .unsupportedLayout)
+        }
         guard !protected(candidate) else { return .unchanged(.protectedToken) }
         return .replace(.init(original: word.text, replacement: candidate, sourceLayout: word.layout, targetLayout: targetLayout, modelVersion: snapshot.modelVersion, kind: kinds.count == 1 ? kinds[0] : .combined))
     }

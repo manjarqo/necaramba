@@ -62,3 +62,15 @@ extension LinguisticEngineTests {
         XCTAssertEqual(replacement(e.decide(word: .init(text: w.text, events: events, context: w.context, layout: w.layout, delimiter: " "), preferences: .defaults, excludedWords: []))?.replacement, "ПРИВЕТ")
     }
 }
+extension LinguisticEngineTests {
+    func testMissingPhysicalLayoutAbstainsWithReason() {
+        let w = word("ghbdtn", layout: "unknown-tis-id")
+        let event = InputEvent(kind: .down, keyCode: 5, modifiers: [], timestampNanos: 1, layout: w.layout, context: w.context, origin: .physical, text: "g", isRepeat: false)
+        XCTAssertEqual(LinguisticEngine(snapshot: .init(modelVersion: 1)).decide(word: .init(text: w.text, events: [event], context: w.context, layout: w.layout, delimiter: " "), preferences: .defaults, excludedWords: []), .unchanged(.unsupportedLayout))
+    }
+    func testBundledSyntheticRulesFixture() throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "RulesV1", withExtension: "json", subdirectory: "Fixtures"))
+        let snapshot = try JSONDecoder().decode(RuleSnapshot.self, from: Data(contentsOf: url))
+        XCTAssertEqual(replacement(LinguisticEngine(snapshot: snapshot).decide(word: word("teh"), preferences: .defaults, excludedWords: []))?.replacement, "the")
+    }
+}
