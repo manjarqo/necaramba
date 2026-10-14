@@ -1,0 +1,5 @@
+// Only the Runner Release target includes this file. Distribution and test
+// configurations must not inherit machine-specific development signing.
+#include "AppInfo.xcconfig"
+CODE_SIGN_STYLE = Automatic
+#include? "LocalSigning.xcconfig"

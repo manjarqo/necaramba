@@ -1,0 +1,6 @@
+// Copy to LocalSigning.xcconfig (gitignored) for a stable local Release identity.
+// Select your own valid Apple Development identity, including its private key.
+// Use its exact 40-character SHA-1 fingerprint to avoid selecting another user.
+CODE_SIGN_IDENTITY = REPLACE_WITH_YOUR_CERTIFICATE_SHA1
+DEVELOPMENT_TEAM = REPLACE_WITH_YOUR_TEAM_ID
+CODE_SIGN_STYLE = Manual
