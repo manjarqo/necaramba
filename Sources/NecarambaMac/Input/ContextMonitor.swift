@@ -10,6 +10,7 @@ public final class ContextMonitor: ContextRefreshing {
   private let layouts: LayoutAccess
   private let permissions: PermissionReading
   private let qualifies: (String, String) -> Bool
+  private let chromiumActivation = ChromiumAccessibilityActivation()
   private let focusPolling = FocusRefreshPolling()
   private var observer: AXObserver?
   private var observedApp: AXUIElement?
@@ -81,6 +82,7 @@ public final class ContextMonitor: ContextRefreshing {
     tokens.append((center, token))
   }
   private func detach() {
+    chromiumActivation.stop()
     focusPolling.stop()
     if let observer {
       CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .commonModes)
@@ -90,7 +92,7 @@ public final class ContextMonitor: ContextRefreshing {
     lastElement = nil
     focusIdentity = nil
   }
-  private func attach() {
+  private func attach(activateAccessibility: Bool = true) {
     precondition(Thread.isMainThread)
     InputDiagnostics.event("context.invalidate.attach")
     state.invalidate(.focusChanged)
@@ -115,6 +117,18 @@ public final class ContextMonitor: ContextRefreshing {
     let element = AXUIElementCreateApplication(app.processIdentifier)
     AXUIElementSetMessagingTimeout(element, 0.1)
     observedApp = element
+    if activateAccessibility {
+      chromiumActivation.start(bundleID: bundleID, activate: {
+        let status = AXUIElementSetAttributeValue(element, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+        InputDiagnostics.event("context.chrome.activation", detail: Int(status.rawValue))
+        return status == .success
+      }, refresh: { [weak self] in
+        guard let self, self.active,
+          NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier else { return }
+        InputDiagnostics.event("context.chrome.activationRefresh")
+        self.attach(activateAccessibility: false)
+      })
+    }
     var created: AXObserver?
     let callback: AXObserverCallback = { _, _, _, refcon in
       guard let refcon else { return }
