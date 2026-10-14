@@ -81,11 +81,24 @@ import NecarambaCore
         case "setPreferences":
             guard let patch = a["patch"] as? [String:Any], !patch.isEmpty else { throw invalid() }
             var flags = Self.flags(preferences.snapshot)
+            var changes: [String: Bool] = [:]
             for (key,value) in patch {
                 guard flags[key] != nil, let number=value as? NSNumber, CFGetTypeID(number)==CFBooleanGetTypeID() else { throw invalid() }
-                flags[key]=number.boolValue
+                changes[key]=number.boolValue
             }
-            try preferences.replace(JSONDecoder().decode(PreferencesSnapshot.self,from:JSONSerialization.data(withJSONObject:flags)))
+            let shortcuts = ["singleShiftEnabled", "altShiftEnabled", "controlShiftEnabled"]
+            let enabled = shortcuts.filter { changes[$0] == true }
+            guard enabled.count <= 1 else { throw invalid() }
+            // Also support older clients sending only the single-Shift toggle.
+            if let selected = enabled.first {
+                for key in shortcuts { flags[key] = key == selected }
+            }
+            flags.merge(changes) { _, new in new }
+            var encoded: [String: Any] = flags
+            encoded["layoutSwitchShortcut"] = flags["singleShiftEnabled"] == true ? "singleShift" :
+                flags["altShiftEnabled"] == true ? "altShift" :
+                flags["controlShiftEnabled"] == true ? "controlShift" : "disabled"
+            try preferences.replace(JSONDecoder().decode(PreferencesSnapshot.self,from:JSONSerialization.data(withJSONObject:encoded)))
         case "addWord":
             guard try rules.words().count + rules.legacyWords().count < 10000 else { throw invalid() }
             do { _ = try rules.addWord(try string(a,"text"),at:Int64(Date().timeIntervalSince1970)); try refreshRules() }
@@ -195,6 +208,7 @@ import NecarambaCore
     private func boolean(_ a:[String:Any],_ key:String) throws -> Bool { guard let n=a[key] as? NSNumber,CFGetTypeID(n)==CFBooleanGetTypeID() else { throw invalid() }; return n.boolValue }
     public static func flags(_ p:PreferencesSnapshot)->[String:Bool] {
         ["autoEnabled":p.autoEnabled,"typoEnabled":p.typoEnabled,"yoEnabled":p.yoEnabled,"singleShiftEnabled":p.singleShiftEnabled,
+         "altShiftEnabled":p.layoutSwitchShortcut == .altShift,"controlShiftEnabled":p.layoutSwitchShortcut == .controlShift,
          "optionEnabled":p.optionEnabled,"splitShiftEnabled":p.splitShiftEnabled,"plainPasteEnabled":p.plainPasteEnabled,"soundEnabled":p.soundEnabled]
     }
     private static func iso(_ date:Date)->String { ISO8601DateFormatter().string(from:date) }

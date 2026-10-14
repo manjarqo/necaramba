@@ -55,7 +55,7 @@ public struct StoredPreferencesV1: Codable, Equatable, Sendable {
  }
  public func setAuto(_ value: Bool) throws {
   let s = snapshot
-  try replace(PreferencesSnapshot(autoEnabled:value,typoEnabled:s.typoEnabled,yoEnabled:s.yoEnabled,singleShiftEnabled:s.singleShiftEnabled,optionEnabled:s.optionEnabled,splitShiftEnabled:s.splitShiftEnabled,plainPasteEnabled:s.plainPasteEnabled,soundEnabled:s.soundEnabled))
+  try replace(PreferencesSnapshot(autoEnabled:value,typoEnabled:s.typoEnabled,yoEnabled:s.yoEnabled,singleShiftEnabled:s.singleShiftEnabled,optionEnabled:s.optionEnabled,splitShiftEnabled:s.splitShiftEnabled,plainPasteEnabled:s.plainPasteEnabled,soundEnabled:s.soundEnabled,layoutSwitchShortcut:s.layoutSwitchShortcut))
  }
  public func setSelectedColor(_ value: Int) throws {
   try replaceSettings(StoredPreferencesV1(snapshot:snapshot,selectedColor:value,loginPreferred:settings.loginPreferred,diagnosticsOptIn:settings.diagnosticsOptIn))

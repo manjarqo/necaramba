@@ -96,6 +96,37 @@ import NecarambaCore
         XCTAssertEqual((reopened.snapshot()["words"] as? [[String:Any]])?.count, 1)
         XCTAssertFalse(reopened.preferences.snapshot.autoEnabled)
     }
+    func testLayoutShortcutChoicePersistsAndRejectsAmbiguousPatch() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let domain = "test.necaramba." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain); try? FileManager.default.removeItem(at: directory) }
+        let app = try ApplicationServices(directory: directory, defaults: defaults,
+            permissions: PermissionFake(), loginBackend: LoginFake(), onPreferences: { _ in })
+        let keys = ["singleShiftEnabled", "altShiftEnabled", "controlShiftEnabled"]
+        for selected in keys + ["disabled"] {
+            let patch = Dictionary(uniqueKeysWithValues: keys.map { ($0, $0 == selected) })
+            _ = try await app.execute("setPreferences", arguments: ["patch": patch])
+            try app.preferences.setAuto(false)
+            let reopened = try ApplicationServices(directory: directory, defaults: defaults,
+                permissions: PermissionFake(), loginBackend: LoginFake(), onPreferences: { _ in })
+            let flags = try XCTUnwrap(reopened.snapshot()["preferences"] as? [String: Bool])
+            for key in keys { XCTAssertEqual(flags[key], key == selected) }
+        }
+        _ = try await app.execute("setPreferences", arguments: ["patch": ["altShiftEnabled": true]])
+        let before = app.preferences.snapshot
+        do {
+            _ = try await app.execute("setPreferences", arguments: ["patch": ["altShiftEnabled": true, "controlShiftEnabled": true]])
+            XCTFail("Conflicting shortcuts must be rejected atomically")
+        } catch {}
+        XCTAssertEqual(app.preferences.snapshot, before)
+        _ = try await app.execute("setPreferences", arguments: ["patch": ["singleShiftEnabled": true]])
+        let flags = try XCTUnwrap(app.snapshot()["preferences"] as? [String: Bool])
+        XCTAssertEqual(flags["singleShiftEnabled"], true)
+        XCTAssertEqual(flags["altShiftEnabled"], false)
+        XCTAssertEqual(flags["controlShiftEnabled"], false)
+    }
+
     func testCancelledClearDoesNotDeleteRules() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let domain = "test.necaramba." + UUID().uuidString; let defaults=UserDefaults(suiteName:domain)!

@@ -57,7 +57,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   }
   private static func configuration(_ p: PreferencesSnapshot) -> GestureConfiguration {
     .init(
-      singleShift: p.singleShiftEnabled, option: p.optionEnabled, splitShift: p.splitShiftEnabled)
+      singleShift: p.singleShiftEnabled, option: p.optionEnabled, splitShift: p.splitShiftEnabled,
+      layoutSwitchShortcut: p.layoutSwitchShortcut)
   }
   @discardableResult public func start() -> Bool {
     lock.lock()

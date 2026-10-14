@@ -85,6 +85,33 @@ final class RuntimeReplayTests: XCTestCase {
         context: token, origin: .physical, text: nil, isRepeat: false))
     wait(for: [done], timeout: 1)
   }
+  func testConfiguredLayoutChordSurvivesPreferencePublicationAndWorksWithoutEditor() {
+    for (shortcut, key, modifier): (LayoutSwitchShortcut, UInt16, Modifier) in [
+      (.altShift, 58, .option), (.controlShift, 59, .control)
+    ] {
+      let context = ContextState()
+      let layout = LayoutID(rawValue: "US")
+      context.update(pid: 42, bundleID: "test", focusID: nil, layout: layout, qualified: false)
+      let token = context.gestureContext()!
+      var actions: [GestureAction] = []
+      // Use a command sink with the same freshly published preferences.
+      let configured = InputRuntime(context: context, initialLayout: layout,
+        command: { if case .gesture(let action, _) = $0 { actions.append(action) } })
+      configured.updatePreferences(.init(layoutSwitchShortcut: shortcut))
+      let sequence: [(UInt16, Set<Modifier>)] = [(key, [modifier]), (56, [modifier, .shift]),
+        (key, [.shift]), (56, [])]
+      for (index, pair) in sequence.enumerated() {
+        XCTAssertEqual(configured.accept(.init(kind: .flagsChanged, keyCode: pair.0,
+          modifiers: pair.1, timestampNanos: UInt64(index + 1), layout: layout,
+          context: token, origin: .physical, text: nil, isRepeat: false)), .pass)
+      }
+      let drained = expectation(description: "shortcut delivered")
+      DispatchQueue.main.async { drained.fulfill() }
+      wait(for: [drained], timeout: 1)
+      XCTAssertEqual(actions, [.switchLayout])
+    }
+  }
+
   func testForeignSyntheticInvalidatesAndDoesNotCommand() {
     var commands: [RuntimeCommand] = []
     let runtime = InputRuntime(

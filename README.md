@@ -30,7 +30,7 @@ The application is free to use. It has no purchase or activation screen. Necaram
 | --- | --- |
 | Convert the last word | Press **Shift twice** to convert the last word to the other layout. Repeat to switch it back. |
 | Convert selected text | Select text in an editable field and press **Shift twice**. Conversion direction is inferred from the text, rather than only the active input source. |
-| Switch the input layout | Enable **Single Shift changes layout** in Settings. |
+| Switch the input layout | Choose **Shift**, **Alt (Option) + Shift**, **Ctrl + Shift**, or **Off** in Settings. |
 | Automatic layout correction | Enable it in Settings. A physical **Space** completes the word and triggers a conservative dictionary-based check. |
 | Spotlight support | The app resolves the actual focused field, reads the full word before the caret and verifies the selected replacement range. |
 | Word exceptions | Add words that should be excluded from automatic correction. |
@@ -41,6 +41,8 @@ The application is free to use. It has no purchase or activation screen. Necaram
 | Appearance and feedback | Change the header color/image, choose a correction sound or turn sound off. |
 | Local statistics and maintenance | View aggregate correction counters, export diagnostics and import/export a settings archive. |
 | Interface languages | English and Russian; the interface follows the app's localization setup. |
+
+The selected layout shortcut fires once after releasing the keys, provided no text was typed while holding them. Double Shift remains available for text conversion regardless of this setting.
 
 #### Automatic correction is deliberately conservative
 
@@ -192,7 +194,7 @@ Some specifications and historical reports describe an earlier commercial design
 | --- | --- |
 | Исправление последнего слова | **Двойной Shift** переводит слово в противоположную раскладку. Повторное нажатие возвращает его обратно. |
 | Преобразование выделенного текста | Выделите текст в редактируемом поле и дважды нажмите Shift. Направление определяется по самому тексту, а не только по текущей раскладке. |
-| Смена системной раскладки | В настройках можно включить переключение по **одному Shift**. |
+| Смена системной раскладки | В настройках можно выбрать **Shift**, **Alt (Option) + Shift**, **Ctrl + Shift** или **Выключено**. |
 | Автоматическая коррекция | После физического нажатия **пробела** приложение проверяет завершённое слово по словарю. |
 | Поддержка Spotlight | Определяется настоящий владелец фокуса, полное слово читается из поля, диапазон замены проверяется перед вставкой. |
 | Слова-исключения | Добавляйте слова, которые не должны исправляться автоматически. |
@@ -203,6 +205,8 @@ Some specifications and historical reports describe an earlier commercial design
 | Оформление и звук | Цвет и изображение шапки, собственный звук исправления или отключение звука. |
 | Статистика и обслуживание | Счётчики исправлений, экспорт диагностики, импорт и экспорт архива настроек. |
 | Языки интерфейса | Английский и русский. |
+
+Выбранное сочетание переключает раскладку один раз после отпускания клавиш, если во время удержания не набирался текст. Двойной Shift для преобразования текста работает независимо от этого выбора.
 
 #### Особенности автоматической коррекции
 
