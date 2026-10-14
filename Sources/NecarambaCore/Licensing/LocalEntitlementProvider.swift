@@ -3,6 +3,7 @@ public struct LocalEntitlementProvider: LicensingAdapter, Sendable {
     private let state: EntitlementState
     public init(_ state: EntitlementState) { self.state = state }
     public func current() async -> EntitlementState { state }
+    public func updates() async -> AsyncStream<EntitlementState> { AsyncStream { $0.finish() } }
     public func purchase(productID: String) async throws -> PurchaseOutcome { throw LicensingError.unavailable }
     public func restore() async throws -> EntitlementState { state }
 }

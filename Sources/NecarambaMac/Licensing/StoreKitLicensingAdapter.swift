@@ -10,6 +10,7 @@ public actor StoreKitLicensingAdapter: LicensingAdapter {
     private let now: () -> Date
     private var prior: EntitlementState = .unavailable
     private var observer: Task<Void, Never>?
+    private var listeners: [UUID: AsyncStream<EntitlementState>.Continuation] = [:]
     private let cacheStorage: EntitlementMaterialStore?
     private var cache: VerifiedEntitlementCache?
     public init(productIDs: Set<String>, bundleID: String, environment: String = "Production", now: @escaping () -> Date = Date.init, cacheStorage: EntitlementMaterialStore? = nil) {
@@ -45,19 +46,39 @@ public actor StoreKitLicensingAdapter: LicensingAdapter {
         guard !productIDs.isEmpty, !bundleID.isEmpty else { throw LicensingError.unavailable }
         try await AppStore.sync(); return await current()
     }
-    public func startObserving() {
-        guard observer == nil, !productIDs.isEmpty, !bundleID.isEmpty else { return }
+    public func updates() async -> AsyncStream<EntitlementState> {
+        guard !productIDs.isEmpty, !bundleID.isEmpty else { return AsyncStream { $0.finish() } }
+        let id = UUID()
+        let stream = AsyncStream<EntitlementState> { continuation in
+            listeners[id] = continuation
+            continuation.onTermination = { [weak self] _ in Task { await self?.removeListener(id) } }
+        }
+        startObserving()
+        return stream
+    }
+    private func startObserving() {
+        guard observer == nil else { return }
         observer = Task { [weak self] in
             for await result in Transaction.updates {
                 if Task.isCancelled { break }
                 await self?.consume(result)
             }
+            await self?.observerFinished()
         }
     }
-    public func stopObserving() { observer?.cancel(); observer = nil }
+    private func removeListener(_ id: UUID) {
+        listeners[id] = nil
+        if listeners.isEmpty { observer?.cancel() }
+    }
+    private func observerFinished() {
+        observer = nil
+        if !listeners.isEmpty { startObserving() }
+    }
     private func consume(_ result: VerificationResult<Transaction>) async {
         guard case .verified(let transaction) = result, accepts(transaction) else { return }
-        prior = stateFor(transaction); await saveCache(result); await transaction.finish()
+        let state = stateFor(transaction)
+        prior = state; await saveCache(result); await transaction.finish()
+        for listener in listeners.values { listener.yield(state) }
     }
     private func entitlementCache() -> VerifiedEntitlementCache? {
         if let cache { return cache }

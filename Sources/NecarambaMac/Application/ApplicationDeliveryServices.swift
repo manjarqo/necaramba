@@ -27,13 +27,29 @@ private final class MainActorRuleConsumer:RuleSnapshotConsumer {
     private var previewExpiry:Date?
     private var updater:RuleUpdateCoordinator?
     private var statusTask:Task<Void,Never>?
+    private var licenseTask:Task<Void,Never>?
+    private var startGeneration=0
+    private var started=false
     public init(application:ApplicationServices,configuration:DeliveryConfiguration,licensing:LicensingAdapter?=nil,shareTransport:RuleShareTransport?=nil) {
         self.application=application; self.configuration=configuration
         share=RuleShareCoordinator(transport:shareTransport ?? HTTPSRuleShareTransport(endpoint:configuration.shareEndpoint,allowedHost:configuration.shareEndpoint?.host ?? ""))
         self.licensing=licensing ?? StoreKitLicensingAdapter(productIDs:configuration.productIDs,bundleID:configuration.bundleID)
     }
     public func start(bundle:Bundle,root:URL,install:@escaping @MainActor (RuleSnapshot,@escaping (UInt64)->Void)->Void) async {
-        applyLicense(await licensing.current())
+        guard !started else { return }
+        started=true;startGeneration += 1
+        let generation=startGeneration
+        let licenseUpdates=await licensing.updates()
+        guard started,generation==startGeneration else { return }
+        let licenseSnapshot=await licensing.current()
+        guard started,generation==startGeneration else { return }
+        applyLicense(licenseSnapshot)
+        licenseTask=Task { [weak self] in
+            for await state in licenseUpdates {
+                guard !Task.isCancelled,let self,self.started,self.startGeneration==generation else { return }
+                self.applyLicense(state)
+            }
+        }
         do {
             guard let resources=bundle.resourceURL else { throw NativeCommandFailure("unavailable") }
             let development=(bundle.object(forInfoDictionaryKey:"NecarambaDevelopmentRules") as? String)=="YES"
@@ -107,7 +123,7 @@ private final class MainActorRuleConsumer:RuleSnapshotConsumer {
         return [:]
     }
     public func cancelPendingShare() { previewID=nil;previewExpiry=nil;share.cancel() }
-    public func stop() { statusTask?.cancel();statusTask=nil;if let updater { Task { await updater.stop() } };previewID=nil;share.cancel() }
+    public func stop() { started=false;startGeneration += 1;licenseTask?.cancel();licenseTask=nil;statusTask?.cancel();statusTask=nil;if let updater { Task { await updater.stop() } };previewID=nil;share.cancel() }
     private func applyLicense(_ value:EntitlementState) {
         var expiry:Date?
         let state:String
@@ -123,5 +139,5 @@ private final class MainActorRuleConsumer:RuleSnapshotConsumer {
         }
         application?.licenseState=state;application?.licenseExpiresAt=expiry.map{ISO8601DateFormatter().string(from:$0)};application?.onChanged?()
     }
-    deinit { statusTask?.cancel() }
+    deinit { statusTask?.cancel();licenseTask?.cancel() }
 }
