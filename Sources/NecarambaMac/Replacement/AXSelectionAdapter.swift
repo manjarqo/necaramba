@@ -234,22 +234,65 @@ public final class AXSelectionAdapter: SelectionAccess {
     let result = execute(evidence, text, selected, valid)
     traceMutation(result)
     guard result == .committed else { return result }
-    // Posting is asynchronous. Read only: never repeat a mutation or attempt rollback.
-    // Sleep outside the tap without pumping the UI runloop (which could reenter commands).
+    // Posting is asynchronous. Only observe states derivable from the already-posted
+    // batch: suffix Backspaces, then Unicode insertion prefixes, with exact surroundings
+    // and caret. Nothing is posted again, and backward progress is not accepted.
     let deadline = now() + 0.1
+    let prefix = (before.value as NSString).substring(to: range.location)
+    let suffix = (before.value as NSString).substring(from: range.location + range.length)
+    let prefixLength = prefix.utf16.count
+    let suffixLength = suffix.utf16.count
+    let deletionSteps = selected ? 0 : evidence.text.count
+    func nextProgress(_ after: AXTextSnapshot, minimum: Int) -> Int? {
+      if minimum == 0 && after.value == before.value && after.range == before.range { return 0 }
+      let length = after.value.utf16.count
+      guard after.range.length == 0, length >= prefixLength + suffixLength else { return nil }
+      let value = after.value as NSString
+      guard value.substring(to: prefixLength) == prefix,
+        value.substring(from: length - suffixLength) == suffix else { return nil }
+      let middleLength = length - prefixLength - suffixLength
+      guard after.range.location == prefixLength + middleLength else { return nil }
+      let middle = value.substring(with: NSRange(location: prefixLength, length: middleLength))
+      var steps: [Int] = []
+      if !selected, middle.count <= evidence.text.count,
+        String(evidence.text.prefix(middle.count)) == middle {
+        steps.append(deletionSteps - middle.count)
+      }
+      if text.unicodeScalars.starts(with: middle.unicodeScalars) {
+        steps.append(deletionSteps + 1 + middleLength)
+      }
+      return steps.filter { $0 >= minimum }.min()
+    }
+    var progress = 0
     for _ in 0..<21 {
-      guard authorized(), now() < deadline,
-        let after = snapshot(evidence.context, generation: generation, deadline: deadline),
-        now() <= deadline, after.identity == identity
-      else { return .uncertain }
-      if after.value == expectedValue && after.range == expectedRange { return .committed }
-      // Only the unchanged pre-post state is safe to wait on. Partial or unrelated edits
-      // are uncertain, even if a later read might happen to match the desired output.
-      guard after.value == before.value, after.range == before.range else { return .uncertain }
+      guard authorized(), now() < deadline else {
+        trace("ax.readback.scopeOrDeadlineRejected"); return .uncertain
+      }
+      guard let after = snapshot(evidence.context, generation: generation, deadline: deadline) else {
+        let unchangedGeneration = inputGeneration?() == generation
+        let safeContext = context.isSafe(evidence.context)
+        trace("ax.readback.snapshotUnavailable", detail: (unchangedGeneration ? 1 : 0) | (safeContext ? 2 : 0))
+        return .uncertain
+      }
+      guard now() <= deadline else { trace("ax.readback.deadlineExceeded"); return .uncertain }
+      guard after.identity == identity else { trace("ax.readback.identityChanged"); return .uncertain }
+      if after.value == expectedValue && after.range == expectedRange {
+        trace("ax.readback.confirmed"); return .committed
+      }
+      guard let next = nextProgress(after, minimum: progress) else {
+        let flags = (after.value == expectedValue ? 1 : 0) | (after.range == expectedRange ? 2 : 0)
+          | (after.value == before.value ? 4 : 0) | (after.range == before.range ? 8 : 0)
+        trace("ax.readback.unprovenState", detail: flags)
+        return .uncertain
+      }
+      progress = next
+      trace(progress == 0 ? "ax.readback.unchanged" : "ax.readback.postedIntermediate")
       let remaining = deadline - now()
-      guard remaining > 0 else { return .uncertain }
+      guard remaining > 0 else { trace("ax.readback.deadlineExceeded"); return .uncertain }
+      // Outside the tap, without pumping the UI runloop or reentering commands.
       wait(min(0.005, remaining))
     }
+    trace("ax.readback.attemptsExhausted")
     return .uncertain
   }
 }

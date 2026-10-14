@@ -360,6 +360,93 @@ final class AXSelectionProofTests: XCTestCase {
       origin: .physical, text: " ", isRepeat: false), inputGeneration: 1)
   }
 
+  func testPostedSuffixDeletionAndInsertionPrefixesWaitForExactReadback() {
+    var elapsed: TimeInterval = 0
+    let (adapter, reader, token) = fixture(now: { elapsed }, wait: { elapsed += $0 })
+    reader.range = NSRange(location: 6, length: 0)
+    let evidence = adapter.suffix("word", in: token)!
+    var attempts = 0
+    adapter.execute = { _, _, _, _ in
+      attempts += 1
+      var states: [(String, Int)] = [("A wor Z", 5), ("A wo Z", 4),
+        ("A w Z", 3), ("A  Z", 2), ("A W Z", 3), ("A WO Z", 4), ("A WORD Z", 6)]
+      reader.onRead = {
+        let state = states.removeFirst()
+        reader.value = state.0
+        reader.range = NSRange(location: state.1, length: 0)
+      }
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .committed)
+    XCTAssertEqual(attempts, 1)
+    XCTAssertLessThanOrEqual(elapsed, 0.1)
+  }
+
+  func testPostedSelectedReplacementPrefixWaitsForExactReadback() {
+    let (adapter, reader, token) = fixture()
+    let evidence = adapter.selected(in: token)!
+    adapter.execute = { _, _, _, _ in
+      var reads = 0
+      reader.onRead = {
+        reads += 1
+        reader.value = reads == 1 ? "A WO Z" : "A WORD Z"
+        reader.range = NSRange(location: reads == 1 ? 4 : 6, length: 0)
+      }
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .committed)
+  }
+
+  func testIntermediateProofRejectsUnrelatedSurroundingsOrCaret() {
+    for state in [("A wor Q", 5), ("B wor Z", 5), ("A wor Z", 2)] {
+      var waits = 0
+      let (adapter, reader, token) = fixture(wait: { _ in waits += 1 })
+      reader.range = NSRange(location: 6, length: 0)
+      let evidence = adapter.suffix("word", in: token)!
+      adapter.execute = { _, _, _, _ in
+        reader.value = state.0
+        reader.range = NSRange(location: state.1, length: 0)
+        return .committed
+      }
+      XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .uncertain)
+      XCTAssertEqual(waits, 0)
+    }
+  }
+
+  func testIntermediateStateCannotCommitWithoutExactFinalReadback() {
+    var elapsed: TimeInterval = 0
+    let (adapter, reader, token) = fixture(now: { elapsed }, wait: { elapsed += $0 })
+    reader.range = NSRange(location: 6, length: 0)
+    let evidence = adapter.suffix("word", in: token)!
+    var attempts = 0
+    adapter.execute = { _, _, _, _ in
+      attempts += 1
+      reader.value = "A wo Z"
+      reader.range = NSRange(location: 4, length: 0)
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .uncertain)
+    XCTAssertEqual(attempts, 1)
+    XCTAssertLessThanOrEqual(elapsed, 0.1)
+  }
+
+  func testPostedIntermediateProgressCannotMoveBackwards() {
+    let (adapter, reader, token) = fixture()
+    reader.range = NSRange(location: 6, length: 0)
+    let evidence = adapter.suffix("word", in: token)!
+    var reads = 0
+    adapter.execute = { _, _, _, _ in
+      reader.onRead = {
+        reads += 1
+        reader.value = reads == 1 ? "A wo Z" : "A wor Z"
+        reader.range = NSRange(location: reads == 1 ? 4 : 5, length: 0)
+      }
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .uncertain)
+    XCTAssertEqual(reads, 2)
+  }
+
   private func word(_ token: ContextToken, origin: EventOrigin = .physical) -> BufferedWord {
     let layout = LayoutID(rawValue: "US")
     let events = "word".map { character in
