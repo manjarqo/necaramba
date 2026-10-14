@@ -52,7 +52,7 @@ public struct WordBuffer: Sendable {
             return nil
         }
         guard pendingPunctuation.isEmpty else { invalidate(.unknownInput); return nil }
-        guard !untrusted, value.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) }) else {
+        guard !untrusted, (value.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) }) || Self.isPhysicalLayoutPunctuation(value)) else {
             invalidate(.unknownInput); return nil
         }
         let candidate = text + value
@@ -74,5 +74,8 @@ public struct WordBuffer: Sendable {
     }
     private static func isBoundary(_ value: String) -> Bool {
         [" ", "\n", "\r", "\t"].contains(value)
+    }
+    private static func isPhysicalLayoutPunctuation(_ value: String) -> Bool {
+        [",", ".", ";", "'", "[", "]", "<", ">", ":", "\"", "{", "}"].contains(value)
     }
 }

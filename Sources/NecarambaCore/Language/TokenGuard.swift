@@ -1,5 +1,21 @@
 import Foundation
 public enum TokenGuard {
+    /// A narrow source shape. A physical map and a known target must still prove conversion.
+    /// Dots are intentionally excluded: a single dot between letters is indistinguishable
+    /// from a hostname or code member access without editor context.
+    public static func isPotentialPhysicalLayoutSource(_ text: String) -> Bool {
+        let punctuation = Set(",;'[]<>:\"{}".map(String.init))
+        var punctuationCount = 0
+        var letterCount = 0
+        for character in text {
+            let value = String(character)
+            if punctuation.contains(value) { punctuationCount += 1; continue }
+            guard value.unicodeScalars.count == 1, let scalar = value.unicodeScalars.first,
+                  (0x41...0x5A).contains(scalar.value) || (0x61...0x7A).contains(scalar.value) else { return false }
+            letterCount += 1
+        }
+        return punctuationCount == 1 && letterCount >= 2
+    }
     public static func normalized(_ text: String) -> String {
         text.precomposedStringWithCanonicalMapping.folding(options: [.caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
     }

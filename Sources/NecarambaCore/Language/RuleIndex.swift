@@ -10,6 +10,7 @@ public struct RuleIndex: Sendable {
         typos = snapshot.typos; yo = snapshot.yoRules
     }
     public func isKnown(_ text: String) -> Bool { knownWords.contains(TokenGuard.normalized(text)) }
+    public func isExplicitlyProtected(_ text: String) -> Bool { protectedWords.contains(TokenGuard.normalized(text)) }
     public func isProtected(_ text: String) -> Bool { protectedWords.contains(TokenGuard.normalized(text)) || TokenGuard.isProtected(text) }
     public func typo(for text: String) -> String? { lookup(text, rules: typos) }
     public func yo(for text: String) -> String? { lookup(text, rules: yo) }

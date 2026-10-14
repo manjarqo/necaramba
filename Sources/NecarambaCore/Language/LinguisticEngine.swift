@@ -1,3 +1,4 @@
+import Foundation
 public enum DecisionReason: String, Sendable, Equatable { case correct, ambiguous, protectedToken, excludedWord, disabled, unsupportedLayout }
 public enum CorrectionKind: String, Sendable, Equatable { case layout, typo, doubleCaps, yo, combined }
 public struct Correction: Sendable, Equatable {
@@ -29,7 +30,15 @@ public struct LinguisticEngine: Sendable {
             $0.origin == .physical && $0.kind == .down && $0.modifiers.contains(.capsLock) && !$0.modifiers.contains(.shift)
         }
         func protected(_ text: String) -> Bool { index.isProtected(confirmedCapsLock ? text.lowercased() : text) }
-        guard !protected(word.text) else { return .unchanged(.protectedToken) }
+        let punctuationSource = TokenGuard.isPotentialPhysicalLayoutSource(word.text)
+        if punctuationSource {
+            guard !index.isExplicitlyProtected(word.text) else { return .unchanged(.protectedToken) }
+            // The visible text must be the exact recorded physical sequence. Never infer
+            // punctuation from character pairs, selection text, or unsupported layouts.
+            guard !physicalMappings.isEmpty, !word.events.isEmpty,
+                  word.events.allSatisfy({ $0.origin == .physical && $0.kind == .down && $0.text?.count == 1 }),
+                  word.events.compactMap(\.text).joined() == word.text else { return .unchanged(.protectedToken) }
+        } else if protected(word.text) { return .unchanged(.protectedToken) }
         var candidate = word.text
         var targetLayout = word.layout
         var kinds: [CorrectionKind] = []
@@ -44,18 +53,22 @@ public struct LinguisticEngine: Sendable {
             else if physicalMappings.isEmpty { converted = LayoutConverter.convert(keys: word.events, to: mapping.target, mappings: snapshot.mappings) }
             else { converted = LayoutConverter.convert(keys: word.events, to: mapping.target, physicalMappings: physicalMappings) }
             if converted != nil { physicalSupported = true }
-            if let converted, converted != word.text, index.isKnown(converted), !protected(converted) { candidates.append((converted, mapping.target)) }
+            if let converted, converted != word.text, index.isKnown(converted), !protected(converted),
+               (!punctuationSource || converted.unicodeScalars.allSatisfy({ CharacterSet.letters.contains($0) })) {
+                candidates.append((converted, mapping.target))
+            }
         }
         if candidates.count > 1 || (index.isKnown(word.text) && !candidates.isEmpty) { return .unchanged(.ambiguous) }
         if !index.isKnown(word.text), let chosen = candidates.first {
             candidate = chosen.0; targetLayout = chosen.1; kinds.append(.layout)
         }
+        if punctuationSource && kinds.isEmpty { return .unchanged(.protectedToken) }
         guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
         if preferences.typoEnabled, let typo = index.typo(for: candidate), index.isKnown(typo), typo != candidate {
             candidate = typo; kinds.append(.typo)
         }
         guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
-        if let caps = RuleIndex.doubleCapsCandidate(candidate), index.isKnown(caps), caps != candidate {
+        if preferences.typoEnabled, let caps = RuleIndex.doubleCapsCandidate(candidate), index.isKnown(caps), caps != candidate {
             candidate = caps; kinds.append(.doubleCaps)
         }
         guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
