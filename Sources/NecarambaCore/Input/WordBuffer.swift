@@ -16,12 +16,13 @@ public struct WordBuffer: Sendable {
     private let maxUTF16: Int
     private var events: [InputEvent] = []
     private var text = ""
+    private var pendingPunctuation = ""
     private var untrusted = false
     public init(maxGraphemes: Int = 128, maxUTF16: Int = 512) {
         self.maxGraphemes = max(0, maxGraphemes); self.maxUTF16 = max(0, maxUTF16)
     }
     public mutating func invalidate(_ reason: InvalidationReason) { clear(); untrusted = true }
-    private mutating func clear() { text = ""; events.removeAll(keepingCapacity: false) }
+    private mutating func clear() { text = ""; pendingPunctuation = ""; events.removeAll(keepingCapacity: false) }
     public mutating func consume(_ event: InputEvent) -> BufferedWord? {
         if event.origin == .ours { return nil }
         guard event.origin == .physical else { invalidate(.unknownInput); return nil }
@@ -40,8 +41,17 @@ public struct WordBuffer: Sendable {
         if Self.isBoundary(value) {
             defer { clear(); untrusted = false }
             guard !untrusted, let first = events.first else { return nil }
-            return BufferedWord(text: text, events: events, context: first.context, layout: first.layout, delimiter: value)
+            return BufferedWord(text: text, events: events, context: first.context, layout: first.layout, delimiter: pendingPunctuation + value)
         }
+        if ["!", "?"].contains(value), !events.isEmpty {
+            let candidate = text + pendingPunctuation + value
+            guard candidate.count <= maxGraphemes, candidate.utf16.count <= maxUTF16 else {
+                invalidate(.unknownInput); return nil
+            }
+            pendingPunctuation += value
+            return nil
+        }
+        guard pendingPunctuation.isEmpty else { invalidate(.unknownInput); return nil }
         guard !untrusted, value.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) }) else {
             invalidate(.unknownInput); return nil
         }
@@ -54,7 +64,7 @@ public struct WordBuffer: Sendable {
     }
     /// Adapter must first prove that the editor deleted exactly the final tracked grapheme.
     @discardableResult public mutating func consumeConfirmedBackspace(_ event: InputEvent) -> Bool {
-        guard !untrusted, event.kind == .down, event.keyCode == 51, event.origin == .physical,
+        guard !untrusted, pendingPunctuation.isEmpty, event.kind == .down, event.keyCode == 51, event.origin == .physical,
               event.modifiers.isSubset(of: [.shift, .capsLock]), let first = events.first,
               event.context == first.context, event.layout == first.layout, !text.isEmpty else {
             invalidate(.unknownInput); return false
@@ -63,6 +73,6 @@ public struct WordBuffer: Sendable {
         return true
     }
     private static func isBoundary(_ value: String) -> Bool {
-        [" ", "\n", "\r", "\t", "!", "?"].contains(value)
+        [" ", "\n", "\r", "\t"].contains(value)
     }
 }

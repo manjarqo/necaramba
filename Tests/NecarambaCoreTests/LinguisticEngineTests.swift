@@ -83,7 +83,7 @@ extension LinguisticEngineTests {
     }
     func testStreamNeverCorrectsURLPathEmailPrefixes() {
         let e = LinguisticEngine(snapshot: .init(modelVersion: 1, lexicon: [.init(word: "the", language: .english, frequencyBand: 5)], typos: [.init(source: "teh", target: "the", caseSensitive: false)]))
-        for text in ["teh.com ", "teh:com ", "teh/com ", "teh@com ", "teh://com ", "teh..com "] {
+        for text in ["teh.com ", "teh:com ", "teh/com ", "teh@com ", "teh://com ", "teh..com ", "teh!name@example.com ", "teh?name@example.com "] {
             var buffer = WordBuffer()
             var corrections: [Correction] = []
             let context = word("teh").context

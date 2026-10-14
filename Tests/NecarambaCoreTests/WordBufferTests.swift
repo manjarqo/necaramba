@@ -50,3 +50,30 @@ extension WordBufferTests {
         XCTAssertFalse(b.consumeConfirmedBackspace(event(nil, code: 51)))
     }
 }
+extension WordBufferTests {
+    func testTerminalPunctuationWaitsForWhitespaceAndPreservesDelimiter() {
+        var b = WordBuffer()
+        for c in "ghbdtn" { _ = b.consume(event(String(c))) }
+        XCTAssertNil(b.consume(event("!")))
+        XCTAssertNil(b.consume(event("?")))
+        let word = b.consume(event(" "))
+        XCTAssertEqual(word?.text, "ghbdtn")
+        XCTAssertEqual(word?.delimiter, "!? ")
+        XCTAssertNil(b.consume(event(" ")))
+    }
+    func testPendingPunctuationIncludedInBounds() {
+        var b = WordBuffer(maxGraphemes: 3, maxUTF16: 3)
+        _ = b.consume(event("a")); _ = b.consume(event("!")); _ = b.consume(event("?"))
+        XCTAssertEqual(b.consume(event(" "))?.delimiter, "!? ")
+        _ = b.consume(event("a")); _ = b.consume(event("!")); _ = b.consume(event("?")); _ = b.consume(event("!"))
+        XCTAssertNil(b.consume(event(" ")))
+    }
+}
+extension WordBufferTests {
+    func testConfirmedBackspaceDeclinesPendingPunctuation() {
+        var b = WordBuffer()
+        _ = b.consume(event("a")); _ = b.consume(event("!"))
+        XCTAssertFalse(b.consumeConfirmedBackspace(event(nil, code: 51)))
+        XCTAssertNil(b.consume(event(" ")))
+    }
+}
