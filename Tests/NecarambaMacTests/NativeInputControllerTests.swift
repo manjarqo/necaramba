@@ -176,6 +176,8 @@ extension NativeInputControllerTests {
   func testManualRoleQualificationDoesNotDependOnApplicationProfile() {
     XCTAssertTrue(ContextMonitor.supportsManualRole("AXTextField"))
     XCTAssertTrue(ContextMonitor.supportsManualRole("AXTextArea"))
+    XCTAssertTrue(ContextMonitor.supportsManualRole("AXComboBox"))
+    XCTAssertFalse(ContextMonitor.supportsManualRole("AXPopUpButton"))
     XCTAssertFalse(ContextMonitor.supportsManualRole("AXWebArea"))
     XCTAssertFalse(ContextMonitor.supportsManualRole("AXButton"))
     XCTAssertFalse(ContextMonitor.supportsManualRole(""))

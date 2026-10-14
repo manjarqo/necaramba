@@ -69,3 +69,9 @@ PID 79221 narrowed the continuing failure beyond AX transport: Chrome completed 
 Text layout is now distinct from current system input layout. An explicit single-Shift transition may rebase the repeat candidate only with unchanged input generation and the same proven process/field focus epoch. External layout changes still invalidate normally. Subsequent conversion derives its target from the retained text layout and verifies the currently visible suffix before writing. Selected conversions retain their two exact proven text alternatives, without inventing physical key events; empty-proxy physical fallback still requires actual physical lineage.
 
 RED: the new integration test failed after the first single Shift and after the one-shot selected undo. GREEN: twelve alternating conversions for both typed and initially selected text, with a single Shift every third round. Full integrated suite: 208 Mac + 65 Core = 273 tests passed (`/tmp/repeat-state-final.log`). This reproduces the specific observed state transitions; physical browser confirmation remains pending.
+
+## Safari page input role
+
+User confirmed Chrome and Safari's address bar now work; Safari page input still fails. PID 97097 at 16:51:06.723 reports context.role.combobox=0, followed by repeated contextMismatch with no editable token. Address-bar conversions at 16:51:39–47 are committed. The page failure occurs before replacement: the manual role filter excluded AXComboBox.
+
+Added AXComboBox to manual role qualification. This only admits the role to existing proof collection: secure-field/composition checks, string AXValue, valid AXSelectedTextRange, identity, focus and exact replacement verification still apply. Pop-up buttons/web areas remain excluded. RED reproduced role rejection; GREEN full suite 208 Mac + 65 Core = 273 tests passed (`/tmp/safari-combobox-green.log`). No automatic compatibility profile was broadened.

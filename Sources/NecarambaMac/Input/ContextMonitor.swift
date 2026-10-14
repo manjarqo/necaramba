@@ -42,7 +42,9 @@ public final class ContextMonitor: ContextRefreshing {
     state.isSafe(token) && automaticToken == token
   }
   public static func supportsManualRole(_ role: String) -> Bool {
-    role == kAXTextFieldRole || role == kAXTextAreaRole
+    // WebKit exposes text inputs with suggestions as combo boxes. The selection
+    // reader still requires a string value and a valid AXSelectedTextRange before editing.
+    role == kAXTextFieldRole || role == kAXTextAreaRole || role == kAXComboBoxRole
   }
   public func start() {
     precondition(Thread.isMainThread)
