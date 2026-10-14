@@ -77,8 +77,13 @@ public final class SQLiteStore: WordRuleStore, AppRuleStore {
       throw error
     }
   }
-  func text(_ s: OpaquePointer, _ column: Int32) -> String {
-    String(cString: sqlite3_column_text(s, column))
+  func text(_ s: OpaquePointer, _ column: Int32) throws -> String {
+    guard sqlite3_column_type(s, column) == SQLITE_TEXT,
+      let bytes = sqlite3_column_text(s, column)
+    else { throw StoreError.invalidArchive }
+    let data = Data(bytes: bytes, count: Int(sqlite3_column_bytes(s, column)))
+    guard let value = String(data: data, encoding: .utf8) else { throw StoreError.invalidArchive }
+    return value
   }
   func readWords(_ table: String) throws -> [WordRule] {
     try statement(
@@ -88,12 +93,12 @@ public final class SQLiteStore: WordRuleStore, AppRuleStore {
       while true {
         let c = sqlite3_step(s)
         if c == SQLITE_DONE { break }
-        guard c == SQLITE_ROW, let id = UUID(uuidString: text(s, 0)) else {
+        guard c == SQLITE_ROW, let id = UUID(uuidString: try text(s, 0)) else {
           throw StoreError.invalidArchive
         }
         values.append(
           WordRule(
-            id: id, normalized: text(s, 1), original: text(s, 2),
+            id: id, normalized: try text(s, 1), original: try text(s, 2),
             createdAt: sqlite3_column_int64(s, 3), shareOptIn: sqlite3_column_int(s, 4) != 0))
       }
       return values
@@ -129,7 +134,9 @@ public final class SQLiteStore: WordRuleStore, AppRuleStore {
     }
   }
   public func deleteWord(id: UUID) throws {
-    try queue.sync { try write("DELETE FROM word_rules WHERE id=?", [id.uuidString]) }
+    try queue.sync {
+      try write("DELETE FROM word_rules WHERE id=? COLLATE NOCASE", [id.uuidString])
+    }
   }
   public func clearWords() throws { try queue.sync { try execute("DELETE FROM word_rules") } }
   func readApps() throws -> [AppRule] {
@@ -140,7 +147,7 @@ public final class SQLiteStore: WordRuleStore, AppRuleStore {
       while true {
         let c = sqlite3_step(s)
         if c == SQLITE_DONE { break }
-        guard c == SQLITE_ROW, let mode = AppRuleMode(rawValue: text(s, 3)) else {
+        guard c == SQLITE_ROW, let mode = AppRuleMode(rawValue: try text(s, 3)) else {
           throw StoreError.invalidArchive
         }
         let bookmark: Data? =
@@ -151,7 +158,7 @@ public final class SQLiteStore: WordRuleStore, AppRuleStore {
             : Data(bytes: sqlite3_column_blob(s, 2), count: Int(sqlite3_column_bytes(s, 2))))
         values.append(
           AppRule(
-            bundleID: text(s, 0), displayName: text(s, 1), bookmark: bookmark, mode: mode,
+            bundleID: try text(s, 0), displayName: try text(s, 1), bookmark: bookmark, mode: mode,
             updatedAt: sqlite3_column_int64(s, 4)))
       }
       return values

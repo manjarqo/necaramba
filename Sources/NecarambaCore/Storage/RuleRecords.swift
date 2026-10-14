@@ -61,7 +61,9 @@ public enum RuleValidation {
   public static func app(_ rule: AppRule) throws {
     guard !rule.bundleID.isEmpty,
       rule.bundleID == rule.bundleID.trimmingCharacters(in: .whitespacesAndNewlines),
-      !rule.bundleID.unicodeScalars.contains(where: { $0.properties.generalCategory == .control })
+      !rule.bundleID.unicodeScalars.contains(where: { $0.properties.generalCategory == .control }),
+      !rule.displayName.unicodeScalars.contains(where: { $0.properties.generalCategory == .control }
+      )
     else { throw StoreError.invalidArchive }
   }
 }

@@ -184,4 +184,87 @@ final class SQLiteStoreTests: XCTestCase {
     }
   }
 
+  func testNullableV0SchemaRejectedWithoutMutation() throws {
+    try temporary { url in
+      var db: OpaquePointer?
+      sqlite3_open(url.path, &db)
+      sqlite3_exec(
+        db,
+        "CREATE TABLE word_rules(id TEXT PRIMARY KEY, normalized TEXT, original TEXT, created_at INTEGER, share_opt_in INTEGER); INSERT INTO word_rules VALUES('11111111-1111-1111-1111-111111111111',NULL,NULL,1,0)",
+        nil, nil, nil)
+      sqlite3_close(db)
+      XCTAssertThrowsError(try SQLiteStore(url: url))
+      sqlite3_open(url.path, &db)
+      var st: OpaquePointer?
+      sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM word_rules WHERE original IS NULL", -1, &st, nil)
+      _ = sqlite3_step(st)
+      XCTAssertEqual(sqlite3_column_int(st, 0), 1)
+      sqlite3_finalize(st)
+      sqlite3_close(db)
+    }
+  }
+  func testLowercaseV0UUIDsMigrateOnceAndDelete() throws {
+    try temporary { url in
+      var db: OpaquePointer?
+      sqlite3_open(url.path, &db)
+      let shortID = UUID()
+      let longID = UUID()
+      let long = String(repeating: "l", count: 21)
+      sqlite3_exec(
+        db,
+        "CREATE TABLE word_rules(id TEXT PRIMARY KEY, normalized TEXT UNIQUE NOT NULL, original TEXT NOT NULL, created_at INTEGER NOT NULL, share_opt_in INTEGER NOT NULL DEFAULT 0); INSERT INTO word_rules VALUES('\(shortID.uuidString.lowercased())','short','short',1,0); INSERT INTO word_rules VALUES('\(longID.uuidString.lowercased())','\(long)','\(long)',2,0)",
+        nil, nil, nil)
+      sqlite3_close(db)
+      let store = try SQLiteStore(url: url)
+      XCTAssertEqual(try store.words().map(\.id), [shortID])
+      XCTAssertEqual(try store.legacyWords().map(\.id), [longID])
+      let other = try SQLiteStore(url: url.appendingPathExtension("other"))
+      try other.importArchive(store.exportArchive())
+      XCTAssertEqual(try other.words().map(\.id), [shortID])
+      XCTAssertEqual(try other.legacyWords().map(\.id), [longID])
+      try store.deleteWord(id: shortID)
+      XCTAssertTrue(try SQLiteStore(url: url).words().isEmpty)
+    }
+  }
+  func testAppNULRejectedBeforeReplacingOrImporting() throws {
+    try temporary { url in
+      let store = try SQLiteStore(url: url)
+      let old = AppRule(
+        bundleID: "org.test", displayName: "Old", bookmark: nil, mode: .allow, updatedAt: 1)
+      try store.setApp(old)
+      let bad = AppRule(
+        bundleID: "org.test", displayName: "New\u{0}Hidden", bookmark: nil, mode: .deny,
+        updatedAt: 2)
+      XCTAssertThrowsError(try store.setApp(bad))
+      let newBad = AppRule(
+        bundleID: "org.other", displayName: bad.displayName, bookmark: nil, mode: .deny,
+        updatedAt: 2)
+      XCTAssertThrowsError(
+        try store.importArchive(JSONEncoder().encode(RuleArchiveV1(words: [], apps: [newBad]))))
+      XCTAssertEqual(try SQLiteStore(url: url).apps(), [old])
+    }
+  }
+
+  func testUnexpectedNullWordIDThrowsInsteadOfCrashing() throws {
+    try temporary { url in
+      let store = try SQLiteStore(url: url)
+      try store.execute("INSERT INTO word_rules VALUES(NULL,'valid','valid',0,0)")
+      XCTAssertThrowsError(try store.words())
+      XCTAssertThrowsError(try store.exportArchive())
+    }
+  }
+  func testV1NullableWordSchemaRejected() throws {
+    try temporary { url in
+      _ = try SQLiteStore(url: url)
+      var db: OpaquePointer?
+      sqlite3_open(url.path, &db)
+      sqlite3_exec(
+        db,
+        "DROP TABLE word_rules; CREATE TABLE word_rules(id TEXT PRIMARY KEY,normalized TEXT UNIQUE,original TEXT,created_at INTEGER,share_opt_in INTEGER)",
+        nil, nil, nil)
+      sqlite3_close(db)
+      XCTAssertThrowsError(try SQLiteStore(url: url))
+    }
+  }
+
 }
