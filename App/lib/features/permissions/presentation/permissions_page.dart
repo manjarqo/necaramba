@@ -106,7 +106,8 @@ class _PermissionRefreshControlState extends State<PermissionRefreshControl> {
       BlocConsumer<NativeCubit, NativeViewState>(
         listener: (context, view) {
           if (_checked != null &&
-              (view.pending.isNotEmpty || !_matchesCheck(view.confirmed))) {
+              (view.pending.any((method) => method != 'refreshCapabilities') ||
+                  !_matchesCheck(view.confirmed))) {
             setState(() => _checked = null);
           }
         },

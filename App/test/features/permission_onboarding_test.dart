@@ -166,6 +166,25 @@ void main() {
       expect(find.textContaining('Checked. macOS'), findsNothing);
     },
   );
+  testWidgets(
+    'unchanged automatic resume refresh preserves explicit check feedback',
+    (tester) async {
+      final repo = FakeNativeRepository()
+        ..current = fixture(capabilities: missing);
+      await mount(tester, repo);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsNothing);
+      await tester.tap(find.byKey(const Key('refreshPermissions')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsOneWidget);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Checked. macOS'), findsOneWidget);
+    },
+  );
   testWidgets('latest missing snapshot wins over a grant in the same frame', (
     tester,
   ) async {
