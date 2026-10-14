@@ -8,6 +8,7 @@ public enum RuntimeOutcome: Equatable {
 public enum RuntimeCommand: Sendable {
   case gesture(GestureAction, ContextToken)
   case boundary(BufferedWord, RuleSnapshot, PreferencesSnapshot)
+  case automaticBoundary(AutomaticBoundaryCandidate, RuleSnapshot, PreferencesSnapshot)
   case plainPaste(ShortcutLease)
 }
 /// All physical events pass through. Deferred commands must independently revalidate AX evidence.
@@ -19,6 +20,9 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   private var snapshot: RuleSnapshot
   private var engine: LinguisticEngine
   private let earlyEnabled: Bool
+  private let conservativeAutomaticEnabled: Bool
+  private var automaticEvents: [InputEvent] = []
+  private var automaticTokenUnsafe = false
   private var buffer = WordBuffer()
   private var tracked: [InputEvent] = []
   private var recentWord: BufferedWord?
@@ -34,6 +38,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   public init(
     context: ContextAccess, initialLayout: LayoutID, preferences: PreferencesSnapshot = .defaults,
     snapshot: RuleSnapshot = RuleSnapshot(modelVersion: 0), earlyEnabled: Bool = false,
+    conservativeAutomaticEnabled: Bool = false,
     engine: LinguisticEngine? = nil, command: @escaping (RuntimeCommand) -> Void = { _ in }
   ) {
     self.context = context
@@ -42,6 +47,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     self.snapshot = snapshot
     self.command = command
     self.earlyEnabled = earlyEnabled
+    self.conservativeAutomaticEnabled = conservativeAutomaticEnabled
     self.engine = engine ?? LinguisticEngine(snapshot: snapshot)
     gestures = GestureRecognizer(configuration: Self.configuration(preferences))
   }
@@ -78,6 +84,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticEvents.removeAll()
+    automaticTokenUnsafe = true
     buffer.invalidate(.unknownInput)
     gestures.invalidate()
     lock.unlock()
@@ -90,6 +98,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticTokenUnsafe = automaticTokenUnsafe || !automaticEvents.isEmpty
+    automaticEvents.removeAll()
     gestures = GestureRecognizer(configuration: Self.configuration(snapshot))
     buffer.invalidate(.unknownInput)
   }
@@ -105,6 +115,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticTokenUnsafe = automaticTokenUnsafe || !automaticEvents.isEmpty
+    automaticEvents.removeAll()
     buffer.invalidate(.unknownInput)
   }
   public var installedModelVersion: UInt64 {
@@ -121,6 +133,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticTokenUnsafe = automaticTokenUnsafe || !automaticEvents.isEmpty
+    automaticEvents.removeAll()
     buffer.invalidate(.layoutChanged)
     gestures.invalidate()
   }
@@ -131,6 +145,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticEvents.removeAll()
+    automaticTokenUnsafe = true
     notifyInvalidation()
     buffer.invalidate(reason)
     gestures.invalidate()
@@ -149,6 +165,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     lock.lock()
     defer { lock.unlock() }
     repeatedManual = nil
+    automaticEvents.removeAll()
+    automaticTokenUnsafe = true
     tracked.removeAll()
     recentWord = nil
     buffer.invalidate(.unknownInput)
@@ -176,6 +194,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     buffer.invalidate(.layoutChanged)
     gestures.invalidate()
     repeatedManual = candidate
+    automaticEvents.removeAll()
+    automaticTokenUnsafe = false
     return true
   }
   public func inputGeneration() -> UInt64 {
@@ -191,6 +211,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticEvents.removeAll()
+    automaticTokenUnsafe = true
     notifyInvalidation()
   }
   public func finishShortcut(_ lease: ShortcutLease, _ result: ApplyResult) {
@@ -229,6 +251,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       tracked.removeAll()
       recentWord = nil
       repeatedManual = nil
+      automaticEvents.removeAll()
+      automaticTokenUnsafe = true
       notifyInvalidation()
       buffer.invalidate(.unknownInput)
       gestures.invalidate()
@@ -239,6 +263,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       tracked.removeAll()
       recentWord = nil
       repeatedManual = nil
+      automaticEvents.removeAll()
+      automaticTokenUnsafe = true
       notifyInvalidation()
       buffer.invalidate(.unknownInput)
       return .pass
@@ -249,6 +275,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       tracked.removeAll()
       recentWord = nil
       repeatedManual = nil
+      automaticEvents.removeAll()
+      automaticTokenUnsafe = true
       buffer.invalidate(.unknownInput)
       guard tap?.canSuppress == true else { return .pass }
       let lease = ShortcutLease(
@@ -256,6 +284,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       deliver(.plainPaste(lease))
       return .suppressed(lease)
     }
+    if conservativeAutomaticEnabled { consumeAutomaticBoundary(event) }
     // Manual conversion can use a newly observed word even while the automatic
     // buffer waits for its first trustworthy boundary after a rule/context reset.
     let manualBoundary: BufferedWord?
@@ -303,11 +332,40 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       // Neither leaves a suffix eligible for a later explicit destructive edit.
       recentWord = word.delimiter.contains(where: { "\n\r\t".contains($0) }) ? nil : word
       tracked.removeAll()
-      if preferences.autoEnabled, !snapshot.lexicon.isEmpty {
+      if !conservativeAutomaticEnabled, preferences.autoEnabled, !snapshot.lexicon.isEmpty {
         deliver(.boundary(word, snapshot, preferences))
       }
     }
     return .pass
+  }
+  private func consumeAutomaticBoundary(_ event: InputEvent) {
+    guard event.kind == .down else { return }
+    if [56, 60].contains(event.keyCode) { return }
+    let ordinary = event.modifiers.isSubset(of: [.shift, .capsLock])
+    if ordinary, event.keyCode == 49, event.text == " " {
+      defer { automaticEvents.removeAll(); automaticTokenUnsafe = false }
+      guard !automaticTokenUnsafe, !automaticEvents.isEmpty,
+        preferences.autoEnabled, !snapshot.lexicon.isEmpty,
+        automaticEvents.allSatisfy({ $0.context == event.context && $0.layout == event.layout })
+      else { return }
+      let word = BufferedWord(text: automaticEvents.compactMap(\.text).joined(), events: automaticEvents,
+        context: event.context, layout: event.layout, delimiter: " ")
+      deliver(.automaticBoundary(.init(word: word, boundary: event, inputGeneration: generation), snapshot, preferences))
+      return
+    }
+    guard ordinary, let text = event.text, text.count == 1,
+      !text.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }),
+      automaticEvents.count < 128 else {
+      automaticEvents.removeAll()
+      automaticTokenUnsafe = true
+      return
+    }
+    if let first = automaticEvents.first,
+      first.context != event.context || first.layout != event.layout {
+      automaticEvents.removeAll()
+      automaticTokenUnsafe = true
+    }
+    automaticEvents.append(event)
   }
   public func advance(to time: UInt64) {
     lock.lock()
@@ -340,6 +398,9 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       self.deliveryPending = false
       let valid = self.generation == expected
       self.lock.unlock()
+      if case .automaticBoundary = value {
+        InputDiagnostics.event(valid ? "auto.boundary.delivered" : "auto.boundary.cancelledGeneration")
+      }
       if case .gesture(let action, _) = value {
         switch action {
         case .manualCorrection:

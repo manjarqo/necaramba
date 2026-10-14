@@ -70,6 +70,13 @@ public struct CapturedLayoutTables: Sendable {
     return (.init(text: events.compactMap(\.text).joined(), events: events,
       context: word.context, layout: word.layout, delimiter: word.delimiter), replacement)
   }
+  public func layoutOnlySnapshot(_ snapshot: RuleSnapshot) -> RuleSnapshot {
+    let mappings = layouts.flatMap { source in
+      layouts.compactMap { target in manualMapping(source: source.id, target: target.id) }
+    }
+    return .init(modelVersion: snapshot.modelVersion, lexicon: snapshot.lexicon,
+      protectedTokens: snapshot.protectedTokens, mappings: mappings)
+  }
   public func resolve(_ snapshot: RuleSnapshot) -> RuleSnapshot {
     let ids = Set(layouts.map(\.id))
     let mappings = snapshot.mappings.compactMap { mapping -> LayoutMapping? in

@@ -97,3 +97,19 @@ public protocol ManualRepeatedSuffixReplacing: AnyObject {
   /// `text` includes delimiter. Empty proxies return dispatched, never verified committed.
   func replaceRepeatedSuffix(_ candidate: ManualRepeatCandidate, with text: String) -> ApplyResult
 }
+
+/// A physical space boundary frozen at event consumption, before deferred AX work.
+public struct AutomaticBoundaryCandidate: Sendable {
+  public let word: BufferedWord
+  public let boundary: InputEvent
+  public let inputGeneration: UInt64
+  public init(word: BufferedWord, boundary: InputEvent, inputGeneration: UInt64) {
+    self.word = word
+    self.boundary = boundary
+    self.inputGeneration = inputGeneration
+  }
+}
+public protocol AutomaticBoundarySuffixReplacing: AnyObject {
+  /// `text` includes the physical trailing space. Empty proxy writes remain dispatched.
+  func replaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with text: String) -> ApplyResult
+}

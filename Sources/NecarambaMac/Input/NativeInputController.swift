@@ -25,8 +25,14 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   private var preparationLease: ShortcutLease?
   private let corpusQualified: Bool
   private let manualActionScope: ManualActionScope
+  private let automaticActionScope: ManualActionScope
+  private let conservativeAutomaticEnabled: Bool
+  private var automaticEngine: LinguisticEngine?
+  private var automaticTables: CapturedLayoutTables?
   private var excluded: Set<String> = []
   private var appOverrides: [String: AppOverride] = [:]
+  public private(set) var automaticReady = false
+  public var onAutomaticReadinessChanged: ((Bool) -> Void)?
   public var onResult: (ApplyResult) -> Void = { _ in }
   public var onCommitted: (UUID, CounterKind) -> Void = { _, _ in }
   public var onToggleAuto: () -> Void = {}
@@ -34,13 +40,16 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     profiles: CapabilityProfiles = CapabilityProfiles(), layouts: LayoutAccess = TISLayoutAdapter(),
     permissions: PermissionReading = PermissionMonitor(),
     preferences: PreferencesSnapshot = .defaults, snapshot: RuleSnapshot = .init(modelVersion: 0),
-    corpusQualified: Bool = false, editingContext: ContextRefreshing? = nil,
+    corpusQualified: Bool = false, conservativeAutomaticEnabled: Bool = false, editingContext: ContextRefreshing? = nil,
     selectionAccess: SelectionAccess? = nil, layoutCapture: LayoutTableCapturing? = nil,
     engineBuilder: RuleEngineBuilding = RuleEngineBuilder()
   ) {
     precondition(Thread.isMainThread)
     let manualScope = ManualActionScope()
     manualActionScope = manualScope
+    let automaticScope = ManualActionScope()
+    automaticActionScope = automaticScope
+    self.conservativeAutomaticEnabled = conservativeAutomaticEnabled
     self.layouts = layouts
     self.layoutCapture = layoutCapture ?? (layouts as? LayoutTableCapturing)
     self.engineBuilder = engineBuilder
@@ -58,7 +67,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     editContext = editingContext ?? monitor
     let ax = AXSelectionAdapter(
       context: editContext, qualifies: { _, role in ContextMonitor.supportsManualRole(role) },
-      allowMissingMarkedTextRange: { manualScope.active })
+      allowMissingMarkedTextRange: { manualScope.active },
+      allowAutomaticBoundary: { automaticScope.active })
     self.selectionAccess = selectionAccess ?? ax
     selection = SelectionAdapter(selection: self.selectionAccess)
     replacement = ReplacementCoordinator(
@@ -66,7 +76,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     runtime = InputRuntime(
       context: editingContext as ContextAccess? ?? monitor.state,
       initialLayout: layouts.current() ?? LayoutID(rawValue: "unsupported"),
-      preferences: preferences, snapshot: initial, earlyEnabled: corpusQualified, engine: engine,
+      preferences: preferences, snapshot: initial, earlyEnabled: corpusQualified && !conservativeAutomaticEnabled,
+      conservativeAutomaticEnabled: conservativeAutomaticEnabled, engine: engine,
       command: { [weak self] in self?.execute($0) })
     ax.execute = { [weak self] evidence, text, selected, preflight in
       self?.runtime.replaceByKeys(
@@ -116,11 +127,21 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         let actual = tables?.resolve(snapshot) ?? snapshot
         let prepared = self.engineBuilder.build(
           snapshot: actual, physicalMappings: tables?.physicalMappings(for: actual) ?? [])
+        let automaticRules = self.conservativeAutomaticEnabled ? tables?.layoutOnlySnapshot(snapshot) : nil
+        let automaticEngine = automaticRules.map {
+          LinguisticEngine(snapshot: $0, physicalMappings: tables?.physicalMappings(for: $0) ?? [])
+        }
+        let automaticReady = automaticRules.map { !$0.lexicon.isEmpty && !$0.mappings.isEmpty } ?? false
         DispatchQueue.main.async { [weak self] in
           guard let self else { return }
           self.rules = actual
           self.engine = prepared
+          self.automaticEngine = automaticEngine
+          self.automaticTables = tables
+          self.automaticReady = automaticReady
           self.runtime.install(actual, engine: prepared)
+          InputDiagnostics.event("auto.ready", detail: automaticReady ? 1 : 0)
+          self.onAutomaticReadinessChanged?(automaticReady)
           onInstalled(actual.modelVersion)
         }
       }
@@ -128,10 +149,12 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     if Thread.isMainThread { capture() } else { DispatchQueue.main.async(execute: capture) }
   }
   public func updateWordPolicies(_ words: Set<String>) {
+    guard excluded != words else { return }
     excluded = words
     runtime.invalidateContext(reason: .unknownInput)
   }
   public func updateAppPolicies(_ policies: [String: AppOverride]) {
+    guard appOverrides != policies else { return }
     appOverrides = policies
     runtime.invalidateContext(reason: .unknownInput)
   }
@@ -240,6 +263,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         report(result, token: word.context)
         if let current = layouts.current() { runtime.updateLayout(current) }
       }
+    case .automaticBoundary(let candidate, let snapshot, let prefs):
+      executeAutomatic(candidate, snapshot: snapshot, preferences: prefs)
     case .plainPaste(let lease):
       preparationLease = lease
       let result = plainPaste(in: lease.context, clipboard: SystemClipboard())
@@ -247,6 +272,61 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       runtime.finishShortcut(lease, result)
       report(result, token: lease.context)
     }
+  }
+  private func executeAutomatic(_ candidate: AutomaticBoundaryCandidate, snapshot: RuleSnapshot,
+                                preferences: PreferencesSnapshot) {
+    InputDiagnostics.event("auto.boundary.received")
+    guard conservativeAutomaticEnabled, automaticReady, let automaticEngine,
+      snapshot.modelVersion == rules.modelVersion, preferences.autoEnabled, self.preferences.autoEnabled,
+      appOverrides[candidate.word.context.bundleID] != .deny,
+      candidate.inputGeneration == runtime.inputGeneration(),
+      candidate.boundary.kind == .down, candidate.boundary.origin == .physical,
+      candidate.boundary.keyCode == 49, candidate.boundary.text == " ", candidate.word.delimiter == " ",
+      candidate.boundary.context == candidate.word.context, candidate.boundary.layout == candidate.word.layout,
+      ready(candidate.word.context), layouts.current() == candidate.word.layout,
+      let tables = automaticTables,
+      let source = tables.manualConversion(candidate.word, target: candidate.word.layout)?.word,
+      source.text.count >= 3 else {
+      InputDiagnostics.event("auto.boundary.contextOrMappingDenied")
+      return
+    }
+    // Only layout switching is evaluated here; broad typo/yo/capitalization qualification is unchanged.
+    let conservative = PreferencesSnapshot(autoEnabled: true, typoEnabled: false, yoEnabled: false)
+    let decision = automaticEngine.decide(word: source, preferences: conservative, excludedWords: excluded)
+    guard case .replace(let correction) = decision else {
+      if case .unchanged(let reason) = decision { InputDiagnostics.event("auto.decision." + reason.rawValue) }
+      return
+    }
+    InputDiagnostics.event("auto.decision.layout")
+    guard correction.kind == .layout, candidate.inputGeneration == runtime.inputGeneration(),
+      let automatic = selectionAccess as? AutomaticBoundarySuffixReplacing else { return }
+    automaticActionScope.active = true
+    defer { automaticActionScope.active = false }
+    let identity = selectionAccess.selected(in: source.context)?.identity
+    let proven = AutomaticBoundaryCandidate(word: source, boundary: candidate.boundary,
+      inputGeneration: candidate.inputGeneration)
+    let result = automatic.replaceAutomaticBoundary(proven, with: correction.replacement + source.delimiter)
+    diagnoseResult(result, event: "auto.result")
+    guard result == .committed || result == .dispatched else {
+      report(result, token: source.context)
+      return
+    }
+    guard candidate.inputGeneration == runtime.inputGeneration(),
+      VerifiedLayoutSwitcher(access: layouts).select(correction.targetLayout),
+      let after = editContext.refresh(), after.pid == source.context.pid,
+      after.bundleID == source.context.bundleID, after.focusEpoch == source.context.focusEpoch else {
+      report(.uncertain, token: source.context)
+      return
+    }
+    if result == .committed {
+      let plan = EditPlan(expected: source.context, original: source.text, replacement: correction.replacement,
+        sourceLayout: source.layout, targetLayout: correction.targetLayout, delimiter: source.delimiter)
+      replacement.recordCommitted(plan, after: after)
+      onCommitted(plan.id, .layout)
+    } else { replacement.invalidate(.unknownInput) }
+    retainManualResult(original: source, text: correction.replacement, target: correction.targetLayout,
+      identity: identity, before: source.context, generation: candidate.inputGeneration)
+    report(result, token: source.context)
   }
   private func quarantine(_ result: ApplyResult, token: ContextToken) {
     if result == .uncertain {
