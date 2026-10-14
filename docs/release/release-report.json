@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "manifest": "docs/release/compatibility-manifest.json",
+  "buildSHA": "",
+  "results": {},
+  "status": "blocked",
+  "reasons": [
+    "real Intel/macOS12 and editor qualification unrun",
+    "language quality gate pending",
+    "TCC permissions unavailable on local built app",
+    "production signing/notarization inputs absent",
+    "B3/B5 queue and interception incomplete",
+    "commercial and MAS channels not qualified"
+  ]
+}
