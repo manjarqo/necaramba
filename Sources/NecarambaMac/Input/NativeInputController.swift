@@ -230,9 +230,10 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         guard let current = layouts.current(),
           let next = layouts.supported().first(where: { $0 != current })
         else { return }
+        let generation = runtime.inputGeneration()
         if VerifiedLayoutSwitcher(access: layouts).select(next) {
-          runtime.updateLayout(next)
-          _ = editContext.refresh()
+          let after = editContext.refresh()
+          runtime.updateLayout(next, preservingManualIn: after, expectedGeneration: generation)
           replacement.invalidate(.layoutChanged)
         }
       }
@@ -351,14 +352,14 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     return tables.manualMapping(source: source, target: target)
   }
   private func retainManualResult(original: BufferedWord, text: String, target: LayoutID,
-                                  identity: UUID?, before: ContextToken, generation: UInt64) {
+                                  identity: UUID?, before: ContextToken, generation: UInt64, alternateText: String? = nil) {
     guard let after = editContext.refresh(), after.pid == before.pid,
       after.bundleID == before.bundleID, after.focusEpoch == before.focusEpoch else {
       runtime.invalidateContext(reason: .focusChanged)
       return
     }
     let candidate = ManualRepeatCandidate(original: original, currentText: text, context: after,
-      layout: target, delimiter: original.delimiter, fieldIdentity: identity)
+      layout: target, delimiter: original.delimiter, fieldIdentity: identity, alternateText: alternateText)
     if !runtime.retainManualResult(candidate, expectedGeneration: generation) {
       runtime.updateLayout(target)
     }
@@ -366,7 +367,9 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   private func repeatManual(_ candidate: ManualRepeatCandidate, mapping: LayoutMapping,
                             generation: UInt64) -> ApplyResult {
     let text: String
-    if layoutCapture != nil {
+    if let alternate = candidate.alternateText {
+      text = alternate
+    } else if layoutCapture != nil {
       guard let converted = manualTables?.manualConversion(candidate.original, target: mapping.target)
       else { return .aborted }
       text = converted.replacement
@@ -377,7 +380,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     let result: ApplyResult
     if selectionAccess.suffix(candidate.currentText + candidate.delimiter, in: candidate.context) != nil {
       result = replacement.apply(.init(expected: candidate.context, original: candidate.currentText,
-        replacement: text, sourceLayout: candidate.layout, targetLayout: mapping.target,
+        replacement: text, sourceLayout: layouts.current() ?? candidate.layout, targetLayout: mapping.target,
         delimiter: candidate.delimiter))
     } else if let repeated = selectionAccess as? ManualRepeatedSuffixReplacing {
       result = repeated.replaceRepeatedSuffix(candidate, with: text + candidate.delimiter)
@@ -391,7 +394,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     }
     if result == .committed || result == .dispatched {
       retainManualResult(original: candidate.original, text: text, target: mapping.target,
-        identity: candidate.fieldIdentity, before: candidate.context, generation: generation)
+        identity: candidate.fieldIdentity, before: candidate.context, generation: generation,
+        alternateText: candidate.alternateText == nil ? nil : candidate.currentText)
       if result == .committed, let id = replacement.lastCommittedID { onCommitted(id, .manual) }
     } else {
       runtime.invalidateContext(reason: .unknownInput)
@@ -441,7 +445,9 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         quarantine(.uncertain, token: token)
         return .uncertain
       }
-      runtime.updateLayout(mapping.target)
+      let original = BufferedWord(text: evidence.text, events: [], context: token, layout: current, delimiter: "")
+      retainManualResult(original: original, text: text, target: mapping.target,
+        identity: evidence.identity, before: token, generation: manualGeneration, alternateText: evidence.text)
       let plan = EditPlan(
         expected: token, original: evidence.text, replacement: text, sourceLayout: current,
         targetLayout: mapping.target, delimiter: "")
@@ -449,8 +455,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       onCommitted(plan.id, .manual)
       return .committed
     }
-    if let repeated = runtime.manualRepeatCandidate(), let mapping = manualMapping,
-      repeated.context == token, repeated.layout == current {
+    if let repeated = runtime.manualRepeatCandidate(),
+      let mapping = self.manualMapping(from: repeated.layout), repeated.context == token {
       return repeatManual(repeated, mapping: mapping, generation: manualGeneration)
     }
     if replacement.hasUndo {

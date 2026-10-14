@@ -77,20 +77,27 @@ public protocol GestureContextReading: AnyObject { func gestureContext() -> Cont
 /// Explicit conversion lineage. Original events remain the physically observed input;
 /// current text/layout describe the last manual result, not newly observed keystrokes.
 public struct ManualRepeatCandidate: Sendable {
+  /// Physical lineage, or an empty-event source for an explicitly selected conversion.
   public let original: BufferedWord
+  public let alternateText: String?
   public let currentText: String
   public let context: ContextToken
   public let layout: LayoutID
   public let delimiter: String
   public let fieldIdentity: UUID?
   public init(original: BufferedWord, currentText: String, context: ContextToken,
-              layout: LayoutID, delimiter: String, fieldIdentity: UUID?) {
+              layout: LayoutID, delimiter: String, fieldIdentity: UUID?, alternateText: String? = nil) {
     self.original = original
+    self.alternateText = alternateText
     self.currentText = currentText
     self.context = context
     self.layout = layout
     self.delimiter = delimiter
     self.fieldIdentity = fieldIdentity
+  }
+  public func rebased(in context: ContextToken) -> ManualRepeatCandidate {
+    .init(original: original, currentText: currentText, context: context, layout: layout,
+          delimiter: delimiter, fieldIdentity: fieldIdentity, alternateText: alternateText)
   }
 }
 public protocol ManualRepeatedSuffixReplacing: AnyObject {

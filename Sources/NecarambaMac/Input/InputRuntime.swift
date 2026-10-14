@@ -124,15 +124,22 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     defer { lock.unlock() }
     return snapshot.modelVersion
   }
-  public func updateLayout(_ id: LayoutID) {
+  public func updateLayout(_ id: LayoutID, preservingManualIn after: ContextToken? = nil,
+                           expectedGeneration: UInt64? = nil) {
     lock.lock()
     defer { lock.unlock() }
     guard layout != id else { return }
+    let retained = repeatedManual.flatMap { candidate -> ManualRepeatCandidate? in
+      guard let after, expectedGeneration == generation, context.isSafe(after),
+        candidate.context.pid == after.pid, candidate.context.bundleID == after.bundleID,
+        candidate.context.focusEpoch == after.focusEpoch else { return nil }
+      return candidate.rebased(in: after)
+    }
     generation &+= 1
     layout = id
     tracked.removeAll()
     recentWord = nil
-    repeatedManual = nil
+    repeatedManual = retained
     automaticTokenUnsafe = automaticTokenUnsafe || !automaticEvents.isEmpty
     automaticEvents.removeAll()
     buffer.invalidate(.layoutChanged)
@@ -174,7 +181,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   public func manualRepeatCandidate() -> ManualRepeatCandidate? {
     lock.lock()
     defer { lock.unlock() }
-    guard let candidate = repeatedManual, candidate.layout == layout,
+    guard let candidate = repeatedManual,
       context.isSafe(candidate.context) else {
       repeatedManual = nil
       return nil

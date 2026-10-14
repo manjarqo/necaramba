@@ -355,6 +355,34 @@ extension NativeInputControllerTests {
       }
     }
   }
+  func testRepeatedConversionSurvivesSingleShiftBetweenPairsAndInitialSelection() {
+    for initiallySelected in [false, true] {
+      let context = FacadeContext()
+      let editor = ManualEditor(context)
+      editor.selectionLength = initiallySelected ? 6 : 0
+      let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+        editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+      if !initiallySelected { typeWord(controller, context: context) }
+      XCTAssertEqual(controller.manualCorrection(), .committed)
+      editor.selectionLength = 0
+      for turn in 0..<12 {
+        if turn % 3 == 2 {
+          let stamp = UInt64(turn + 1) * 1_000_000_000
+          for (index, modifiers): (Int, Set<Modifier>) in [Set<Modifier>([.shift]), []].enumerated() {
+            controller.runtime.accept(.init(kind: .flagsChanged, keyCode: 56, modifiers: modifiers,
+              timestampNanos: stamp + UInt64(index), layout: controller.runtime.cachedInputContext()!.1,
+              context: context.token, origin: .physical, text: nil, isRepeat: false))
+          }
+          controller.runtime.advance(to: stamp + 400_000_000)
+          let delivered = expectation(description: "single Shift delivered")
+          DispatchQueue.main.async { delivered.fulfill() }
+          wait(for: [delivered], timeout: 1)
+        }
+        XCTAssertEqual(controller.manualCorrection(), .committed, "turn \(turn), selected \(initiallySelected)")
+        XCTAssertEqual(editor.text, turn % 2 == 0 ? "ghbdtn" : "привет")
+      }
+    }
+  }
   func testTwentyConversionsRetainWordWhenShiftArrivesDuringReplacement() {
     let context = FacadeContext()
     let editor = ManualEditor(context)
