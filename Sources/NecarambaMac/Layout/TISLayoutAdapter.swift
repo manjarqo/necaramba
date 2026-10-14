@@ -66,3 +66,51 @@ public final class TISLayoutAdapter: LayoutAccess {
         TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) != nil
     }
 }
+
+extension TISLayoutAdapter {
+    /// Captures the actual hardware/layout pair outside input callbacks; IME sources lack key-layout data.
+    public func physicalMappings(for snapshot: RuleSnapshot, keyboardType: UInt32 = UInt32(LMGetKbdType())) -> [PhysicalLayoutMapping] {
+        let ids = Set(supported())
+        return snapshot.mappings.compactMap { mapping in
+            guard ids.contains(mapping.source), ids.contains(mapping.target) else { return nil }
+            var entries: [PhysicalLayoutMapping.Entry] = []
+            for code in UInt16(0)..<UInt16(128) {
+                for modifiers: Set<Modifier> in [[], [.shift], [.capsLock], [.shift, .capsLock]] {
+                    guard translate(keyCode: code, modifiers: modifiers, layout: mapping.source, keyboardType: keyboardType) != nil,
+                          let translated = translate(keyCode: code, modifiers: modifiers, layout: mapping.target, keyboardType: keyboardType) else { continue }
+                    entries.append(.init(keyCode: code, modifiers: modifiers, text: translated))
+                }
+            }
+            return entries.isEmpty ? nil : .init(source: mapping.source, target: mapping.target, entries: entries)
+        }
+    }
+}
+
+extension TISLayoutAdapter {
+    /// Resolves corpus aliases by checking every advertised pair against actual hardware translations.
+    /// Multiple matching pairs are ambiguous and remain disabled; names are never treated as proof.
+    public func resolveMappings(in snapshot: RuleSnapshot, keyboardType: UInt32 = UInt32(LMGetKbdType())) -> RuleSnapshot {
+        let ids=supported()
+        let actual=snapshot.mappings.compactMap { mapping -> LayoutMapping? in
+            if ids.contains(mapping.source),ids.contains(mapping.target) { return mapping }
+            guard !mapping.pairs.isEmpty else { return nil }
+            var matches:[LayoutMapping]=[]
+            for source in ids {
+                let sourceKeys=(UInt16(0)..<UInt16(128)).compactMap { code -> (UInt16,String)? in
+                    guard let text=translate(keyCode:code,modifiers:[],layout:source,keyboardType:keyboardType) else { return nil }
+                    return (code,text)
+                }
+                for target in ids where target != source {
+                    let proven=mapping.pairs.allSatisfy { original,replacement in
+                        sourceKeys.contains { code,text in
+                            text==original && translate(keyCode:code,modifiers:[],layout:target,keyboardType:keyboardType)==replacement
+                        }
+                    }
+                    if proven { matches.append(.init(source:source,target:target,pairs:mapping.pairs)) }
+                }
+            }
+            return matches.count==1 ? matches[0]:nil
+        }
+        return .init(modelVersion:snapshot.modelVersion,lexicon:snapshot.lexicon,typos:snapshot.typos,yoRules:snapshot.yoRules,protectedTokens:snapshot.protectedTokens,mappings:actual)
+    }
+}

@@ -1,1 +1,18 @@
-{"schemaVersion":1,"mode":"synthetic-only","scenarios":["own-marker","foreign-synthetic","repeat","focus-change","layout-change","secure-transition","partial-edit","clipboard-concurrent-copy"],"hostStatus":"UNRUN"}
+{
+  "schemaVersion": 1,
+  "mode": "synthetic-only",
+  "scenarios": [
+    "own-marker",
+    "foreign-synthetic",
+    "repeat",
+    "focus-change",
+    "layout-change",
+    "secure-transition",
+    "partial-edit",
+    "clipboard-concurrent-copy",
+    "overflow",
+    "deadline",
+    "commit"
+  ],
+  "hostStatus": "UNRUN"
+}

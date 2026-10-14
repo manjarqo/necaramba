@@ -1,70 +1,257 @@
 import Foundation
 import NecarambaCore
-public enum RuntimeOutcome:Equatable { case pass }
-public enum RuntimeCommand:Sendable { case gesture(GestureAction,ContextToken); case boundary(BufferedWord,RuleSnapshot,PreferencesSnapshot); case plainPaste(ContextToken) }
+
+public enum RuntimeOutcome: Equatable { case pass, suppressed }
+public enum RuntimeCommand: Sendable {
+  case gesture(GestureAction, ContextToken)
+  case boundary(BufferedWord, RuleSnapshot, PreferencesSnapshot)
+  case plainPaste(ContextToken)
+}
 /// All physical events pass through. Deferred commands must independently revalidate AX evidence.
-public final class InputRuntime:InputRuntimeControl,RuleSnapshotConsumer {
- private let lock=NSRecursiveLock()
- private let context:ContextAccess
- private var layout:LayoutID
- private var preferences:PreferencesSnapshot
- private var snapshot:RuleSnapshot
- private var buffer=WordBuffer()
- private var gestures:GestureRecognizer
- private let command:(RuntimeCommand)->Void
- private var tap:EventTapAdapter?
- private var generation:UInt64=0
- private var deliveryPending=false
- private var invalidationPending=false
- public var onInputInvalidation:()->Void = {}
- public private(set) var forwardedCount=0
- public init(context:ContextAccess,initialLayout:LayoutID,preferences:PreferencesSnapshot = .defaults,snapshot:RuleSnapshot = RuleSnapshot(modelVersion:0),command:@escaping(RuntimeCommand)->Void = {_ in}) {
-  self.context=context; layout=initialLayout; self.preferences=preferences; self.snapshot=snapshot; self.command=command
-  gestures=GestureRecognizer(configuration:Self.configuration(preferences))
- }
- private static func configuration(_ p:PreferencesSnapshot)->GestureConfiguration { .init(singleShift:p.singleShiftEnabled,option:p.optionEnabled,splitShift:p.splitShiftEnabled) }
- @discardableResult public func start()->Bool {
-  lock.lock(); defer { lock.unlock() }
-  if tap != nil { return true }
-  let adapter=EventTapAdapter(runtime:self); guard adapter.start() else { return false }; tap=adapter; return true
- }
- public func stop() { lock.lock(); let old=tap; tap=nil; buffer.invalidate(.unknownInput); gestures.invalidate(); lock.unlock(); old?.stop() }
- public func updatePreferences(_ snapshot:PreferencesSnapshot) { lock.lock(); defer { lock.unlock() }; preferences=snapshot; gestures=GestureRecognizer(configuration:Self.configuration(snapshot)); buffer.invalidate(.unknownInput) }
- public func install(_ snapshot:RuleSnapshot) { lock.lock(); defer { lock.unlock() }; self.snapshot=snapshot; buffer.invalidate(.unknownInput) }
- public func updateLayout(_ id:LayoutID) { lock.lock(); defer { lock.unlock() }; layout=id; buffer.invalidate(.layoutChanged); gestures.invalidate() }
- public func invalidateContext(reason:InvalidationReason) { lock.lock(); defer { lock.unlock() }; generation &+= 1; notifyInvalidation(); buffer.invalidate(reason); gestures.invalidate() }
- public func cachedInputContext()->(ContextToken,LayoutID)? { lock.lock(); defer { lock.unlock() }; guard let token=context.current() else { return nil }; return (token,layout) }
- @discardableResult public func accept(_ event:InputEvent)->RuntimeOutcome {
-  lock.lock(); defer { lock.unlock() }; forwardedCount += 1
-  guard event.origin != .ours else { return .pass }
-  if event.kind != .up { generation &+= 1; notifyInvalidation() }
-  guard event.origin == .physical,context.isSafe(event.context) else { buffer.invalidate(.unknownInput); gestures.invalidate(); return .pass }
-  for action in gestures.consume(event) { deliver(.gesture(action,event.context)) }
-  if event.kind == .down,event.keyCode==9,event.modifiers == [.command,.shift],preferences.plainPasteEnabled {
-   // Cannot suppress until qualified selection has been proven; the normal chord remains untouched.
-   buffer.invalidate(.unknownInput)
-   return .pass
+public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
+  private let lock = NSRecursiveLock()
+  private let context: ContextAccess
+  private var layout: LayoutID
+  private var preferences: PreferencesSnapshot
+  private var snapshot: RuleSnapshot
+  private var engine: LinguisticEngine
+  private let earlyEnabled: Bool
+  private var buffer = WordBuffer()
+  private var tracked: [InputEvent] = []
+  private var recentWord: BufferedWord?
+  private var gestures: GestureRecognizer
+  private let command: (RuntimeCommand) -> Void
+  private var tap: EventTapAdapter?
+  private var generation: UInt64 = 0
+  private var deliveryPending = false
+  private var invalidationPending = false
+  public var onInputInvalidation: () -> Void = {}
+  public private(set) var forwardedCount = 0
+  public init(
+    context: ContextAccess, initialLayout: LayoutID, preferences: PreferencesSnapshot = .defaults,
+    snapshot: RuleSnapshot = RuleSnapshot(modelVersion: 0), earlyEnabled: Bool = false,
+    engine: LinguisticEngine? = nil, command: @escaping (RuntimeCommand) -> Void = { _ in }
+  ) {
+    self.context = context
+    layout = initialLayout
+    self.preferences = preferences
+    self.snapshot = snapshot
+    self.command = command
+    self.earlyEnabled = earlyEnabled
+    self.engine = engine ?? LinguisticEngine(snapshot: snapshot)
+    gestures = GestureRecognizer(configuration: Self.configuration(preferences))
   }
-  if let word=buffer.consume(event),preferences.autoEnabled,!snapshot.lexicon.isEmpty { deliver(.boundary(word,snapshot,preferences)) }
-  return .pass
- }
- public func advance(to time:UInt64) { lock.lock(); defer { lock.unlock() }; guard let token=context.current() else { gestures.invalidate(); return }; for action in gestures.advance(to:time) { deliver(.gesture(action,token)) } }
- private func notifyInvalidation() {
-  guard !invalidationPending else { return }; invalidationPending=true
-  DispatchQueue.main.async { [weak self] in
-   guard let self else { return }; self.lock.lock(); self.invalidationPending=false; self.lock.unlock()
-   self.onInputInvalidation()
+  private static func configuration(_ p: PreferencesSnapshot) -> GestureConfiguration {
+    .init(
+      singleShift: p.singleShiftEnabled, option: p.optionEnabled, splitShift: p.splitShiftEnabled)
   }
- }
- private func deliver(_ value:RuntimeCommand) {
-  guard !deliveryPending else { return }
-  deliveryPending=true; let expected=generation
-  DispatchQueue.main.async { [weak self] in
-   guard let self else { return }; self.lock.lock()
-   self.deliveryPending=false
-   let valid=self.generation==expected; self.lock.unlock()
-   guard valid else { return }
-   self.command(value)
+  @discardableResult public func start() -> Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    if let tap { return tap.isInstalled }
+    let adapter = EventTapAdapter(runtime: self)
+    guard adapter.start() else { return false }
+    tap = adapter
+    return true
   }
- }
+  public func stop() {
+    lock.lock()
+    let old = tap
+    tap = nil
+    generation &+= 1
+    tracked.removeAll()
+    recentWord = nil
+    buffer.invalidate(.unknownInput)
+    gestures.invalidate()
+    lock.unlock()
+    old?.stop()
+  }
+  public func updatePreferences(_ snapshot: PreferencesSnapshot) {
+    lock.lock()
+    defer { lock.unlock() }
+    generation &+= 1
+    preferences = snapshot
+    gestures = GestureRecognizer(configuration: Self.configuration(snapshot))
+    buffer.invalidate(.unknownInput)
+  }
+  public func install(_ snapshot: RuleSnapshot) {
+    install(snapshot, engine: LinguisticEngine(snapshot: snapshot))
+  }
+  public func install(_ snapshot: RuleSnapshot, engine: LinguisticEngine) {
+    lock.lock()
+    defer { lock.unlock() }
+    generation &+= 1
+    self.snapshot = snapshot
+    self.engine = engine
+    tracked.removeAll()
+    recentWord = nil
+    buffer.invalidate(.unknownInput)
+  }
+  public var installedModelVersion: UInt64 {
+    lock.lock()
+    defer { lock.unlock() }
+    return snapshot.modelVersion
+  }
+  public func updateLayout(_ id: LayoutID) {
+    lock.lock()
+    defer { lock.unlock() }
+    generation &+= 1
+    layout = id
+    tracked.removeAll()
+    recentWord = nil
+    buffer.invalidate(.layoutChanged)
+    gestures.invalidate()
+  }
+  public func invalidateContext(reason: InvalidationReason) {
+    lock.lock()
+    defer { lock.unlock() }
+    generation &+= 1
+    tracked.removeAll()
+    recentWord = nil
+    notifyInvalidation()
+    buffer.invalidate(reason)
+    gestures.invalidate()
+  }
+  public func manualWord() -> BufferedWord? {
+    lock.lock()
+    defer { lock.unlock() }
+    if let first = tracked.first {
+      return .init(
+        text: tracked.compactMap(\.text).joined(), events: tracked, context: first.context,
+        layout: first.layout, delimiter: "")
+    }
+    return recentWord
+  }
+  public func inputGeneration() -> UInt64 {
+    lock.lock()
+    defer { lock.unlock() }
+    return generation
+  }
+  public func replayedPhysicalInput() {
+    lock.lock()
+    defer { lock.unlock() }
+    generation &+= 1
+    buffer.invalidate(.unknownInput)
+    tracked.removeAll()
+    recentWord = nil
+    notifyInvalidation()
+  }
+  public func finishShortcut(_ result: ApplyResult) {
+    lock.lock()
+    let adapter = tap
+    lock.unlock()
+    adapter?.finishShortcut(result)
+  }
+  public func replaceByKeys(
+    _ evidence: SelectionEvidence, with text: String, selected: Bool, preflight: () -> Bool
+  ) -> ApplyResult {
+    lock.lock()
+    let adapter = tap
+    lock.unlock()
+    guard let adapter else { return .aborted }
+    return adapter.replace(evidence, with: text, selected: selected, preflight: preflight)
+  }
+  public func cachedInputContext() -> (ContextToken, LayoutID)? {
+    lock.lock()
+    defer { lock.unlock() }
+    guard let token = context.current() ?? (context as? GestureContextReading)?.gestureContext()
+    else { return nil }
+    return (token, layout)
+  }
+  @discardableResult public func accept(_ event: InputEvent) -> RuntimeOutcome {
+    lock.lock()
+    defer { lock.unlock() }
+    forwardedCount += 1
+    guard event.origin != .ours else { return .pass }
+    if event.kind != .up { generation &+= 1 }
+    if event.kind == .down && ![56, 60, 58, 61].contains(event.keyCode) { notifyInvalidation() }
+    guard event.origin == .physical else {
+      buffer.invalidate(.unknownInput)
+      gestures.invalidate()
+      return .pass
+    }
+    for action in gestures.consume(event) { deliver(.gesture(action, event.context)) }
+    guard context.isSafe(event.context) else {
+      buffer.invalidate(.unknownInput)
+      return .pass
+    }
+    if event.kind == .down, event.keyCode == 9, event.modifiers == [.command, .shift],
+      preferences.plainPasteEnabled
+    {
+      buffer.invalidate(.unknownInput)
+      guard tap?.canSuppress == true else { return .pass }
+      deliver(.plainPaste(event.context))
+      return .suppressed
+    }
+    if event.kind == .down {
+      if let text = event.text, text.count == 1,
+        text.unicodeScalars.allSatisfy({ CharacterSet.letters.contains($0) }),
+        event.modifiers.isSubset(of: [.shift, .capsLock])
+      {
+        if tracked.first?.context != event.context || tracked.first?.layout != event.layout {
+          tracked.removeAll()
+        }
+        if tracked.count < 128 {
+          tracked.append(event)
+        } else {
+          tracked.removeAll()
+          recentWord = nil
+        }
+      } else if ![56, 60, 58, 61].contains(event.keyCode) {
+        tracked.removeAll()
+        recentWord = nil
+      }
+    }
+    if earlyEnabled, preferences.autoEnabled, let first = tracked.first, !tracked.isEmpty {
+      let word = BufferedWord(
+        text: tracked.compactMap(\.text).joined(), events: tracked, context: first.context,
+        layout: first.layout, delimiter: "")
+      if case .replace = engine.decide(word: word, preferences: preferences, excludedWords: []) {
+        deliver(.boundary(word, snapshot, preferences))
+      }
+    }
+    if let word = buffer.consume(event) {
+      recentWord = word
+      tracked.removeAll()
+      if preferences.autoEnabled, !snapshot.lexicon.isEmpty {
+        deliver(.boundary(word, snapshot, preferences))
+      }
+    }
+    return .pass
+  }
+  public func advance(to time: UInt64) {
+    lock.lock()
+    defer { lock.unlock() }
+    guard let token = context.current() ?? (context as? GestureContextReading)?.gestureContext()
+    else {
+      gestures.invalidate()
+      return
+    }
+    for action in gestures.advance(to: time) { deliver(.gesture(action, token)) }
+  }
+  private func notifyInvalidation() {
+    guard !invalidationPending else { return }
+    invalidationPending = true
+    DispatchQueue.main.async { [weak self] in
+      guard let self else { return }
+      self.lock.lock()
+      self.invalidationPending = false
+      self.lock.unlock()
+      self.onInputInvalidation()
+    }
+  }
+  private func deliver(_ value: RuntimeCommand) {
+    guard !deliveryPending else { return }
+    deliveryPending = true
+    let expected = generation
+    DispatchQueue.main.async { [weak self] in
+      guard let self else { return }
+      self.lock.lock()
+      self.deliveryPending = false
+      let valid = self.generation == expected
+      self.lock.unlock()
+      guard valid else { return }
+      self.command(value)
+    }
+  }
 }
