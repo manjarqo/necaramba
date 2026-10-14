@@ -18,6 +18,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   private var rules: RuleSnapshot
   private var engine: LinguisticEngine
   private let layoutCapture: LayoutTableCapturing?
+  private var manualTables: CapturedLayoutTables?
   private let engineBuilder: RuleEngineBuilding
   private let compiler = DispatchQueue(label: "Necaramba rules compiler")
   private var quarantined: ContextToken?
@@ -109,6 +110,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     let capture = { [weak self] in
       guard let self else { return }
       let tables = self.layoutCapture?.captureTables()
+      self.manualTables = tables
       self.compiler.async { [weak self] in
         guard let self else { return }
         let actual = tables?.resolve(snapshot) ?? snapshot
@@ -254,8 +256,19 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     quarantine(result, token: token)
     onResult(result)
   }
+  private func manualMapping(from source: LayoutID) -> LayoutMapping? {
+    guard let capture = layoutCapture else {
+      return rules.mappings.first(where: { $0.source == source })
+    }
+    guard let target = layouts.supported().first(where: { $0 != source }) else { return nil }
+    if let mapping = manualTables?.manualMapping(source: source, target: target) { return mapping }
+    let tables = capture.captureTables()
+    manualTables = tables
+    return tables.manualMapping(source: source, target: target)
+  }
   public func manualCorrection() -> ApplyResult {
     precondition(Thread.isMainThread)
+    let manualGeneration = runtime.inputGeneration()
     manualActionScope.active = true
     defer { manualActionScope.active = false }
     InputDiagnostics.event("manual.start.wordLength", detail: runtime.manualWord()?.text.count ?? 0)
@@ -271,9 +284,14 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     let selected = selectionAccess.selected(in: token)
     InputDiagnostics.event("manual.selectedProof", detail: selected == nil ? 0 : 1)
     InputDiagnostics.event("manual.selectionNonempty", detail: selected?.text.isEmpty == false ? 1 : 0)
-    InputDiagnostics.event("manual.mappingExists", detail: rules.mappings.contains { $0.source == current } ? 1 : 0)
+    let manualMapping = manualMapping(from: current)
+    guard runtime.inputGeneration() == manualGeneration else {
+      InputDiagnostics.event("manual.mappingCapture.inputChanged")
+      return .aborted
+    }
+    InputDiagnostics.event("manual.mappingExists", detail: manualMapping == nil ? 0 : 1)
     if let evidence = selected, !evidence.text.isEmpty,
-      let mapping = rules.mappings.first(where: { $0.source == current })
+      let mapping = manualMapping
     {
       let text = LayoutConverter.convert(evidence.text, mapping: mapping)
       guard text != evidence.text else { return .aborted }
@@ -302,7 +320,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       if undone != .aborted { return undone }
     }
     guard let word = runtime.manualWord(), word.context == token, word.layout == current,
-      let mapping = rules.mappings.first(where: { $0.source == word.layout })
+      let mapping = manualMapping
     else {
       InputDiagnostics.event("manual.wordContextLayoutOrMappingMissing")
       return .aborted

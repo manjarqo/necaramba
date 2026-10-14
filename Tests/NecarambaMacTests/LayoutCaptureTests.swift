@@ -70,3 +70,24 @@ private final class BuilderSpy: RuleEngineBuilding {
     return .init(snapshot: snapshot, physicalMappings: physicalMappings)
   }
 }
+extension LayoutCaptureTests {
+  func testManualPhysicalMappingPreservesCaseAndLeavesAmbiguousCharactersAlone() throws {
+    let us = LayoutID(rawValue: "US")
+    let ru = LayoutID(rawValue: "RU")
+    let tables = CapturedLayoutTables(layouts: [
+      .init(id: us, entries: [
+        .init(keyCode: 5, modifiers: [], text: "g"),
+        .init(keyCode: 5, modifiers: [.shift], text: "G"),
+        .init(keyCode: 1, modifiers: [], text: "x"),
+        .init(keyCode: 2, modifiers: [], text: "x")]),
+      .init(id: ru, entries: [
+        .init(keyCode: 5, modifiers: [], text: "п"),
+        .init(keyCode: 5, modifiers: [.shift], text: "П"),
+        .init(keyCode: 1, modifiers: [], text: "а"),
+        .init(keyCode: 2, modifiers: [], text: "б")])
+    ])
+    let mapping = try XCTUnwrap(tables.manualMapping(source: us, target: ru))
+    XCTAssertEqual(LayoutConverter.convert("gGx", mapping: mapping), "пПx")
+    XCTAssertNil(tables.manualMapping(source: us, target: .init(rawValue: "missing")))
+  }
+}

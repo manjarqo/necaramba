@@ -23,6 +23,30 @@ public struct CapturedLayoutTables: Sendable {
   }
   public let layouts: [Layout]
   public init(layouts: [Layout]) { self.layouts = layouts }
+  /// Explicit conversion uses observed physical pairs, independently of classifier compatibility.
+  public func manualMapping(source sourceID: LayoutID, target targetID: LayoutID) -> LayoutMapping? {
+    guard sourceID != targetID,
+      let source = layouts.first(where: { $0.id == sourceID }),
+      let target = layouts.first(where: { $0.id == targetID }) else { return nil }
+    let targetEntries = Dictionary(grouping: target.entries) {
+      Key(code: $0.keyCode, modifiers: $0.modifiers)
+    }
+    var candidates: [String: Set<String>] = [:]
+    for entry in source.entries where entry.text.count == 1 {
+      guard entry.modifiers.isSubset(of: [.shift, .capsLock]) else { continue }
+      for replacement in targetEntries[Key(code: entry.keyCode, modifiers: entry.modifiers)] ?? []
+      where replacement.text.count == 1 {
+        candidates[entry.text, default: []].insert(replacement.text)
+      }
+    }
+    var pairs: [String: String] = [:]
+    for (text, replacements) in candidates {
+      // An ambiguous character stays unchanged, including uppercase: no inferred fallback.
+      pairs[text] = replacements.count == 1 ? replacements.first! : text
+    }
+    guard pairs.contains(where: { $0.key != $0.value }) else { return nil }
+    return .init(source: sourceID, target: targetID, pairs: pairs)
+  }
   public func resolve(_ snapshot: RuleSnapshot) -> RuleSnapshot {
     let ids = Set(layouts.map(\.id))
     let mappings = snapshot.mappings.compactMap { mapping -> LayoutMapping? in

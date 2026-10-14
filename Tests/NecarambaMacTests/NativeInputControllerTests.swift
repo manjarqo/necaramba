@@ -209,3 +209,62 @@ extension NativeInputControllerTests {
     XCTAssertEqual(editor.text, "ghbdtn")
   }
 }
+
+private final class ManualCapture: LayoutTableCapturing {
+  var onCapture: () -> Void = {}
+  func captureTables() -> CapturedLayoutTables {
+    onCapture()
+    let codes: [UInt16] = [5, 4, 11, 2, 17, 45, 50]
+    return .init(layouts: [
+      .init(id: .init(rawValue: "US"), entries: zip(codes, Array("ghbdtn`")).map {
+        .init(keyCode: $0.0, modifiers: [], text: String($0.1))
+      }),
+      .init(id: .init(rawValue: "RU"), entries: zip(codes, Array("привет>")).map {
+        .init(keyCode: $0.0, modifiers: [], text: String($0.1))
+      })
+    ])
+  }
+}
+extension NativeInputControllerTests {
+  func testManualConversionUsesActualTablesDespiteRejectedShippedMapping() {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    let capture = ManualCapture()
+    let snapshot = RuleSnapshot(modelVersion: 1, mappings: [
+      .init(source: .init(rawValue: "US"), target: .init(rawValue: "RU"),
+        pairs: ["g": "п", "h": "р", "b": "и", "d": "в", "t": "е", "n": "т", "`": "ё"])
+    ])
+    XCTAssertTrue(capture.captureTables().resolve(snapshot).mappings.isEmpty)
+    let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+      editingContext: context, selectionAccess: editor, layoutCapture: capture)
+    let installed = expectation(description: "rejected automatic mapping installed")
+    controller.install(snapshot) { _ in installed.fulfill() }
+    wait(for: [installed], timeout: 2)
+    typeWord(controller, context: context)
+    XCTAssertEqual(controller.manualCorrection(), .committed)
+    XCTAssertEqual(editor.text, "привет")
+  }
+  func testManualSelectionNeedsNoRulePackageOrDictionary() {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    editor.selectionLength = 6
+    let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+      editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+    XCTAssertEqual(controller.manualCorrection(), .committed)
+    XCTAssertEqual(editor.text, "привет")
+  }
+}
+
+extension NativeInputControllerTests {
+  func testTypingDuringManualTableCaptureCancelsAction() {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    editor.selectionLength = 6
+    let capture = ManualCapture()
+    let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+      editingContext: context, selectionAccess: editor, layoutCapture: capture)
+    capture.onCapture = { self.typeWord(controller, context: context) }
+    XCTAssertEqual(controller.manualCorrection(), .aborted)
+    XCTAssertEqual(editor.text, "ghbdtn")
+  }
+}
