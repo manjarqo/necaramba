@@ -237,7 +237,7 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
           && $0.layout == word.layout && $0.modifiers.isSubset(of: [.shift, .capsLock])
           && $0.text?.count == 1
       }), word.events.compactMap(\.text).joined() == word.text,
-      word.delimiter.allSatisfy({ "!? \n\r\t".contains($0) }),
+      word.delimiter.allSatisfy({ "!? ".contains($0) }),
       let generation = inputGeneration?(), let before = snapshot(word.context, generation: generation),
       before.value.isEmpty, before.range == NSRange(location: 0, length: 0), let execute
     else { return .aborted }
@@ -257,7 +257,8 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
       after.identity == before.identity
     else { return .uncertain }
     if after.value == text && after.range == NSRange(location: text.utf16.count, length: 0) {
-      return .committed
+      // Even exact output cannot retrospectively prove the original invisible suffix.
+      return .dispatched
     }
     return after.value.isEmpty && after.range == NSRange(location: 0, length: 0)
       ? .dispatched : .uncertain

@@ -167,6 +167,31 @@ final class AXSelectionProofTests: XCTestCase {
     XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .uncertain)
   }
 
+  func testTrackedReadableResultStillDoesNotProveOriginalSuffix() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.value = ""
+    reader.range = NSRange(location: 0, length: 0)
+    adapter.execute = { _, _, _, _ in
+      reader.value = "WORD "
+      reader.range = NSRange(location: 5, length: 0)
+      return .committed
+    }
+    XCTAssertEqual(adapter.replaceTrackedSuffix(word(token), with: "WORD "), .dispatched)
+  }
+
+  func testTrackedSubmissionDelimitersAbortWithoutPosting() {
+    let (adapter, reader, token) = fixture(manual: true)
+    reader.value = ""
+    reader.range = NSRange(location: 0, length: 0)
+    adapter.execute = { _, _, _, _ in XCTFail("Submission must never be replayed"); return .committed }
+    let original = word(token)
+    for delimiter in ["\n", "\r", "\t", "!\n", " \r", "?\t"] {
+      let submitted = BufferedWord(text: original.text, events: original.events,
+        context: original.context, layout: original.layout, delimiter: delimiter)
+      XCTAssertEqual(adapter.replaceTrackedSuffix(submitted, with: "WORD" + delimiter), .aborted)
+    }
+  }
+
   private func word(_ token: ContextToken, origin: EventOrigin = .physical) -> BufferedWord {
     let layout = LayoutID(rawValue: "US")
     let events = "word".map { character in
