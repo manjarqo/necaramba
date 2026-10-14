@@ -7,6 +7,9 @@ public final class EventTapAdapter {
   public static let ownMarker = Int64.random(in: 1...Int64.max)
   private weak var runtime: InputRuntime?
   private let lock = NSLock()
+  // Serializes stop against in-flight callbacks, without holding InputRuntime's lock.
+  // Recursive because a tap-disabled callback can stop its own adapter.
+  private let callbacks = NSRecursiveLock()
   private var thread: Thread?
   private var loop: CFRunLoop?
   private var tap: CFMachPort?
@@ -50,10 +53,17 @@ public final class EventTapAdapter {
     return installed
   }
   public func stop() {
+    callbacks.lock()
     lock.lock()
     stopped = true
+    installed = false
     let runloop = loop
+    let port = tap
     lock.unlock()
+    // Disable before the caller can create another tap. Teardown/replay stays on
+    // the original run loop; no synchronous wait on that run loop or main queue.
+    if let port { CGEvent.tapEnable(tap: port, enable: false) }
+    callbacks.unlock()
     if let runloop {
       CFRunLoopPerformBlock(runloop, CFRunLoopMode.commonModes.rawValue) { [weak self] in
         if let self { self.release(self.ownership.cancel(), result: .aborted) }
@@ -105,10 +115,14 @@ public final class EventTapAdapter {
     let timer = CFRunLoopTimerCreateWithHandler(nil, CFAbsoluteTimeGetCurrent() + 0.02, 0.02, 0, 0)
     { [weak self] _ in self?.tick() }
     CFRunLoopAddTimer(runloop, timer, .commonModes)
-    CGEvent.tapEnable(tap: port, enable: true)
+    callbacks.lock()
     lock.lock()
-    installed = true
+    if !stopped {
+      CGEvent.tapEnable(tap: port, enable: true)
+      installed = true
+    }
     lock.unlock()
+    callbacks.unlock()
     ready.signal()
     CFRunLoopRun()
     CFRunLoopTimerInvalidate(timer)
@@ -171,14 +185,17 @@ public final class EventTapAdapter {
     guard batch.count <= 512, !batch.isEmpty else { return .aborted }
     lock.lock()
     let runloop = loop
-    let active = installed
+    let active = installed && !stopped
     lock.unlock()
     guard active, let runloop else { return .aborted }
     let done = DispatchSemaphore(value: 0)
     var result: ApplyResult = .aborted
     CFRunLoopPerformBlock(runloop, CFRunLoopMode.commonModes.rawValue) { [weak self] in
       defer { done.signal() }
-      guard let self, DispatchTime.now().uptimeNanoseconds - requested < 100_000_000,
+      guard let self else { return }
+      self.callbacks.lock()
+      defer { self.callbacks.unlock() }
+      guard !self.isStopped, DispatchTime.now().uptimeNanoseconds - requested < 100_000_000,
         !IsSecureEventInputEnabled(), runtime.cachedInputContext()?.0 == evidence.context,
         self.admit(
           lease, generation: generation, context: evidence.context,
@@ -208,7 +225,15 @@ public final class EventTapAdapter {
     }
     return result
   }
-  private func tick() {
+  private var isStopped: Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    return stopped
+  }
+  func tick() {
+    callbacks.lock()
+    defer { callbacks.unlock() }
+    guard !isStopped else { return }
     let now = DispatchTime.now().uptimeNanoseconds
     if ownership.expired(at: now) {
       let events = ownership.cancel()
@@ -259,7 +284,10 @@ public final class EventTapAdapter {
       event.post(tap: .cgSessionEventTap)
     }
   }
-  private func receive(_ type: CGEventType, _ event: CGEvent) -> Bool {
+  func receive(_ type: CGEventType, _ event: CGEvent) -> Bool {
+    callbacks.lock()
+    defer { callbacks.unlock() }
+    guard !isStopped else { return true }
     guard let runtime else { return true }
     if type == .tapDisabledByUserInput {
       runtime.invalidateContext(reason: .permissionRevoked)

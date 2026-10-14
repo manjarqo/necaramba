@@ -57,17 +57,28 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tap = adapter
     return true
   }
+  public var isRunning: Bool {
+    lock.lock()
+    let current = tap
+    lock.unlock()
+    return current?.isInstalled == true
+  }
   public func stop() {
     lock.lock()
     let old = tap
     tap = nil
+    lock.unlock()
+    // Let the adapter finish any in-flight callback without holding this lock.
+    // Invalidate after that barrier so its final event cannot leave a command
+    // or buffered word eligible for the replacement runtime.
+    old?.stop()
+    lock.lock()
     generation &+= 1
     tracked.removeAll()
     recentWord = nil
     buffer.invalidate(.unknownInput)
     gestures.invalidate()
     lock.unlock()
-    old?.stop()
   }
   public func updatePreferences(_ snapshot: PreferencesSnapshot) {
     lock.lock()

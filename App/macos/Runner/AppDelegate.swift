@@ -60,7 +60,8 @@ struct NecarambaMain {
       applicationServices.onChanged = { [weak bridge] in bridge?.publishChange() }
       publishRulePolicies()
       let permissionRuntime = PermissionRuntimeController(permissions: permissions,
-        start: { [weak input] in input?.start() ?? false }, stop: { [weak input] in input?.stop() })
+        start: { [weak input] in input?.start() ?? false }, stop: { [weak input] in input?.stop() },
+        isRunning: { [weak input] in input?.runtime.isRunning ?? false })
       self.permissionRuntime = permissionRuntime
       applicationServices.onRefreshCapabilities = { [weak applicationServices, weak permissionRuntime] in
         applicationServices?.runtimeRunning = permissionRuntime?.refresh() ?? false

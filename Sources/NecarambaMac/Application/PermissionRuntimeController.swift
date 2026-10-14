@@ -6,19 +6,21 @@ import NecarambaCore
     private let permissions: PermissionReading
     private let start: () -> Bool
     private let stop: () -> Void
+    private let isRunning: () -> Bool
     private var previous: PermissionState?
     private var running = false
 
-    public init(permissions: PermissionReading, start: @escaping () -> Bool, stop: @escaping () -> Void) {
+    public init(permissions: PermissionReading, start: @escaping () -> Bool, stop: @escaping () -> Void, isRunning: @escaping () -> Bool) {
         self.permissions = permissions
         self.start = start
         self.stop = stop
+        self.isRunning = isRunning
     }
 
     @discardableResult public func refresh() -> Bool {
         let current = permissions.current()
         if let previous,
-           previous.listen != current.listen || previous.post != current.post || previous.ax != current.ax {
+           (previous.listen != current.listen || previous.post != current.post || previous.ax != current.ax || !isRunning()) {
             stop()
             running = false
         }
