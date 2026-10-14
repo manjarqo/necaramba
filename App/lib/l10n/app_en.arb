@@ -153,5 +153,11 @@
   "additionalUnavailable": "These corrections are not available yet. Your saved preferences are preserved.",
   "runtimeStarting": "Starting…",
   "runtimeUnavailable": "Automatic correction unavailable",
-  "runtimeDisconnected": "Not connected"
+  "runtimeDisconnected": "Not connected",
+  "layoutShortcut": "Switch input language",
+  "layoutShortcutHelp": "Release the keys to switch. Double Shift always corrects text.",
+  "shortcutShift": "Shift",
+  "shortcutAltShift": "Alt (Option) + Shift",
+  "shortcutControlShift": "Ctrl + Shift",
+  "shortcutOff": "Off"
 }

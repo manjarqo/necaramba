@@ -498,4 +498,23 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get runtimeDisconnected => 'Нет подключения';
+
+  @override
+  String get layoutShortcut => 'Смена языка ввода';
+
+  @override
+  String get layoutShortcutHelp =>
+      'Срабатывает при отпускании клавиш. Двойной Shift всегда исправляет текст.';
+
+  @override
+  String get shortcutShift => 'Shift';
+
+  @override
+  String get shortcutAltShift => 'Alt (Option) + Shift';
+
+  @override
+  String get shortcutControlShift => 'Ctrl + Shift';
+
+  @override
+  String get shortcutOff => 'Выключено';
 }

@@ -495,4 +495,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get runtimeDisconnected => 'Not connected';
+
+  @override
+  String get layoutShortcut => 'Switch input language';
+
+  @override
+  String get layoutShortcutHelp =>
+      'Release the keys to switch. Double Shift always corrects text.';
+
+  @override
+  String get shortcutShift => 'Shift';
+
+  @override
+  String get shortcutAltShift => 'Alt (Option) + Shift';
+
+  @override
+  String get shortcutControlShift => 'Ctrl + Shift';
+
+  @override
+  String get shortcutOff => 'Off';
 }

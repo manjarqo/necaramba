@@ -18,6 +18,8 @@ NativeState fixture({
     'typoEnabled': true,
     'yoEnabled': true,
     'singleShiftEnabled': true,
+    'altShiftEnabled': false,
+    'controlShiftEnabled': false,
     'optionEnabled': false,
     'splitShiftEnabled': true,
     'plainPasteEnabled': true,

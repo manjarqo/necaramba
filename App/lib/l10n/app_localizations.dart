@@ -1021,6 +1021,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not connected'**
   String get runtimeDisconnected;
+
+  /// No description provided for @layoutShortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch input language'**
+  String get layoutShortcut;
+
+  /// No description provided for @layoutShortcutHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Release the keys to switch. Double Shift always corrects text.'**
+  String get layoutShortcutHelp;
+
+  /// No description provided for @shortcutShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Shift'**
+  String get shortcutShift;
+
+  /// No description provided for @shortcutAltShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Alt (Option) + Shift'**
+  String get shortcutAltShift;
+
+  /// No description provided for @shortcutControlShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Ctrl + Shift'**
+  String get shortcutControlShift;
+
+  /// No description provided for @shortcutOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get shortcutOff;
 }
 
 class _AppLocalizationsDelegate

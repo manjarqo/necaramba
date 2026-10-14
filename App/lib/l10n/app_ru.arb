@@ -153,5 +153,11 @@
   "additionalUnavailable": "Эти исправления пока недоступны. Сохранённые настройки остаются без изменений.",
   "runtimeStarting": "Запуск…",
   "runtimeUnavailable": "Автоисправление недоступно",
-  "runtimeDisconnected": "Нет подключения"
+  "runtimeDisconnected": "Нет подключения",
+  "layoutShortcut": "Смена языка ввода",
+  "layoutShortcutHelp": "Срабатывает при отпускании клавиш. Двойной Shift всегда исправляет текст.",
+  "shortcutShift": "Shift",
+  "shortcutAltShift": "Alt (Option) + Shift",
+  "shortcutControlShift": "Ctrl + Shift",
+  "shortcutOff": "Выключено"
 }

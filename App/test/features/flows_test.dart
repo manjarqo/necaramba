@@ -6,7 +6,7 @@ import 'package:necaramba/domain/repositories/native_repository.dart';
 import '../support/native_fakes.dart';
 
 void main() {
-  testWidgets('eight flags retain confirmed values after permission failure', (
+  testWidgets('settings retain confirmed values after permission failure', (
     tester,
   ) async {
     final repo = FakeNativeRepository();
@@ -20,7 +20,7 @@ void main() {
             widget is SwitchListTile &&
             widget.key != const Key('launchAtLogin'),
       ),
-      findsNWidgets(8),
+      findsNWidgets(7),
     );
     repo.failure = const NativeFailure('permissionDenied', retryable: false);
     await tester.tap(find.byKey(const Key('autoEnabled')));

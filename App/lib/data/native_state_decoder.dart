@@ -7,6 +7,8 @@ class NativeStateDecoder {
     'typoEnabled',
     'yoEnabled',
     'singleShiftEnabled',
+    'altShiftEnabled',
+    'controlShiftEnabled',
     'optionEnabled',
     'splitShiftEnabled',
     'plainPasteEnabled',
@@ -50,6 +52,25 @@ class NativeStateDecoder {
     final m = map(v);
     keys(m, expected);
     return m.map((k, v) => MapEntry(k, boolean(v)));
+  }
+
+  static Map<String, bool> preferences(Object? value) {
+    final values = map(value);
+    // Schema 1 snapshots from older runtimes have neither new choice.
+    if (!values.containsKey('altShiftEnabled') &&
+        !values.containsKey('controlShiftEnabled')) {
+      values.addAll({'altShiftEnabled': false, 'controlShiftEnabled': false});
+    }
+    final result = flags(values, preferenceKeys);
+    if ([
+          'singleShiftEnabled',
+          'altShiftEnabled',
+          'controlShiftEnabled',
+        ].where((key) => result[key]!).length >
+        1) {
+      invalid();
+    }
+    return result;
   }
 
   static void date(Object? v) {
@@ -149,7 +170,7 @@ class NativeStateDecoder {
     return NativeState(
       sessionID: session,
       revision: integer(m['revision']),
-      preferences: flags(m['preferences'], preferenceKeys),
+      preferences: preferences(m['preferences']),
       capabilities: flags(m['capabilities'], {
         'listen',
         'post',
