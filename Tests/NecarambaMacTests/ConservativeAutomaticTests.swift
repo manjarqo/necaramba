@@ -147,6 +147,69 @@ final class ConservativeAutomaticTests: XCTestCase {
     XCTAssertEqual(fixture.editor.text, "привет ")
   }
 
+  func testFirstOpaqueWordAfterEmptyCaptureResetNeedsNoLeadingSpace() {
+    for reason: InvalidationReason in [.mouseNavigation, .focusChanged, .unknownInput] {
+      let fixture = fixture(proxy: true)
+      fixture.controller.runtime.invalidateContext(reason: reason)
+      feed("ghbdtn ", fixture)
+      drain()
+      XCTAssertEqual(fixture.editor.text, "привет ", reason.rawValue)
+      XCTAssertEqual(fixture.editor.results, [.dispatched])
+    }
+  }
+
+  func testMouseResetCannotForgetForeignPastePrefix() {
+    let fixture = fixture(proxy: true)
+    fixture.controller.runtime.accept(.init(kind: .down, keyCode: 9, modifiers: [.command],
+      timestampNanos: 100, layout: fixture.layouts.value, context: fixture.context.token,
+      origin: .foreignSynthetic, text: nil, isRepeat: false))
+    fixture.editor.text = "url/"
+    fixture.controller.runtime.invalidateContext(reason: .mouseNavigation)
+    feed("ghbdtn ", fixture)
+    drain()
+    XCTAssertEqual(fixture.editor.text, "url/ghbdtn ")
+    XCTAssertTrue(fixture.editor.results.isEmpty)
+  }
+
+  func testApplicationShortcutDoesNotBlockFirstWordInNewFocus() {
+    let fixture = fixture(proxy: true)
+    fixture.controller.runtime.accept(.init(kind: .down, keyCode: 48, modifiers: [.command],
+      timestampNanos: 100, layout: fixture.layouts.value, context: fixture.context.token,
+      origin: .physical, text: "\t", isRepeat: false))
+    fixture.controller.runtime.invalidateContext(reason: .focusChanged)
+    fixture.context.token = .init(pid: 42, bundleID: "test", focusEpoch: 2, layoutEpoch: 1)
+    feed("ghbdtn ", fixture)
+    drain()
+    XCTAssertEqual(fixture.editor.text, "привет ")
+    XCTAssertEqual(fixture.editor.results, [.dispatched])
+  }
+
+  func testKnownPrefixInNewFocusIsNotMistakenForFreshCapture() {
+    for manual in [false, true] {
+      let fixture = fixture(proxy: true)
+      feed(" ", fixture)
+      fixture.controller.runtime.invalidateContext(reason: .focusChanged)
+      fixture.context.token = .init(pid: 42, bundleID: "test", focusEpoch: 2, layoutEpoch: 1)
+      if manual {
+        let original = BufferedWord(text: "prefix", events: [], context: fixture.context.token,
+          layout: fixture.layouts.value, delimiter: "")
+        let candidate = ManualRepeatCandidate(original: original, currentText: "prefix",
+          context: fixture.context.token, layout: fixture.layouts.value, delimiter: "", fieldIdentity: UUID())
+        XCTAssertTrue(fixture.controller.runtime.retainManualResult(candidate,
+          expectedGeneration: fixture.controller.runtime.inputGeneration()))
+      } else {
+        fixture.controller.runtime.accept(.init(kind: .down, keyCode: 9, modifiers: [.command, .shift],
+          timestampNanos: 100, layout: fixture.layouts.value, context: fixture.context.token,
+          origin: .physical, text: nil, isRepeat: false))
+      }
+      fixture.editor.text = "prefix"
+      feed("ghbdtn ", fixture)
+      drain()
+      XCTAssertEqual(fixture.editor.text, "prefixghbdtn ")
+      XCTAssertTrue(fixture.editor.results.isEmpty)
+    }
+  }
+
   private func drain() {
     let done = expectation(description: "boundary executor")
     DispatchQueue.main.async { done.fulfill() }
@@ -248,7 +311,7 @@ private final class AutoEditor: SelectionAccess, AutomaticBoundarySuffixReplacin
     guard candidate.inputGeneration == generation(), candidate.word.context == context.token,
       candidate.boundary.keyCode == 49, candidate.boundary.text == " ",
       text.hasSuffix(candidate.word.text + " ") else { return .aborted }
-    if candidate.requiresWordStartProof {
+    if candidate.requiresWordStartProof && (!proxy || !candidate.allowsOpaqueWordStart) {
       guard !proxy else { return .aborted }
       let prefix = text.dropLast(candidate.word.text.count + 1)
       guard prefix.isEmpty || prefix.last?.isWhitespace == true else { return .aborted }

@@ -578,7 +578,10 @@ extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
     else { trace("ax.auto.boundaryOrSnapshotRejected"); return .aborted }
     let original = word.text + word.delimiter
     if before.value.isEmpty && before.range == NSRange(location: 0, length: 0) {
-      guard !candidate.requiresWordStartProof else { return .aborted }
+      guard !candidate.requiresWordStartProof || candidate.allowsOpaqueWordStart else {
+        trace("ax.auto.opaquePrefixBlocked"); return .aborted
+      }
+      if candidate.requiresWordStartProof { trace("ax.auto.freshOpaqueCapture") }
       trace("ax.auto.emptyProxy")
       return replaceEmptyProxySuffix(
         original, in: word.context, identity: before.identity, with: text,

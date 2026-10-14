@@ -110,14 +110,18 @@ public struct AutomaticBoundaryCandidate: Sendable {
   public let word: BufferedWord
   public let boundary: InputEvent
   public let inputGeneration: UInt64
-  /// Lost prefix history requires a readable editor proof of the word's start.
+  /// Lost prefix history requires word-start proof in readable editors.
+  /// Opaque fallback additionally requires explicit allowsOpaqueWordStart.
   public let requiresWordStartProof: Bool
+  /// Fresh physical capture may be dispatched to an opaque proxy without text readback.
+  public let allowsOpaqueWordStart: Bool
   public init(word: BufferedWord, boundary: InputEvent, inputGeneration: UInt64,
-              requiresWordStartProof: Bool = false) {
+              requiresWordStartProof: Bool = false, allowsOpaqueWordStart: Bool = false) {
     self.word = word
     self.boundary = boundary
     self.inputGeneration = inputGeneration
     self.requiresWordStartProof = requiresWordStartProof
+    self.allowsOpaqueWordStart = allowsOpaqueWordStart
   }
 }
 public protocol AutomaticBoundarySuffixReplacing: AnyObject {

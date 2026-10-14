@@ -47,7 +47,7 @@ The application is free to use. It has no purchase or activation screen. Necaram
 - The current automatic mode checks unambiguous dictionary matches of at least three letters after a physical Space.
 - Enter and Tab do not trigger this replacement path.
 - Unknown or ambiguous words are left unchanged.
-- The first word after Enter is tracked without a leading space. After pasting or moving the caret, readable fields can prove the word starts at the beginning of the field or after whitespace; opaque fields still need a fresh boundary.
+- The first word after Enter is tracked without a leading space. After pasting or moving the caret, readable fields can prove the word starts at the beginning of the field or after whitespace; opaque fields use a fresh uninterrupted physical capture when no interrupted token or paste is known. They cannot verify unseen text before the captured word.
 - Manual conversion is useful for words that the automatic dictionary does not recognize.
 - Typo correction, double-capital correction and restoration of `ё` are not enabled in the current live automatic pipeline. Their additional-correction controls are unavailable.
 
@@ -209,7 +209,7 @@ Some specifications and historical reports describe an earlier commercial design
 - Текущий режим исправляет однозначно распознанные словарём слова длиной от трёх букв после физического пробела.
 - Enter и Tab не запускают этот сценарий замены.
 - Неизвестные и неоднозначные слова остаются без изменений.
-- Первое слово после Enter отслеживается без начального пробела. После вставки текста или перемещения курсора в читаемых полях проверяется начало слова: начало поля или пробельный символ перед ним. В полях, не раскрывающих текст, по-прежнему нужна новая граница слова.
+- Первое слово после Enter отслеживается без начального пробела. После вставки текста или перемещения курсора в читаемых полях проверяется начало слова: начало поля или пробельный символ перед ним. В полях, не раскрывающих текст, используется новый непрерывный набор, если не было известной вставки или прерванного слова. Проверить невидимый текст перед набранным словом в таких полях невозможно.
 - Для слов, которых нет в словаре, можно использовать ручное переключение.
 - Исправление опечаток, двух заглавных букв и восстановление `ё` пока не включены в действующий автоматический режим. Соответствующие дополнительные настройки недоступны.
 

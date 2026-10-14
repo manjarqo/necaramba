@@ -405,6 +405,26 @@ final class AXSelectionProofTests: XCTestCase {
     XCTAssertEqual(adapter.replaceAutomaticBoundary(candidate, with: "WORD "), .aborted)
   }
 
+  func testFreshOpaqueWordCanDispatchButReadableEmbeddedSuffixCannot() {
+    for value in ["", "url/word "] {
+      let (adapter, reader, token) = fixture(automatic: true)
+      reader.value = value
+      reader.range = NSRange(location: value.utf16.count, length: 0)
+      let original = autoCandidate(token)
+      let candidate = AutomaticBoundaryCandidate(word: original.word, boundary: original.boundary,
+        inputGeneration: 1, requiresWordStartProof: true, allowsOpaqueWordStart: true)
+      var posts = 0
+      adapter.execute = { _, _, _, preflight in
+        guard preflight() else { return .aborted }
+        posts += 1
+        return .committed
+      }
+      XCTAssertEqual(adapter.replaceAutomaticBoundary(candidate, with: "WORD "),
+        value.isEmpty ? .dispatched : .aborted)
+      XCTAssertEqual(posts, value.isEmpty ? 1 : 0)
+    }
+  }
+
   private func autoCandidate(_ token: ContextToken) -> AutomaticBoundaryCandidate {
     .init(word: word(token), boundary: .init(kind: .down, keyCode: 49, modifiers: [],
       timestampNanos: 2, layout: .init(rawValue: "US"), context: token,

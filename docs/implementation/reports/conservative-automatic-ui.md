@@ -33,3 +33,16 @@ Light/dark Flutter previews were visually reviewed. Universal x86_64/arm64 Relea
 Regression tests reproduced dropped first words after Return and focus invalidation. Return now establishes a physical boundary for the next token without correcting the submitted word. An untrusted token can reach the automatic adapter with an explicit word-start-proof requirement, preserved when remapping captured key events. Readable AX fields must prove field start or preceding whitespace; the full observed value is pinned through destructive preflight. Opaque fields cannot satisfy this proof and still require a known physical boundary. Paste/navigation and appended manual-conversion suffix protection remain intact.
 
 Validation: 225 Mac + 65 Core = 290 Swift tests passed. Added first-word, opaque-prefix, embedded URL/email, Unicode whitespace, and changed-prefix-before-dispatch coverage. Actual physical input in Orca remains a user verification step; no claim is made that opaque focus-only resets can establish an empty field.
+
+
+## Orca opaque first-word follow-up
+
+Physical user verification showed the first-word fix still failed in Orca while Chrome succeeded. Runtime logs showed a layout correction decision followed by `auto.result code=0` after successful AX reads of the empty proxy; the next word reached `ax.auto.emptyProxy` and `auto.result code=3`. Thus first-word start-proof rejection, rather than vocabulary or permission failure, was confirmed.
+
+Runtime now distinguishes unknown prefix history after an empty capture reset from a known interrupted token, paste, edited suffix or foreign input. A fresh uninterrupted physical token may explicitly use the opaque fallback. Readable fields still require start/whitespace proof. A paste or interrupted token remains blocked across subsequent invalidations within the same field until a physical boundary. A new PID/bundle/focus epoch starts a fresh capture; layout changes alone do not. Opaque output remains `dispatched`, never verified, counted or retried. This is a deliberate compatibility tradeoff: unseen pre-existing text before a freshly captured token cannot be checked in an opaque terminal proxy.
+
+RED: new empty-capture-reset and adapter dispatch tests failed with aborted/unchanged text. GREEN: 228 Mac + 65 Core = 293 tests passed, including preservation of pasted URL prefixes across mouse reset and readable embedded-suffix rejection even with opaque permission. Real physical Orca verification remains pending after the updated build.
+
+Review found the previous field’s Cmd+Tab block surviving an actual focus change. A regression test reproduced it; tracking the capture context now prevents that carryover. Final validation: 229 Mac + 65 Core = 294 Swift tests passed.
+
+A second review caught known-prefix context not being recorded by intercepted plain paste and retained manual results. Both paths were reproduced RED and corrected; replay/discard and unsafe-event paths also retain their known context. Final suite after these changes: 230 Mac + 65 Core = 295 tests, zero failures.

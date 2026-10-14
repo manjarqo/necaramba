@@ -23,6 +23,10 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   private let conservativeAutomaticEnabled: Bool
   private var automaticEvents: [InputEvent] = []
   private var automaticTokenUnsafe = false
+  // A missing prefix differs from a known interrupted token/paste. Only the
+  // former may use physical capture in editors that never expose their value.
+  private var automaticPrefixBlocked = false
+  private var automaticCaptureContext: ContextToken?
   private var buffer = WordBuffer()
   private var tracked: [InputEvent] = []
   private var recentWord: BufferedWord?
@@ -84,6 +88,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticPrefixBlocked = automaticPrefixBlocked || !automaticEvents.isEmpty
     automaticEvents.removeAll()
     automaticTokenUnsafe = true
     buffer.invalidate(.unknownInput)
@@ -98,6 +103,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticPrefixBlocked = automaticPrefixBlocked || !automaticEvents.isEmpty
     automaticTokenUnsafe = automaticTokenUnsafe || !automaticEvents.isEmpty
     automaticEvents.removeAll()
     gestures = GestureRecognizer(configuration: Self.configuration(snapshot))
@@ -115,6 +121,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticPrefixBlocked = automaticPrefixBlocked || !automaticEvents.isEmpty
     automaticTokenUnsafe = automaticTokenUnsafe || !automaticEvents.isEmpty
     automaticEvents.removeAll()
     buffer.invalidate(.unknownInput)
@@ -140,6 +147,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = retained
+    automaticPrefixBlocked = automaticPrefixBlocked || !automaticEvents.isEmpty
     automaticTokenUnsafe = automaticTokenUnsafe || !automaticEvents.isEmpty
     automaticEvents.removeAll()
     buffer.invalidate(.layoutChanged)
@@ -152,6 +160,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     tracked.removeAll()
     recentWord = nil
     repeatedManual = nil
+    automaticPrefixBlocked = automaticPrefixBlocked || !automaticEvents.isEmpty
     automaticEvents.removeAll()
     automaticTokenUnsafe = true
     notifyInvalidation()
@@ -171,9 +180,11 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   public func discardManualCandidate() {
     lock.lock()
     defer { lock.unlock() }
+    automaticCaptureContext = context.current() ?? automaticCaptureContext
     repeatedManual = nil
     automaticEvents.removeAll()
     automaticTokenUnsafe = true
+    automaticPrefixBlocked = true
     tracked.removeAll()
     recentWord = nil
     buffer.invalidate(.unknownInput)
@@ -196,6 +207,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     guard generation == expectedGeneration, context.isSafe(candidate.context) else { return false }
     generation &+= 1
     layout = candidate.layout
+    automaticCaptureContext = candidate.context
     tracked.removeAll()
     recentWord = nil
     buffer.invalidate(.layoutChanged)
@@ -203,6 +215,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     repeatedManual = candidate
     automaticEvents.removeAll()
     automaticTokenUnsafe = candidate.delimiter != " "
+    automaticPrefixBlocked = candidate.delimiter != " "
     return true
   }
   public func inputGeneration() -> UInt64 {
@@ -213,6 +226,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   public func replayedPhysicalInput() {
     lock.lock()
     defer { lock.unlock() }
+    automaticCaptureContext = context.current() ?? automaticCaptureContext
     generation &+= 1
     buffer.invalidate(.unknownInput)
     tracked.removeAll()
@@ -220,6 +234,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     repeatedManual = nil
     automaticEvents.removeAll()
     automaticTokenUnsafe = true
+    automaticPrefixBlocked = true
     notifyInvalidation()
   }
   public func finishShortcut(_ lease: ShortcutLease, _ result: ApplyResult) {
@@ -259,11 +274,13 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     if event.kind != .up && ![56, 60].contains(event.keyCode) { repeatedManual = nil }
     if event.kind == .down && ![56, 60, 58, 61].contains(event.keyCode) { notifyInvalidation() }
     guard event.origin == .physical else {
+      automaticCaptureContext = event.context
       tracked.removeAll()
       recentWord = nil
       repeatedManual = nil
       automaticEvents.removeAll()
       automaticTokenUnsafe = true
+      automaticPrefixBlocked = true
       notifyInvalidation()
       buffer.invalidate(.unknownInput)
       gestures.invalidate()
@@ -271,11 +288,13 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     }
     for action in gestures.consume(event) { deliver(.gesture(action, event.context)) }
     guard context.isSafe(event.context) else {
+      automaticCaptureContext = event.context
       tracked.removeAll()
       recentWord = nil
       repeatedManual = nil
       automaticEvents.removeAll()
       automaticTokenUnsafe = true
+      automaticPrefixBlocked = true
       notifyInvalidation()
       buffer.invalidate(.unknownInput)
       return .pass
@@ -283,11 +302,13 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     if event.kind == .down, event.keyCode == 9, event.modifiers == [.command, .shift],
       preferences.plainPasteEnabled
     {
+      automaticCaptureContext = event.context
       tracked.removeAll()
       recentWord = nil
       repeatedManual = nil
       automaticEvents.removeAll()
       automaticTokenUnsafe = true
+      automaticPrefixBlocked = true
       buffer.invalidate(.unknownInput)
       guard tap?.canSuppress == true else { return .pass }
       let lease = ShortcutLease(
@@ -352,6 +373,16 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   private func consumeAutomaticBoundary(_ event: InputEvent) {
     guard event.kind == .down else { return }
     if [56, 60].contains(event.keyCode) { return }
+    if let previous = automaticCaptureContext,
+      previous.pid != event.context.pid || previous.bundleID != event.context.bundleID ||
+        previous.focusEpoch != event.context.focusEpoch {
+      // A new field must not inherit a shortcut/prefix from the old one.
+      // Readable fields still prove the prefix; opaque fields use fresh capture.
+      automaticEvents.removeAll()
+      automaticTokenUnsafe = true
+      automaticPrefixBlocked = false
+    }
+    automaticCaptureContext = event.context
     let ordinary = event.modifiers.isSubset(of: [.shift, .capsLock])
     // Return starts a new line or submits the current message. It never edits
     // the preceding word, but the next physical token has a known boundary.
@@ -359,10 +390,11 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       event.text == "\n" || event.text == "\r" {
       automaticEvents.removeAll()
       automaticTokenUnsafe = false
+      automaticPrefixBlocked = false
       return
     }
     if ordinary, event.keyCode == 49, event.text == " " {
-      defer { automaticEvents.removeAll(); automaticTokenUnsafe = false }
+      defer { automaticEvents.removeAll(); automaticTokenUnsafe = false; automaticPrefixBlocked = false }
       guard !automaticEvents.isEmpty,
         preferences.autoEnabled, !snapshot.lexicon.isEmpty,
         automaticEvents.allSatisfy({ $0.context == event.context && $0.layout == event.layout })
@@ -370,7 +402,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       let word = BufferedWord(text: automaticEvents.compactMap(\.text).joined(), events: automaticEvents,
         context: event.context, layout: event.layout, delimiter: " ")
       deliver(.automaticBoundary(.init(word: word, boundary: event, inputGeneration: generation,
-        requiresWordStartProof: automaticTokenUnsafe), snapshot, preferences))
+        requiresWordStartProof: automaticTokenUnsafe,
+        allowsOpaqueWordStart: !automaticPrefixBlocked), snapshot, preferences))
       return
     }
     guard ordinary, let text = event.text, text.count == 1,
@@ -378,12 +411,14 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       automaticEvents.count < 128 else {
       automaticEvents.removeAll()
       automaticTokenUnsafe = true
+      automaticPrefixBlocked = true
       return
     }
     if let first = automaticEvents.first,
       first.context != event.context || first.layout != event.layout {
       automaticEvents.removeAll()
       automaticTokenUnsafe = true
+      automaticPrefixBlocked = true
     }
     automaticEvents.append(event)
   }
