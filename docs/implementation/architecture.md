@@ -12,3 +12,5 @@ User approved Flutter/Swift plan and explicitly requested Clean Architecture.
 Plan path refinements follow these boundaries. Swift permission UI DTO uses PermissionState, native editing result uses InputCapabilities, avoiding the two different CapabilityState definitions in B/C prose. Source of truth remains native.
 
 Status: implementation in progress. Unavailable Intel/macOS12 physical hosts, Developer ID signing/notarization and commercial credentials remain explicit release gates, not passing tests.
+
+Developer ID development Runner uses local.necaramba.app and no app sandbox; MAS is a separate capability gate, not inherited from the Flutter template. Team identity/notarization remain unconfigured. Input runtime will remain conservative until qualification. Engine and native services share a process (UI freeze independence is tested separately; no claim of crash isolation).
