@@ -7,7 +7,7 @@ final class RulePackageVerifierTests: XCTestCase {
         let key = Curve25519.Signing.PrivateKey()
         let snapshot = RuleSnapshot(modelVersion: version,
             lexicon: [.init(word: "hello", language: .english, frequencyBand: 1), .init(word: "привет", language: .russian, frequencyBand: 1)],
-            protectedTokens: ["API"], mappings: [.init(source: .init(rawValue: "en"), target: .init(rawValue: "ru"), pairs: ["f": "а"]), .init(source: .init(rawValue: "ru"), target: .init(rawValue: "en"), pairs: ["а": "f"])])
+            protectedTokens: ["API"], mappings: [.init(source: .init(rawValue: "US"), target: .init(rawValue: "RU"), pairs: ["f": "а"]), .init(source: .init(rawValue: "RU"), target: .init(rawValue: "US"), pairs: ["а": "f"])])
         let payload = try JSONEncoder().encode(snapshot)
         let digest = Data(SHA256.hash(data: payload))
         let manifest = try canonicalManifest(.init(schemaVersion: 1, modelVersion: version, minimumAppVersion: "1.0.0", payloadSize: UInt64(payload.count), payloadSHA256: digest.map { String(format: "%02x", $0) }.joined(), keyID: "test"))
@@ -57,6 +57,19 @@ extension RulePackageVerifierTests {
         let original = String(data: p.2, encoding: .utf8)!
         for changed in ["{\"surprise\":true," + original.dropFirst(), "{\"modelVersion\":2," + original.dropFirst()] {
             let q = try resign(p, payload: Data(changed.utf8)); XCTAssertThrowsError(try RulePackageVerifier(trustedKeys: ["test": q.3], appVersion: "1.0.0").verify(manifest: q.0, signature: q.1, payload: q.2, installedVersion: 0))
+        }
+    }
+    func testTwoMappingsInSameDirectionAreNotProductionRules() throws {
+        let p = try package()
+        let original = try JSONDecoder().decode(RuleSnapshot.self, from: p.2)
+        let forward = LayoutMapping(source: .init(rawValue: "US"), target: .init(rawValue: "RU"), pairs: ["f": "а"])
+        let invalid = RuleSnapshot(modelVersion: original.modelVersion, lexicon: original.lexicon,
+                                   typos: original.typos, yoRules: original.yoRules,
+                                   protectedTokens: original.protectedTokens, mappings: [forward, forward])
+        let signed = try resign(p, payload: JSONEncoder().encode(invalid))
+        XCTAssertThrowsError(try RulePackageVerifier(trustedKeys: ["test": signed.3], appVersion: "1.0.0")
+            .verify(manifest: signed.0, signature: signed.1, payload: signed.2, installedVersion: 0)) {
+            XCTAssertEqual($0 as? RuleVerificationError, .invalidPayload)
         }
     }
 }

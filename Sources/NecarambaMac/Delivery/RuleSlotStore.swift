@@ -63,10 +63,15 @@ public final class RuleSlotStore {
     }
     public func load(bundled: RulePackage) throws -> VerifiedRuleSnapshot {
         lock.lock(); defer { lock.unlock() }
-        let state = try readState()
         let bundledVerified = try? verifier.verify(manifest: bundled.manifest, signature: bundled.signature,
                                                    payload: bundled.payload, installedVersion: 0)
         if let bundledVerified { bundledIdentity = (bundledVerified.modelVersion, bundledVerified.digest) }
+        // A missing or malformed state cannot authenticate installed generations or their
+        // high-water mark. Keep verified bundled input available, but do not reset state.
+        guard let state = try? readState() else {
+            guard let bundledVerified else { throw RuleStorageError.noVerifiedRules }
+            return bundledVerified
+        }
         for id in [state.current, state.previous].compactMap({ $0 }) {
             if let verified = try? readVerified(version: id, state: state) { cleanup(state: state); return verified }
         }
@@ -85,7 +90,14 @@ public final class RuleSlotStore {
     }
     private func readState() throws -> State {
         let url = root.appendingPathComponent("state.json")
-        guard FileManager.default.fileExists(atPath: url.path) else { return State(current: nil, previous: nil, highestAcceptedVersion: 0, digests: [:]) }
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            let generations = root.appendingPathComponent("generations")
+            if FileManager.default.fileExists(atPath: generations.path) {
+                let entries = try FileManager.default.contentsOfDirectory(atPath: generations.path)
+                guard entries.allSatisfy({ $0.hasPrefix(".staging-") }) else { throw RuleStorageError.invalidState }
+            }
+            return State(current: nil, previous: nil, highestAcceptedVersion: 0, digests: [:])
+        }
         do {
             let data = try boundedRead(url, limit: 65536)
             let state = try JSONDecoder().decode(State.self, from: data)

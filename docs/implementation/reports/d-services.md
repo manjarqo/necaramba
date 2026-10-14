@@ -23,3 +23,12 @@ Scope: independently signed rule packages, offline slot installation and bounded
 - No real HTTPS endpoint, redirect/cancellation integration, AppKit input swap/replay, purchase/restore/revocation StoreKit configuration test, or clean-host/manual/editor test was run. URLProtocol and synthetic entitlement tests establish only the local behavior exercised.
 - `RuleUpdateStatus.current` denotes a durably delivered model, not acknowledgement that the input runtime has activated it; the runtime must publish its actual active version after its transaction boundary.
 - AC-053–062, AC-070, AC-086–090 and AC-101 are only partially supported by the unit evidence above. None is marked fully accepted on this report alone.
+
+## Review fixes — 2026-10-14
+
+- RED regressions reproduced: rollback after observed grace expiry restored access; missing state with retained generation accepted an older remote package; malformed state prevented verified bundled startup; two same-direction mappings passed production validation. The three focused suites then passed (12 Mac and 5 Core tests, zero failures).
+- The entitlement cache now persists the latest observed clock value before returning a cached grant, rejects rollback below it, and requires a distinct verified transaction at a non-rolled-back time to establish a new record. Legacy cache records without this field use their original checked date as the floor.
+- Missing state with installed generations and malformed state block remote promotion. Startup still loads a verified bundled package when state integrity is unavailable; it neither deletes the installed generations nor resets their recorded version.
+- Production payload validation now requires both `US->RU` and `RU->US` layout mapping directions, matching the independently generated corpus.
+- A one-off local verifier executable checked the development manifest, signature and actual independent corpus together after this change: model 1, 179,000 lexemes, digest `c5b8ffaae684f053cb57203bc364115fec413224f659d0bbac8b9b2d1b04a133`. No private key was used or saved by that check.
+- Same-version redelivery cannot repair a corrupted current generation: the generation path is immutable and replacing a nonempty directory is not an atomic state transition under this slot design. Startup uses verified previous/bundled rules, and a higher signed version can install. A future repair needs a separately designed generation identity and crash-tested commit protocol; no unverified or conflicting same-version bytes are activated.

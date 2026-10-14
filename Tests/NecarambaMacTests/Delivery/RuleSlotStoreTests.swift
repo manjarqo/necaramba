@@ -75,4 +75,24 @@ extension RuleSlotStoreTests {
             XCTAssertEqual($0 as? RuleVerificationError, .downgrade)
         }
     }
+    func testMissingStateWithInstalledGenerationBlocksRemotePromotion() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let f = RuleFixtures()
+        _ = try RuleSlotStore(root: root, verifier: f.verifier).promote(f.package(version: 3))
+        try FileManager.default.removeItem(at: root.appendingPathComponent("state.json"))
+        let restarted = RuleSlotStore(root: root, verifier: f.verifier)
+        XCTAssertEqual(try restarted.load(bundled: f.package(version: 0)).modelVersion, 0)
+        XCTAssertThrowsError(try restarted.promote(f.package(version: 1)))
+    }
+    func testMalformedStateFallsBackToBundledButBlocksRemotePromotion() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let f = RuleFixtures()
+        _ = try RuleSlotStore(root: root, verifier: f.verifier).promote(f.package(version: 3))
+        try Data("broken".utf8).write(to: root.appendingPathComponent("state.json"))
+        let restarted = RuleSlotStore(root: root, verifier: f.verifier)
+        XCTAssertEqual(try restarted.load(bundled: f.package(version: 0)).modelVersion, 0)
+        XCTAssertThrowsError(try restarted.promote(f.package(version: 4)))
+    }
 }

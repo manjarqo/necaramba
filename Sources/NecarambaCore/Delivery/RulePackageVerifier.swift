@@ -64,6 +64,8 @@ public struct RulePackageVerifier: Sendable {
               (s.typos + s.yoRules).allSatisfy({ text($0.source) && text($0.target) }),
               s.protectedTokens.count <= 100_000, s.protectedTokens.allSatisfy({ text($0) }),
               s.mappings.count >= 2, s.mappings.count <= 32 else { return false }
+        let directions = Set(s.mappings.map { "\($0.source.rawValue)->\($0.target.rawValue)" })
+        guard directions.contains("US->RU"), directions.contains("RU->US") else { return false }
         return s.mappings.allSatisfy { m in text(m.source.rawValue) && text(m.target.rawValue) && m.source != m.target && !m.pairs.isEmpty && m.pairs.count <= 256 && m.pairs.allSatisfy { $0.key.count == 1 && $0.value.count == 1 && text($0.key) && text($0.value) } }
     }
 }
