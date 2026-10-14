@@ -61,7 +61,7 @@ class NativeStateDecoder {
 
   static NativeState decode(Object? value) {
     final m = map(value);
-    if (m['schema'] != 1) {
+    if (m['schema'] is! int || m['schema'] != 1) {
       throw const NativeFailure('unsupportedSchema', retryable: false);
     }
     keys(m, {

@@ -37,11 +37,16 @@ class NativeState {
 
 class NativeStateReducer {
   NativeState? _current;
+  final Set<String> _retiredSessions = {};
   NativeState? get current => _current;
   bool accept(NativeState state) {
+    if (_retiredSessions.contains(state.sessionID)) return false;
     if (_current?.sessionID == state.sessionID &&
         state.revision <= _current!.revision) {
       return false;
+    }
+    if (_current != null && _current!.sessionID != state.sessionID) {
+      _retiredSessions.add(_current!.sessionID);
     }
     _current = state;
     return true;

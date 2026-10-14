@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../entities/native_state.dart';
 
 abstract interface class NativeRepository {
@@ -12,10 +14,21 @@ class NativeReply {
     required this.requestID,
     required this.state,
     required Map<String, Object?> result,
-  }) : result = Map.unmodifiable(result);
+  }) : result = Map.unmodifiable(
+         result.map((key, value) => MapEntry(key, _freeze(value))),
+       );
   final String requestID;
   final NativeState state;
   final Map<String, Object?> result;
+}
+
+Object? _freeze(Object? value) {
+  if (value is Uint8List) return Uint8List.fromList(value).asUnmodifiableView();
+  if (value is Map) {
+    return Map.unmodifiable(value.map((key, v) => MapEntry(key, _freeze(v))));
+  }
+  if (value is List) return List.unmodifiable(value.map(_freeze));
+  return value;
 }
 
 class NativeFailure implements Exception {

@@ -26,3 +26,18 @@ E1 NativeCompositionRoot start/stop and native start-idempotence test are NOT im
 E-01 hardware launch on real Intel/macOS12 and Apple Silicon has NOT run; universal/minimum-load-command inspection alone does not close it. E-02 Dart boundary checks PASS, native channel tests still pending. E-03 feature/localized product flows/accessibility pending (only SDK localization delegates scaffolded). E-04 pending. No TCC changes, input capture, installed Caramba access, device/manual/release-signing tests, login changes or personal document access performed.
 
 The root must replace generated `com.example.necaramba` identity before release and wire the real native owner. Client local concurrent mutations are not queued: optimistic conflict/resync protects native state. Native request-ID cache and duplicate-submission native tests remain native ownership. Pixel dimensions of thumbnail must be verified by native decoder; Dart checks binary payload <=256KiB.
+
+## E2 review corrections (2026-10-14)
+
+Six behavioral regressions were added before the fixes and all failed on the previous implementation: double schema1.0 accepted; sessionA command reply replaced sessionB event; reconnect reused blocked getState and lost listener; ordinary mutation leaked private result fields; mutable nested reply byte/list/map; platform error details dropped ID/retryability. After fixes, all six pass. Additional tests cover the real StandardMethodCodec error envelope, malformed details, nested preview fields and thumbnail dimensions/size. `flutter test` now18 PASS; `flutter analyze` clean. No native/hardware gates changed.
+
+The reducer permanently retires superseded session IDs for the repository lifetime. A command reply from a retired session causes typed conflict and resync; its result is not delivered. An older same-session reply preserves current confirmed revision. Reconnect is coalesced, invalidates outstanding read generation, installs a new listener and performs a fresh getState; old completion cannot clear a newer refresh or restore stale state. All reply maps/lists/Uint8List values are defensively copied and recursively unmodifiable. schema must be integer1.
+
+Result schema agreed with native integrator (no extra keys accepted):
+
+- Ordinary command: empty result map.
+- previewShare: `{previewID:UUID-string,preview:{word:String,language:english|russian,modelVersion:decimal-string,feedback:String|null,host:hostname-string}}`. host has no scheme/path; the native configured HTTPS endpoint is authoritative. The `.example` host appears only in synthetic tests and is never a product fallback.
+- getThumbnail: `{bytes:Uint8List,width:int,height:int}`. Absent image has empty bytes and dimensions0/0; present image has1..512 dimensions and bytes<=256KiB. This supersedes the earlier report's native-only dimension validation limitation.
+- PlatformException details, if present, exactly `{requestID:String,retryable:bool}`; ID is nonempty<=128 characters and must match a mutation request ID. Code is whitelist-mapped and message is ignored. Malformed/extra details fail validation. Absent details retain compatibility fallback mapping.
+
+Public repository/use-case/snapshot signatures remain stable. Changes are Dart-only; original universal release build evidence remains the prior scaffold build, not a new native integration qualification.
