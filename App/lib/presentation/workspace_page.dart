@@ -216,33 +216,62 @@ class _WorkspacePageState extends State<WorkspacePage>
                       children: [
                         if (wide)
                           SizedBox(
-                            width: 186,
-                            child: ListView(
-                              padding: const EdgeInsets.fromLTRB(
-                                12,
-                                20,
-                                10,
-                                16,
+                            width: 204,
+                            child: Material(
+                              color: Theme.of(context).colorScheme.surface
+                                  .withValues(alpha: .45),
+                              shape: Border(
+                                right: BorderSide(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outlineVariant,
+                                ),
                               ),
-                              children: [
-                                for (var i = 0; i < titles.length; i++)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 5),
-                                    child: ListTile(
-                                      dense: true,
-                                      selected: selected == i,
-                                      selectedTileColor: Theme.of(context)
-                                          .colorScheme
-                                          .secondaryContainer,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                              child: ListView(
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  24,
+                                  12,
+                                  16,
+                                ),
+                                children: [
+                                  for (var i = 0; i < titles.length; i++)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 3),
+                                      child: ListTile(
+                                        dense: true,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                            ),
+                                        selectedColor: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        selected: selected == i,
+                                        selectedTileColor: Theme.of(context)
+                                            .colorScheme
+                                            .secondaryContainer,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        leading: Icon(icons[i], size: 19),
+                                        title: Text(
+                                          titles[i],
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: selected == i
+                                                ? FontWeight.w600
+                                                : FontWeight.w400,
+                                          ),
+                                        ),
+                                        onTap: () =>
+                                            setState(() => selected = i),
                                       ),
-                                      leading: Icon(icons[i], size: 21),
-                                      title: Text(titles[i]),
-                                      onTap: () => setState(() => selected = i),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         Expanded(
@@ -298,7 +327,7 @@ class _WorkspacePageState extends State<WorkspacePage>
                                           )
                                             ListView(
                                               padding: EdgeInsets.all(
-                                                wide ? 28 : 16,
+                                                wide ? 32 : 20,
                                               ),
                                               children: [
                                                 Text(
@@ -307,8 +336,17 @@ class _WorkspacePageState extends State<WorkspacePage>
                                                       .textTheme
                                                       .headlineLarge,
                                                 ),
-                                                const SizedBox(height: 18),
-                                                _feature(s, i),
+                                                const SizedBox(height: 8),
+                                                Align(
+                                                  alignment: Alignment.topLeft,
+                                                  child: ConstrainedBox(
+                                                    constraints:
+                                                        const BoxConstraints(
+                                                          maxWidth: 760,
+                                                        ),
+                                                    child: _feature(s, i),
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                         ],

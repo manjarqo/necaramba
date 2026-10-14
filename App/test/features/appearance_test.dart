@@ -56,7 +56,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(window.region!.height, 126);
+      expect(window.region!.height, 64);
       expect(window.region!.width, 800);
       window.events.add('opaque-drop-handle');
       await tester.pumpAndSettle();

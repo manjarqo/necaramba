@@ -275,13 +275,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsIntro.
   ///
   /// In en, this message translates to:
-  /// **'Local correction, under your control. Settings are saved on this Mac.'**
+  /// **'Your keyboard, your way. Changes are saved on this Mac.'**
   String get settingsIntro;
 
   /// No description provided for @manualHint.
   ///
   /// In en, this message translates to:
-  /// **'Double Shift corrects a word or selection and can undo the last correction. Shift combinations keep their normal behavior.'**
+  /// **'Double Shift switches the last word back and forth, or converts selected text. Other Shift combinations work as usual.'**
   String get manualHint;
 
   /// No description provided for @words.
@@ -341,7 +341,7 @@ abstract class AppLocalizations {
   /// No description provided for @appHint.
   ///
   /// In en, this message translates to:
-  /// **'Native selection identifies applications by bundle ID. Rules affect automation; manual shortcuts remain separate.'**
+  /// **'Choose which apps can use automatic correction. Manual shortcuts stay available.'**
   String get appHint;
 
   /// No description provided for @allow.
@@ -461,7 +461,7 @@ abstract class AppLocalizations {
   /// No description provided for @dropHint.
   ///
   /// In en, this message translates to:
-  /// **'Drop a local image onto the header. The native service validates and stores it.'**
+  /// **'Drop an image onto the top bar to personalize it.'**
   String get dropHint;
 
   /// No description provided for @removeImage.
@@ -683,7 +683,7 @@ abstract class AppLocalizations {
   /// No description provided for @licenseIntro.
   ///
   /// In en, this message translates to:
-  /// **'Purchases and receipt verification are handled by the native StoreKit service.'**
+  /// **'Manage your license and purchases through the App Store.'**
   String get licenseIntro;
 
   /// No description provided for @purchase.
@@ -743,7 +743,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutIntro.
   ///
   /// In en, this message translates to:
-  /// **'Necaramba • local RU / EN keyboard correction\nFlutter interface · Swift runtime\nmacOS 12 and later'**
+  /// **'Keyboard correction for Russian and English.\nWorks locally on your Mac.\nmacOS 12 and later'**
   String get aboutIntro;
 
   /// No description provided for @login.
@@ -791,7 +791,7 @@ abstract class AppLocalizations {
   /// No description provided for @localOnly.
   ///
   /// In en, this message translates to:
-  /// **'LOCAL BY DEFAULT'**
+  /// **'On this Mac'**
   String get localOnly;
 
   /// No description provided for @status.
@@ -955,6 +955,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Later'**
   String get permissionsLater;
+
+  /// No description provided for @afterSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'After you press Space'**
+  String get afterSpace;
+
+  /// No description provided for @autoAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'The switch saves your preference. The status above shows availability. Protected fields and unsupported inputs are skipped.'**
+  String get autoAvailability;
+
+  /// No description provided for @keyboardShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get keyboardShortcuts;
+
+  /// No description provided for @doubleShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Double Shift'**
+  String get doubleShift;
+
+  /// No description provided for @doubleShiftHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert the last word. Press again to switch it back.'**
+  String get doubleShiftHelp;
+
+  /// No description provided for @additionalCorrections.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional corrections'**
+  String get additionalCorrections;
+
+  /// No description provided for @additionalUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'These corrections are not available yet. Your saved preferences are preserved.'**
+  String get additionalUnavailable;
+
+  /// No description provided for @runtimeStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting…'**
+  String get runtimeStarting;
+
+  /// No description provided for @runtimeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic correction unavailable'**
+  String get runtimeUnavailable;
+
+  /// No description provided for @runtimeDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get runtimeDisconnected;
 }
 
 class _AppLocalizationsDelegate

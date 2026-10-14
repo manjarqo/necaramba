@@ -100,11 +100,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsIntro =>
-      'Local correction, under your control. Settings are saved on this Mac.';
+      'Your keyboard, your way. Changes are saved on this Mac.';
 
   @override
   String get manualHint =>
-      'Double Shift corrects a word or selection and can undo the last correction. Shift combinations keep their normal behavior.';
+      'Double Shift switches the last word back and forth, or converts selected text. Other Shift combinations work as usual.';
 
   @override
   String get words => 'Words';
@@ -136,7 +136,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appHint =>
-      'Native selection identifies applications by bundle ID. Rules affect automation; manual shortcuts remain separate.';
+      'Choose which apps can use automatic correction. Manual shortcuts stay available.';
 
   @override
   String get allow => 'Allow automation';
@@ -198,8 +198,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get headerImage => 'Header image';
 
   @override
-  String get dropHint =>
-      'Drop a local image onto the header. The native service validates and stores it.';
+  String get dropHint => 'Drop an image onto the top bar to personalize it.';
 
   @override
   String get removeImage => 'Remove image';
@@ -315,7 +314,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licenseIntro =>
-      'Purchases and receipt verification are handled by the native StoreKit service.';
+      'Manage your license and purchases through the App Store.';
 
   @override
   String get purchase => 'Purchase';
@@ -346,7 +345,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutIntro =>
-      'Necaramba • local RU / EN keyboard correction\nFlutter interface · Swift runtime\nmacOS 12 and later';
+      'Keyboard correction for Russian and English.\nWorks locally on your Mac.\nmacOS 12 and later';
 
   @override
   String get login => 'Launch at login';
@@ -372,7 +371,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Import a validated archive? Conflicting or invalid archives are rejected without changing existing data.';
 
   @override
-  String get localOnly => 'LOCAL BY DEFAULT';
+  String get localOnly => 'On this Mac';
 
   @override
   String get status => 'Runtime status';
@@ -459,4 +458,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get permissionsLater => 'Later';
+
+  @override
+  String get afterSpace => 'After you press Space';
+
+  @override
+  String get autoAvailability =>
+      'The switch saves your preference. The status above shows availability. Protected fields and unsupported inputs are skipped.';
+
+  @override
+  String get keyboardShortcuts => 'Keyboard shortcuts';
+
+  @override
+  String get doubleShift => 'Double Shift';
+
+  @override
+  String get doubleShiftHelp =>
+      'Convert the last word. Press again to switch it back.';
+
+  @override
+  String get additionalCorrections => 'Additional corrections';
+
+  @override
+  String get additionalUnavailable =>
+      'These corrections are not available yet. Your saved preferences are preserved.';
+
+  @override
+  String get runtimeStarting => 'Starting…';
+
+  @override
+  String get runtimeUnavailable => 'Automatic correction unavailable';
+
+  @override
+  String get runtimeDisconnected => 'Not connected';
 }

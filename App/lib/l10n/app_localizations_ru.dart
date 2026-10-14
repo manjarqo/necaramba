@@ -101,11 +101,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsIntro =>
-      'Локальные исправления под вашим контролем. Настройки сохраняются на этом Mac.';
+      'Настройте поведение клавиатуры. Изменения сохраняются на этом Mac.';
 
   @override
   String get manualHint =>
-      'Двойной Shift исправляет слово или выделение и отменяет последнее исправление. Сочетания с Shift работают как обычно.';
+      'Двойной Shift меняет раскладку последнего слова туда и обратно или преобразует выделенный текст. Другие сочетания с Shift работают как обычно.';
 
   @override
   String get words => 'Слова';
@@ -137,7 +137,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appHint =>
-      'Системный выбор определяет приложения по bundle ID. Правила управляют автоматикой; ручные команды работают отдельно.';
+      'Выберите приложения для автоисправления. Ручные сочетания остаются доступны.';
 
   @override
   String get allow => 'Разрешить автоматику';
@@ -200,7 +200,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dropHint =>
-      'Перетащите локальное изображение на шапку. Нативная служба проверит и сохранит его.';
+      'Перетащите изображение на верхнюю панель, чтобы изменить её оформление.';
 
   @override
   String get removeImage => 'Удалить изображение';
@@ -316,7 +316,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get licenseIntro =>
-      'Покупки и проверка чеков выполняются нативной службой StoreKit.';
+      'Управляйте лицензией и покупками через App Store.';
 
   @override
   String get purchase => 'Купить';
@@ -347,7 +347,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get aboutIntro =>
-      'Necaramba • локальная коррекция ввода RU / EN\nИнтерфейс Flutter · служба Swift\nmacOS 12 и новее';
+      'Исправление русской и английской раскладки.\nРаботает локально на вашем Mac.\nmacOS 12 и новее';
 
   @override
   String get login => 'Запускать при входе';
@@ -373,7 +373,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Импортировать проверенный архив? Конфликтующие или некорректные архивы отклоняются без изменения текущих данных.';
 
   @override
-  String get localOnly => 'ЛОКАЛЬНО ПО УМОЛЧАНИЮ';
+  String get localOnly => 'На этом Mac';
 
   @override
   String get status => 'Статус службы';
@@ -461,4 +461,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get permissionsLater => 'Позже';
+
+  @override
+  String get afterSpace => 'После нажатия пробела';
+
+  @override
+  String get autoAvailability =>
+      'Переключатель сохраняет ваш выбор. Статус вверху показывает доступность автоматики. Защищённые и неподдерживаемые поля пропускаются.';
+
+  @override
+  String get keyboardShortcuts => 'Сочетания клавиш';
+
+  @override
+  String get doubleShift => 'Двойной Shift';
+
+  @override
+  String get doubleShiftHelp =>
+      'Изменить раскладку последнего слова. Повторное нажатие вернёт исходный текст.';
+
+  @override
+  String get additionalCorrections => 'Дополнительные исправления';
+
+  @override
+  String get additionalUnavailable =>
+      'Эти исправления пока недоступны. Сохранённые настройки остаются без изменений.';
+
+  @override
+  String get runtimeStarting => 'Запуск…';
+
+  @override
+  String get runtimeUnavailable => 'Автоисправление недоступно';
+
+  @override
+  String get runtimeDisconnected => 'Нет подключения';
 }

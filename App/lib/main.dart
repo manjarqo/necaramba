@@ -11,6 +11,7 @@ import 'domain/usecases/native_usecases.dart';
 import 'l10n/app_localizations.dart';
 import 'presentation/native_cubit.dart';
 import 'presentation/workspace_page.dart';
+import 'presentation/theme/workspace_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,41 +58,15 @@ class _NecarambaAppState extends State<NecarambaApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Necaramba',
+    debugShowCheckedModeBanner: false,
     locale: widget.locale,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    theme: _theme(Brightness.light),
-    darkTheme: _theme(Brightness.dark),
+    theme: WorkspaceTheme.build(Brightness.light),
+    darkTheme: WorkspaceTheme.build(Brightness.dark),
     home: BlocProvider.value(
       value: _cubit,
       child: WorkspacePage(windowInteraction: widget.windowInteraction),
-    ),
-  );
-  ThemeData _theme(Brightness brightness) => ThemeData(
-    brightness: brightness,
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xff42634e),
-      brightness: brightness,
-    ),
-    scaffoldBackgroundColor: brightness == Brightness.light
-        ? const Color(0xfff5f5f1)
-        : const Color(0xff151b18),
-    textTheme: const TextTheme(
-      headlineLarge: TextStyle(
-        fontSize: 30,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -1,
-      ),
-      titleLarge: TextStyle(fontWeight: FontWeight.w600),
-    ),
-    cardTheme: CardThemeData(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-    ),
-    inputDecorationTheme: const InputDecorationTheme(
-      border: OutlineInputBorder(),
-      filled: true,
     ),
   );
 }

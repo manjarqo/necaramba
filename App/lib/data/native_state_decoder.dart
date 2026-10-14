@@ -157,6 +157,8 @@ class NativeStateDecoder {
         'secureInput',
       }),
       status: enumeration(m['status'], {
+        'starting',
+        'unavailable',
         'active',
         'off',
         'permissionRequired',

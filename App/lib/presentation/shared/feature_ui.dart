@@ -13,12 +13,16 @@ class FeatureUI {
   NativeCubit get cubit => context.read<NativeCubit>();
   bool get busy => cubit.state.pending.isNotEmpty || !cubit.state.connected;
   Widget intro(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 18),
-    child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
+    padding: const EdgeInsets.only(bottom: 20),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.bodyLarge
+          ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+    ),
   );
   Widget card(List<Widget> children) => Card(
     child: Padding(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: children,

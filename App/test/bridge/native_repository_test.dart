@@ -56,6 +56,13 @@ class FakeTransport implements NativeTransport {
 }
 
 void main() {
+  test('decoder preserves initialization and unavailable runtime statuses', () {
+    for (final status in ['starting', 'unavailable']) {
+      final wire = {...fixture(), 'status': status};
+      expect(NativeStateDecoder.decode(wire).status, status);
+      expect(NativeStateDecoder.encode(NativeStateDecoder.decode(wire)), wire);
+    }
+  });
   test('decoder rejects unsupported schema and malformed nested state', () {
     expect(
       () => NativeStateDecoder.decode({...fixture(), 'schema': 2}),

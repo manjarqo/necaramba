@@ -38,31 +38,79 @@ class PermissionControls extends SnapshotFeature {
       ('ax', 'axTrusted', ui.l.ax, ui.l.axHelp),
     ])
       Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: Column(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              permission.$3,
-              style: Theme.of(ui.context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(permission.$4),
-            const SizedBox(height: 4),
-            if (snapshot.capabilities[permission.$2] == true)
-              Text(ui.l.granted)
-            else ...[
-              Text(ui.l.notGranted),
-              OutlinedButton(
-                key: Key('request-${permission.$1}'),
-                onPressed: ui.busy
-                    ? null
-                    : () => ui.cubit.run('requestPermission', {
-                        'kind': permission.$1,
-                      }),
-                child: Text(ui.l.request),
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: Theme.of(ui.context).colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(7),
               ),
-            ],
+              child: Icon(
+                switch (permission.$1) {
+                  'listen' => Icons.keyboard_outlined,
+                  'post' => Icons.edit_outlined,
+                  _ => Icons.accessibility_new_outlined,
+                },
+                size: 17,
+                color: Theme.of(ui.context).colorScheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    permission.$3,
+                    style: Theme.of(ui.context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    permission.$4,
+                    style: Theme.of(ui.context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  if (snapshot.capabilities[permission.$2] == true)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 15,
+                          color: Theme.of(ui.context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(ui.l.granted),
+                      ],
+                    )
+                  else
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          ui.l.notGranted,
+                          style: Theme.of(ui.context).textTheme.bodySmall,
+                        ),
+                        OutlinedButton(
+                          key: Key('request-${permission.$1}'),
+                          onPressed: ui.busy
+                              ? null
+                              : () => ui.cubit.run('requestPermission', {
+                                  'kind': permission.$1,
+                                }),
+                          child: Text(ui.l.request),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

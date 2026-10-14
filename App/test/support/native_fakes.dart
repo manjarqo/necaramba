@@ -7,6 +7,7 @@ NativeState fixture({
   int revision = 1,
   bool auto = true,
   String sessionID = 'test',
+  String status = 'permissionRequired',
   Map<String, bool>? capabilities,
 }) => NativeState(
   sessionID: sessionID,
@@ -24,7 +25,7 @@ NativeState fixture({
   capabilities:
       capabilities ??
       {'listen': true, 'post': false, 'axTrusted': false, 'secureInput': false},
-  status: 'permissionRequired',
+  status: status,
   words: [],
   apps: [],
   model: {'version': '1', 'lastChecked': null, 'state': 'current'},
