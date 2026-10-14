@@ -11,7 +11,6 @@ public struct EditPlan: Equatable, Sendable {
 }
 public enum ApplyResult: Equatable, Sendable { case committed, aborted, uncertain }
 public protocol KeySending:AnyObject { func replaceVerifiedSuffix(_ plan:EditPlan)->ApplyResult }
-public protocol RuleSnapshotConsumer:AnyObject { func install(_ snapshot:RuleSnapshot) }
 /// Evidence is immutable and tied to a focus token and exact UTF16 range.
 public struct SelectionEvidence:Equatable, Sendable {
  public let context:ContextToken
