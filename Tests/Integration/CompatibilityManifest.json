@@ -1,0 +1,1 @@
+{"schemaVersion":1,"default":"deny","qualifiedControls":[],"hostMatrixStatus":"UNRUN","requiredEvidence":["bundleID","role","osMajor","immutableRevision","pass"]}
