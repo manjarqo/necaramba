@@ -135,7 +135,7 @@ public final class AXSelectionAdapter: SelectionAccess {
     _ token: ContextToken, generation: UInt64, deadline: TimeInterval? = nil
   ) -> AXTextSnapshot? {
     guard inputGeneration?() == generation, context.isSafe(token),
-      let value = deadline.map { reader.read(in: token, deadline: $0) } ?? reader.read(in: token),
+      let value = deadline.map({ reader.read(in: token, deadline: $0) }) ?? reader.read(in: token),
       value.value.utf8.count <= 1024 * 1024, value.range.location >= 0, value.range.length >= 0,
       value.range.location <= value.value.utf16.count,
       value.range.length <= value.value.utf16.count - value.range.location,

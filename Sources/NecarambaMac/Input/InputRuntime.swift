@@ -202,6 +202,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     if event.kind == .down, event.keyCode == 9, event.modifiers == [.command, .shift],
       preferences.plainPasteEnabled
     {
+      tracked.removeAll()
+      recentWord = nil
       buffer.invalidate(.unknownInput)
       guard tap?.canSuppress == true else { return .pass }
       let lease = ShortcutLease(
@@ -213,7 +215,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     // buffer waits for its first trustworthy boundary after a rule/context reset.
     let manualBoundary: BufferedWord?
     if event.kind == .down, event.modifiers.isSubset(of: [.shift, .capsLock]),
-      let delimiter = event.text, [" ", "\n", "\r", "\t"].contains(delimiter),
+      let delimiter = event.text, delimiter == " ",
       let first = tracked.first, first.context == event.context, first.layout == event.layout {
       manualBoundary = .init(text: tracked.compactMap(\.text).joined(), events: tracked,
         context: first.context, layout: first.layout, delimiter: delimiter)
@@ -250,7 +252,9 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     }
     if let manualBoundary { recentWord = manualBoundary }
     if let word = buffer.consume(event) {
-      recentWord = word
+      // Enter can submit a terminal command; Tab can change focus/completion.
+      // Neither leaves a suffix eligible for a later explicit destructive edit.
+      recentWord = word.delimiter.contains(where: { "\n\r\t".contains($0) }) ? nil : word
       tracked.removeAll()
       if preferences.autoEnabled, !snapshot.lexicon.isEmpty {
         deliver(.boundary(word, snapshot, preferences))

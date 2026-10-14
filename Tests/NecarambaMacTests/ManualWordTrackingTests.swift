@@ -29,6 +29,21 @@ final class ManualWordTrackingTests: XCTestCase {
     XCTAssertEqual(runtime.manualWord()?.text, "ghbdtn")
     XCTAssertEqual(runtime.manualWord()?.delimiter, " ")
   }
+  func testSubmissionAndTabClearManualWord() {
+    for boundary in ["\n", "\r", "\t"] {
+      let (context, runtime) = fixture()
+      type("ghbdtn" + boundary, into: runtime, context: context)
+      XCTAssertNil(runtime.manualWord(), "manual correction after submission/navigation")
+    }
+  }
+  func testPlainPasteShortcutClearsPreviousPhysicalWordEvenWhenPassedThrough() {
+    let (context, runtime) = fixture()
+    type("ghbdtn", into: runtime, context: context)
+    _ = runtime.accept(.init(kind: .down, keyCode: 9, modifiers: [.command, .shift],
+      timestampNanos: 10, layout: layout, context: context.current()!, origin: .physical,
+      text: "V", isRepeat: false))
+    XCTAssertNil(runtime.manualWord())
+  }
   func testForeignInputCannotLeavePhysicalSuffixEligible() {
     let (context, runtime) = fixture()
     type("ghbdtn", into: runtime, context: context)
