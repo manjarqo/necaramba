@@ -114,9 +114,11 @@ public final class SystemAXSelectionReader: AXSelectionReading {
       return (status, value)
     }
     let (roleStatus, roleValue) = readAttribute(kAXRoleAttribute)
+    if roleStatus == .cannotComplete { return transient(identity: identity) }
     guard roleStatus == .success, let role = roleValue as? String,
       qualifies(token.bundleID, role) else { trace("ax.invalidRole"); return .rejected }
     let (subroleStatus, subroleValue) = readAttribute(kAXSubroleAttribute)
+    if subroleStatus == .cannotComplete { return transient(identity: identity) }
     if subroleStatus == .success {
       guard let subrole = subroleValue as? String, subrole != kAXSecureTextFieldSubrole
       else { trace("ax.secureOrMalformedSubrole"); return .rejected }
@@ -124,6 +126,7 @@ public final class SystemAXSelectionReader: AXSelectionReading {
       trace("ax.subroleUnproven"); return .rejected
     }
     let (markedStatus, marked) = readAttribute("AXMarkedTextRange")
+    if markedStatus == .cannotComplete { return transient(identity: identity) }
     var markedRange: CFRange?
     if markedStatus == .success {
       guard let marked, CFGetTypeID(marked) == AXValueGetTypeID()
@@ -278,7 +281,10 @@ public final class AXSelectionAdapter: SelectionAccess {
     // Posting is asynchronous. Only observe states derivable from the already-posted
     // batch: suffix Backspaces, then Unicode insertion prefixes, with exact surroundings
     // and caret. Nothing is posted again, and backward progress is not accepted.
-    let deadline = now() + 0.1
+    // Safari can take >100 ms to answer after a posted edit. Manual commands
+    // have a separate settling budget; automatic correction stays at 100 ms.
+    let readbackBudget: TimeInterval = manualCommandActive() ? 0.3 : 0.1
+    let deadline = now() + readbackBudget
     let prefix = (before.value as NSString).substring(to: range.location)
     let suffix = (before.value as NSString).substring(from: range.location + range.length)
     let prefixLength = prefix.utf16.count
@@ -321,16 +327,20 @@ public final class AXSelectionAdapter: SelectionAccess {
     }
     var observedValueProgress = 0
     var observedRangeProgress = 0
-    for _ in 0..<21 {
+    for _ in 0..<(manualCommandActive() ? 61 : 21) {
       guard authorized(), now() < deadline else {
         trace("ax.readback.scopeOrDeadlineRejected"); return .uncertain
       }
       guard inputGeneration?() == generation, context.isSafe(evidence.context) else {
-        trace("ax.readback.contextOrGenerationChanged"); return .uncertain
+        trace("ax.readback.contextOrGenerationChanged", detail:
+          (inputGeneration?() == generation ? 1 : 0) | (context.isSafe(evidence.context) ? 2 : 0))
+        return .uncertain
       }
       let observation = reader.observe(in: evidence.context, deadline: deadline)
       guard authorized(), inputGeneration?() == generation, context.isSafe(evidence.context) else {
-        trace("ax.readback.contextOrGenerationChanged"); return .uncertain
+        trace("ax.readback.contextOrGenerationChanged", detail:
+          (inputGeneration?() == generation ? 1 : 0) | (context.isSafe(evidence.context) ? 2 : 0))
+        return .uncertain
       }
       guard now() <= deadline else { trace("ax.readback.deadlineExceeded"); return .uncertain }
       switch observation {

@@ -17,6 +17,30 @@ final class ManualWordTrackingTests: XCTestCase {
         origin: origin, text: String(char), isRepeat: false))
     }
   }
+  func testPlainPhysicalShiftDoesNotInvalidateInFlightTextProof() {
+    let (context, runtime) = fixture()
+    type("ghbdtn", into: runtime, context: context)
+    let generation = runtime.inputGeneration()
+    for index in 0..<40 {
+      _ = runtime.accept(.init(kind: .flagsChanged, keyCode: 56,
+        modifiers: index % 2 == 0 ? [.shift] : [], timestampNanos: UInt64(100 + index),
+        layout: layout, context: context.current()!, origin: .physical, text: nil, isRepeat: false))
+    }
+    XCTAssertEqual(runtime.inputGeneration(), generation)
+    XCTAssertEqual(runtime.manualWord()?.text, "ghbdtn")
+  }
+  func testModifiedOrForeignShiftStillInvalidatesTextProof() {
+    for foreign in [false, true] {
+      let (context, runtime) = fixture()
+      type("ghbdtn", into: runtime, context: context)
+      let generation = runtime.inputGeneration()
+      _ = runtime.accept(.init(kind: .flagsChanged, keyCode: 56,
+        modifiers: foreign ? [.shift] : [.command, .shift], timestampNanos: 100,
+        layout: layout, context: context.current()!, origin: foreign ? .foreignSynthetic : .physical,
+        text: nil, isRepeat: false))
+      XCTAssertGreaterThan(runtime.inputGeneration(), generation)
+    }
+  }
   func testManualWordIncludesRussianPhysicalPunctuation() {
     let (context, runtime) = fixture()
     type("[jhjij", into: runtime, context: context)

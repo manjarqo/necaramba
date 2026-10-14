@@ -86,6 +86,7 @@ private final class ManualEditor: SelectionAccess, ManualTrackedSuffixReplacing,
   var emptyProxy = false
   var fallbackCalls = 0
   var replacementResult = ApplyResult.committed
+  var onReplace: (() -> Void)?
   init(_ context: FacadeContext) { self.context = context }
   func selected(in token: ContextToken) -> SelectionEvidence? {
     guard token == context.token else { return nil }
@@ -102,6 +103,7 @@ private final class ManualEditor: SelectionAccess, ManualTrackedSuffixReplacing,
     guard replacementResult == .committed else { return replacementResult }
     text = (text as NSString).replacingCharacters(
       in: NSRange(location: evidence.location, length: evidence.length), with: replacement)
+    onReplace?()
     return .committed
   }
   func replaceRepeatedSuffix(_ candidate: ManualRepeatCandidate, with replacement: String) -> ApplyResult {
@@ -352,6 +354,24 @@ extension NativeInputControllerTests {
         XCTAssertEqual(editor.text, expected)
       }
     }
+  }
+  func testTwentyConversionsRetainWordWhenShiftArrivesDuringReplacement() {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    let controller = NativeInputController(layouts: ManualLayouts(), permissions: FacadePermissions(),
+      editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+    typeWord(controller, context: context)
+    editor.onReplace = {
+      controller.runtime.accept(.init(kind: .flagsChanged, keyCode: 56, modifiers: [],
+        timestampNanos: 100, layout: controller.runtime.cachedInputContext()!.1,
+        context: context.token, origin: .physical, text: nil, isRepeat: false))
+    }
+    for turn in 0..<20 {
+      XCTAssertEqual(controller.manualCorrection(), .committed)
+      XCTAssertEqual(editor.text, turn % 2 == 0 ? "привет" : "ghbdtn")
+      XCTAssertNotNil(controller.runtime.manualRepeatCandidate())
+    }
+    editor.onReplace = nil
   }
   func testNavigationAndFocusChangeInvalidateRepeatedManualConversion() {
     for changeFocus in [false, true] {

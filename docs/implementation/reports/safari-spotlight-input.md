@@ -51,3 +51,13 @@ Integrated verification after follow-up: 203 Mac + 65 Core = 268 Swift tests pas
 Release follow-up: `flutter build macos --release` succeeded (61.0 MB); deep/strict codesign verification passed with the same Apple Development requirement, and `lipo` reports x86_64 and arm64. Relaunched PID 62334 reached Active without onboarding.
 
 Live Chrome observation: the installed browser returned AXError.notImplemented (-25208) for the best-effort AXEnhancedUserInterface request. Therefore activation is not claimed to have succeeded on this Chrome build. A new local-only test page (`/tmp/necaramba-input-check/index.html`) nevertheless exposes its input and textarea through CUA, and the runtime publishes an editable textfield token. This confirms local field discovery, not physical conversion. Browser-specific custom editors and repeated physical conversion still require user confirmation.
+
+## Rapid repetition follow-up
+
+The user confirmed that Safari still stops after one or two conversions, and Chrome stops after a longer rapid sequence. PID 62334 provides distinct failures: Safari at 15:53:04 rejects AXRole cannotComplete after 50 ms, and at 15:53:20 exceeds the 100 ms readback deadline; Chrome at 15:55:31 reports contextOrGenerationChanged during verification following several committed conversions.
+
+The runtime counted every flagsChanged event as new input, including bare physical Shift release. A regression reproduced 40 harmless Shift transitions changing the proof generation from 6 to 46. Bare physical Shift flags now preserve text proof generation; modified shortcuts, foreign synthetic events, text input and invalid context continue to invalidate. An integration test performs 20 alternating manual conversions while injecting a physical Shift transition during each replacement and checks retained reversal state throughout.
+
+Read-only post-dispatch verification treats role/subrole/marked-range transport timeouts as pending observations, just like focus/value/range timeouts. No missing security metadata is accepted as a completed proof. Manual settling has a 300 ms/61-observation budget; automatic settling remains 100 ms/21 observations. Exact final identity/value/caret and safe context remain mandatory, with no repost or rollback. This is a bounded compatibility change, not a guarantee that an unresponsive browser will complete.
+
+RED: bare Shift generation and 150 ms manual-settling regressions failed before fixes (`/tmp/repeat-red.log`). GREEN: integrated 207 Mac + 65 Core = 272 Swift tests passed (`/tmp/repeat-final-tests.log`), including the 20-conversion regression. Physical rapid repetition awaits the rebuilt app.

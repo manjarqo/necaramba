@@ -244,7 +244,11 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     defer { lock.unlock() }
     forwardedCount += 1
     guard event.origin != .ours else { return .pass }
-    if event.kind != .up { generation &+= 1 }
+    // Bare physical Shift controls conversion but cannot change text or caret.
+    // In particular its release may arrive while AX verifies the preceding edit.
+    let plainShift = event.origin == .physical && event.kind == .flagsChanged
+      && [56, 60].contains(event.keyCode) && event.modifiers.isSubset(of: [.shift, .capsLock])
+    if event.kind != .up && !plainShift { generation &+= 1 }
     if event.kind != .up && ![56, 60].contains(event.keyCode) { repeatedManual = nil }
     if event.kind == .down && ![56, 60, 58, 61].contains(event.keyCode) { notifyInvalidation() }
     guard event.origin == .physical else {

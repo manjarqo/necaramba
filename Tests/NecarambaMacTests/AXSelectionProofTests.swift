@@ -559,6 +559,23 @@ final class AXSelectionProofTests: XCTestCase {
     XCTAssertEqual(reads, 2)
   }
 
+  func testManualReadbackCanSettleAfterBrowserDelayBeyondOneHundredMilliseconds() {
+    var elapsed: TimeInterval = 0
+    let (adapter, reader, token) = fixture(manual: true, now: { elapsed }, wait: { elapsed += $0 })
+    let evidence = adapter.selected(in: token)!
+    var posts = 0
+    adapter.execute = { _, _, _, _ in
+      posts += 1
+      reader.onObservation = {
+        if elapsed < 0.15 { return .transient(identity: reader.id, value: nil) }
+        return .snapshot(.init(identity: reader.id, value: "A WORD Z", range: NSRange(location: 6, length: 0)))
+      }
+      return .committed
+    }
+    XCTAssertEqual(adapter.replace(evidence, with: "WORD"), .committed)
+    XCTAssertEqual(posts, 1)
+    XCTAssertLessThanOrEqual(elapsed, 0.3)
+  }
   private func word(_ token: ContextToken, origin: EventOrigin = .physical) -> BufferedWord {
     let layout = LayoutID(rawValue: "US")
     let events = "word".map { character in
