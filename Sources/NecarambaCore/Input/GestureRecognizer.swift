@@ -38,9 +38,9 @@ public struct GestureRecognizer: Sendable {
         lastTimestamp = event.timestampNanos
         if let context, context != event.context || layout != event.layout { invalidate(); return [] }
         context = event.context; layout = event.layout
-        if event.isRepeat { return [] }
         let isShift = event.keyCode == 56 || event.keyCode == 60
         let isOption = event.keyCode == 58 || event.keyCode == 61
+        if event.isRepeat && (isShift || isOption) { return [] }
         guard (isShift || isOption), event.kind == .flagsChanged || event.kind == .down || event.kind == .up else {
             pendingRelease = nil; cancelled = !held.isEmpty; second = false; return []
         }
@@ -63,8 +63,9 @@ public struct GestureRecognizer: Sendable {
             return []
         }
         if !held.isEmpty {
+            let wasCancelled = cancelled
             held.insert(event.keyCode); pendingRelease = nil; cancelled = true; second = false
-            if isShift, configuration.splitShift, held == [56, 60], unwanted.isEmpty { return [.toggleAuto] }
+            if !wasCancelled, isShift, configuration.splitShift, held == [56, 60], unwanted.isEmpty { return [.toggleAuto] }
             return []
         }
         var actions: [GestureAction] = []

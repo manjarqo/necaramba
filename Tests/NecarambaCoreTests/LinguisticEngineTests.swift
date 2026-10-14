@@ -36,7 +36,8 @@ final class LinguisticEngineTests: XCTestCase {
         let m = LayoutMapping(source: .init(rawValue: "US"), target: .init(rawValue: "RU"), pairs: ["a":"я"])
         let e = LinguisticEngine(snapshot: .init(modelVersion: 1, lexicon: [.init(word: "a", language: .english, frequencyBand: 1), .init(word: "я", language: .russian, frequencyBand: 1), .init(word: "é", language: .english, frequencyBand: 1)], mappings: [m]))
         XCTAssertEqual(e.decide(word: word("a"), preferences: .defaults, excludedWords: []), .unchanged(.ambiguous))
-        XCTAssertEqual(e.decide(word: word("e\u{301}"), preferences: .defaults, excludedWords: []), .unchanged(.correct))
+        XCTAssertEqual(TokenGuard.normalized("e\u{301}"), TokenGuard.normalized("é"))
+        XCTAssertEqual(e.decide(word: word("e\u{301}"), preferences: .defaults, excludedWords: []), .unchanged(.protectedToken))
     }
 }
 extension LinguisticEngineTests {
@@ -72,5 +73,25 @@ extension LinguisticEngineTests {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "RulesV1", withExtension: "json", subdirectory: "Fixtures"))
         let snapshot = try JSONDecoder().decode(RuleSnapshot.self, from: Data(contentsOf: url))
         XCTAssertEqual(replacement(LinguisticEngine(snapshot: snapshot).decide(word: word("teh"), preferences: .defaults, excludedWords: []))?.replacement, "the")
+    }
+}
+extension LinguisticEngineTests {
+    func testUnicodeMixedAndUnsupportedScriptsProtected() {
+        for text in ["éф", "øя", "αa", "中文", "éclair"] {
+            XCTAssertTrue(TokenGuard.isProtected(text), text)
+        }
+    }
+    func testStreamNeverCorrectsURLPathEmailPrefixes() {
+        let e = LinguisticEngine(snapshot: .init(modelVersion: 1, lexicon: [.init(word: "the", language: .english, frequencyBand: 5)], typos: [.init(source: "teh", target: "the", caseSensitive: false)]))
+        for text in ["teh.com ", "teh:com ", "teh/com ", "teh@com ", "teh://com ", "teh..com "] {
+            var buffer = WordBuffer()
+            var corrections: [Correction] = []
+            let context = word("teh").context
+            for c in text {
+                let event = InputEvent(kind: .down, keyCode: 0, modifiers: [], timestampNanos: 1, layout: .init(rawValue: "US"), context: context, origin: .physical, text: String(c), isRepeat: false)
+                if let buffered = buffer.consume(event), let correction = replacement(e.decide(word: buffered, preferences: .defaults, excludedWords: [])) { corrections.append(correction) }
+            }
+            XCTAssertTrue(corrections.isEmpty, text)
+        }
     }
 }

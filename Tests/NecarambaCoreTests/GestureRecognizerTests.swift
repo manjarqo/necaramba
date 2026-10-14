@@ -52,3 +52,20 @@ extension GestureRecognizerTests {
         XCTAssertEqual(r.consume(duplicate), [])
     }
 }
+extension GestureRecognizerTests {
+    func testCancelledShiftCannotBecomeSplit() {
+        var r = recognizer(split: true)
+        _ = r.consume(event(56, true, 0)); _ = r.consume(event(0, true, 1))
+        XCTAssertEqual(r.consume(event(60, true, 2)), [])
+        _ = r.consume(event(60, false, 3, modifiers: [.shift])); _ = r.consume(event(56, false, 4))
+        XCTAssertEqual(r.advance(to: 400_000_000), [])
+    }
+    func testOrdinaryRepeatCancelsHeldModifiers() {
+        for key: UInt16 in [56, 58] {
+            var r = recognizer(option: true)
+            _ = r.consume(event(key, true, 0)); _ = r.consume(event(0, true, 1, repeatKey: true))
+            XCTAssertEqual(r.consume(event(key, false, 2)), [])
+            XCTAssertEqual(r.advance(to: 400_000_000), [])
+        }
+    }
+}

@@ -33,6 +33,10 @@ public struct WordBuffer: Sendable {
         }
         guard event.kind == .down else { return nil }
         guard let value = event.text, value.count == 1 else { invalidate(.unknownInput); return nil }
+        if untrusted {
+            if [" ", "\n", "\r", "\t"].contains(value) { clear(); untrusted = false }
+            return nil
+        }
         if Self.isBoundary(value) {
             defer { clear(); untrusted = false }
             guard !untrusted, let first = events.first else { return nil }
@@ -59,6 +63,6 @@ public struct WordBuffer: Sendable {
         return true
     }
     private static func isBoundary(_ value: String) -> Bool {
-        [" ", "\n", "\r", "\t", ".", ",", ";", ":", "!", "?"].contains(value)
+        [" ", "\n", "\r", "\t", "!", "?"].contains(value)
     }
 }
