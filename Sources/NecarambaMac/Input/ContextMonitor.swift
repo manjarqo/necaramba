@@ -97,6 +97,14 @@ public final class ContextMonitor: ContextRefreshing {
     detach()
     guard let app = NSWorkspace.shared.frontmostApplication, let bundleID = app.bundleIdentifier
     else { diagnose("context.attach.noApplication"); return }
+    switch bundleID {
+    case "com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.dev", "com.google.Chrome.canary":
+      InputDiagnostics.event("context.application.chrome")
+    case "com.apple.Safari", "com.apple.SafariTechnologyPreview":
+      InputDiagnostics.event("context.application.safari")
+    default:
+      InputDiagnostics.event("context.application.other")
+    }
     let permission = permissions.current()
     if !permission.secureInput {
       state.update(
