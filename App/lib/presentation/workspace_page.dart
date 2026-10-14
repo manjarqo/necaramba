@@ -9,6 +9,7 @@ import 'native_cubit.dart';
 import '../features/settings/presentation/settings_page.dart';
 import '../features/exceptions/presentation/exceptions_page.dart';
 import '../features/permissions/presentation/permissions_page.dart';
+import '../features/permissions/domain/permission_readiness.dart';
 import '../features/appearance/presentation/appearance_page.dart';
 import '../features/rules/presentation/rules_page.dart';
 import '../features/statistics/presentation/statistics_page.dart';
@@ -27,6 +28,101 @@ class WorkspacePage extends StatefulWidget {
 class _WorkspacePageState extends State<WorkspacePage>
     with WidgetsBindingObserver {
   int selected = 0;
+  String? _permissionSession;
+  bool? _previouslyGranted;
+  DialogRoute<void>? _permissionRoute;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkPermissions(cubit.state);
+  }
+
+  void _checkPermissions(NativeViewState view) {
+    final snapshot = view.confirmed;
+    if (snapshot == null || !view.connected) return;
+    final granted = hasKeyboardPermissions(snapshot);
+    final shouldOpen =
+        !granted &&
+        (_permissionSession != snapshot.sessionID ||
+            _previouslyGranted == true);
+    _permissionSession = snapshot.sessionID;
+    _previouslyGranted = granted;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final latest = cubit.state.confirmed;
+      if (latest == null) return;
+      if (hasKeyboardPermissions(latest)) {
+        final route = _permissionRoute;
+        if (route != null && route.isActive) {
+          route.navigator?.removeRoute(route);
+        }
+      } else if (shouldOpen) {
+        _showPermissions();
+      }
+    });
+  }
+
+  void _showPermissions() {
+    final snapshot = cubit.state.confirmed;
+    if (!mounted ||
+        _permissionRoute != null ||
+        snapshot == null ||
+        hasKeyboardPermissions(snapshot)) {
+      return;
+    }
+    final nativeCubit = cubit;
+    final route = DialogRoute<void>(
+      context: context,
+      builder: (dialogContext) => BlocProvider.value(
+        value: nativeCubit,
+        child: BlocBuilder<NativeCubit, NativeViewState>(
+          builder: (context, view) => AlertDialog(
+            title: Text(l.permissionSetupTitle),
+            scrollable: true,
+            content: SizedBox(
+              width: 480,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(l.permissionSetupIntro),
+                  const SizedBox(height: 20),
+                  PermissionControls(snapshot: view.confirmed!),
+                  if (view.error != null && view.error != 'cancelled')
+                    Text(
+                      _error(view.error!),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                key: const Key('refreshPermissions'),
+                onPressed: view.pending.isNotEmpty || !view.connected
+                    ? null
+                    : () => nativeCubit.run('refreshCapabilities', {}),
+                child: Text(l.refresh),
+              ),
+              TextButton(
+                key: const Key('permissionsLater'),
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(l.permissionsLater),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    _permissionRoute = route;
+    Navigator.of(context).push(route).whenComplete(() {
+      if (identical(_permissionRoute, route)) _permissionRoute = null;
+    });
+  }
+
   AppLocalizations get l => AppLocalizations.of(context)!;
   NativeCubit get cubit => context.read<NativeCubit>();
   bool get busy => cubit.state.pending.isNotEmpty || !cubit.state.connected;
@@ -48,6 +144,12 @@ class _WorkspacePageState extends State<WorkspacePage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    final route = _permissionRoute;
+    if (route != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (route.isActive) route.navigator?.removeRoute(route);
+      });
+    }
     super.dispose();
   }
 
@@ -74,7 +176,8 @@ class _WorkspacePageState extends State<WorkspacePage>
   @override
   Widget build(
     BuildContext context,
-  ) => BlocBuilder<NativeCubit, NativeViewState>(
+  ) => BlocConsumer<NativeCubit, NativeViewState>(
+    listener: (context, view) => _checkPermissions(view),
     builder: (context, view) {
       final s = view.confirmed;
       return Scaffold(
@@ -88,6 +191,26 @@ class _WorkspacePageState extends State<WorkspacePage>
                     view: view,
                     windowInteraction: widget.windowInteraction,
                   ),
+                  if (s != null && !hasKeyboardPermissions(s))
+                    Material(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text(l.permissionsMissing)),
+                            TextButton(
+                              key: const Key('reviewPermissions'),
+                              onPressed: _showPermissions,
+                              child: Text(l.reviewPermissions),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   if (view.error != null && view.error != 'cancelled')
                     _notice(_error(view.error!), Icons.error_outline),
                   if (view.pending.isNotEmpty)

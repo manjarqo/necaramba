@@ -427,4 +427,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get idle => 'Not checked yet';
+
+  @override
+  String get permissionSetupTitle => 'Allow keyboard access';
+
+  @override
+  String get permissionSetupIntro =>
+      'Necaramba needs these macOS permissions to observe keyboard input and apply changes. Enable Necaramba in System Settings (System Preferences on macOS 12) → Privacy & Security / Security & Privacy. Automatic correction also depends on available rules and editor support. If access still appears missing after enabling it, macOS may require you to quit and reopen Necaramba.';
+
+  @override
+  String get listenHelp =>
+      'Input Monitoring — observe keyboard events for layout switching.';
+
+  @override
+  String get postHelp =>
+      'Accessibility — send keyboard events to apply a requested change.';
+
+  @override
+  String get axHelp =>
+      'Accessibility — check the focused editor before changing text.';
+
+  @override
+  String get permissionsMissing => 'Keyboard access is incomplete.';
+
+  @override
+  String get reviewPermissions => 'Review access';
+
+  @override
+  String get permissionsLater => 'Later';
 }

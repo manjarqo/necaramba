@@ -3,8 +3,13 @@ import 'dart:async';
 import 'package:necaramba/domain/entities/native_state.dart';
 import 'package:necaramba/domain/repositories/native_repository.dart';
 
-NativeState fixture({int revision = 1, bool auto = true}) => NativeState(
-  sessionID: 'test',
+NativeState fixture({
+  int revision = 1,
+  bool auto = true,
+  String sessionID = 'test',
+  Map<String, bool>? capabilities,
+}) => NativeState(
+  sessionID: sessionID,
   revision: revision,
   preferences: {
     'autoEnabled': auto,
@@ -16,12 +21,9 @@ NativeState fixture({int revision = 1, bool auto = true}) => NativeState(
     'plainPasteEnabled': true,
     'soundEnabled': true,
   },
-  capabilities: {
-    'listen': true,
-    'post': false,
-    'axTrusted': false,
-    'secureInput': false,
-  },
+  capabilities:
+      capabilities ??
+      {'listen': true, 'post': false, 'axTrusted': false, 'secureInput': false},
   status: 'permissionRequired',
   words: [],
   apps: [],
@@ -37,7 +39,14 @@ NativeState fixture({int revision = 1, bool auto = true}) => NativeState(
 );
 
 class FakeNativeRepository implements NativeRepository {
-  NativeState current = fixture();
+  NativeState current = fixture(
+    capabilities: {
+      'listen': true,
+      'post': true,
+      'axTrusted': true,
+      'secureInput': false,
+    },
+  );
   final controller = StreamController<NativeState>.broadcast();
   final calls = <({String method, Map<String, Object?> arguments})>[];
   NativeFailure? failure;

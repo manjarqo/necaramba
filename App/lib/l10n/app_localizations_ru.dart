@@ -428,4 +428,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get idle => 'Проверка ещё не выполнялась';
+
+  @override
+  String get permissionSetupTitle => 'Разрешите доступ к клавиатуре';
+
+  @override
+  String get permissionSetupIntro =>
+      'Necaramba нужны разрешения macOS для обработки клавиатурного ввода и применения изменений. Включите Necaramba в Системных настройках → Конфиденциальность и безопасность (macOS 12: Защита и безопасность → Конфиденциальность). Автокоррекция также зависит от доступных правил и поддержки редактора. Если после выдачи разрешения статус не изменился, macOS может потребовать завершить и снова открыть Necaramba.';
+
+  @override
+  String get listenHelp =>
+      'Мониторинг ввода — отслеживание событий клавиатуры для переключения раскладки.';
+
+  @override
+  String get postHelp =>
+      'Универсальный доступ — отправка событий клавиатуры для применения запрошенного изменения.';
+
+  @override
+  String get axHelp =>
+      'Универсальный доступ — проверка активного редактора перед изменением текста.';
+
+  @override
+  String get permissionsMissing =>
+      'Не все разрешения для клавиатуры предоставлены.';
+
+  @override
+  String get reviewPermissions => 'Проверить доступ';
+
+  @override
+  String get permissionsLater => 'Позже';
 }

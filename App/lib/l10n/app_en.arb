@@ -133,5 +133,13 @@
   "grace": "Grace period",
   "pending": "Pending approval",
   "revoked": "Revoked",
-  "idle": "Not checked yet"
+  "idle": "Not checked yet",
+  "permissionSetupTitle": "Allow keyboard access",
+  "permissionSetupIntro": "Necaramba needs these macOS permissions to observe keyboard input and apply changes. Enable Necaramba in System Settings (System Preferences on macOS 12) → Privacy & Security / Security & Privacy. Automatic correction also depends on available rules and editor support. If access still appears missing after enabling it, macOS may require you to quit and reopen Necaramba.",
+  "listenHelp": "Input Monitoring — observe keyboard events for layout switching.",
+  "postHelp": "Accessibility — send keyboard events to apply a requested change.",
+  "axHelp": "Accessibility — check the focused editor before changing text.",
+  "permissionsMissing": "Keyboard access is incomplete.",
+  "reviewPermissions": "Review access",
+  "permissionsLater": "Later"
 }

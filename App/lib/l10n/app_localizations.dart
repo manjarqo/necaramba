@@ -901,6 +901,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not checked yet'**
   String get idle;
+
+  /// No description provided for @permissionSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow keyboard access'**
+  String get permissionSetupTitle;
+
+  /// No description provided for @permissionSetupIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Necaramba needs these macOS permissions to observe keyboard input and apply changes. Enable Necaramba in System Settings (System Preferences on macOS 12) → Privacy & Security / Security & Privacy. Automatic correction also depends on available rules and editor support. If access still appears missing after enabling it, macOS may require you to quit and reopen Necaramba.'**
+  String get permissionSetupIntro;
+
+  /// No description provided for @listenHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Input Monitoring — observe keyboard events for layout switching.'**
+  String get listenHelp;
+
+  /// No description provided for @postHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessibility — send keyboard events to apply a requested change.'**
+  String get postHelp;
+
+  /// No description provided for @axHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessibility — check the focused editor before changing text.'**
+  String get axHelp;
+
+  /// No description provided for @permissionsMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard access is incomplete.'**
+  String get permissionsMissing;
+
+  /// No description provided for @reviewPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Review access'**
+  String get reviewPermissions;
+
+  /// No description provided for @permissionsLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get permissionsLater;
 }
 
 class _AppLocalizationsDelegate

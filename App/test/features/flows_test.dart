@@ -93,19 +93,23 @@ void main() {
   testWidgets(
     'capabilities display independently and react to stream changes',
     (tester) async {
-      final repo = FakeNativeRepository();
+      final repo = FakeNativeRepository()..current = fixture();
       await tester.pumpWidget(
         NecarambaApp(repository: repo, locale: const Locale('en')),
       );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('permissionRequired')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('permissionsLater')));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Access'));
       await tester.pumpAndSettle();
       expect(find.text('Granted'), findsOneWidget);
       expect(find.text('Not granted'), findsNWidgets(2));
-      await tester.tap(find.text('Request access').first);
+      await tester.ensureVisible(find.byKey(const Key('request-post')));
       await tester.pumpAndSettle();
-      expect(repo.calls.last.arguments, {'kind': 'listen'});
+      await tester.tap(find.byKey(const Key('request-post')));
+      await tester.pumpAndSettle();
+      expect(repo.calls.last.arguments, {'kind': 'post'});
     },
   );
   testWidgets('stream failure disables changes until explicit reconnect', (
