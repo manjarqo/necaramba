@@ -1,0 +1,3251 @@
+{
+  "corpusTotal" : 18010,
+  "corpusVersion" : "independent-v2-oracle-fix",
+  "counts" : {
+    "falseChanges" : 0,
+    "falseNegative" : 436,
+    "falsePositive" : 0,
+    "noChange" : 3600,
+    "total" : 6002,
+    "trueNegative" : 3600,
+    "truePositive" : 1966
+  },
+  "evaluationMode" : "token-only synthetic replay; physical-input/editor differential unrun",
+  "failures" : [
+    "layout recall undefined or below 0.95"
+  ],
+  "falseChangeInterval" : {
+    "lower" : 1.0842021724855044e-19,
+    "upper" : 0.001065973598839638
+  },
+  "falseChangeRate" : 0,
+  "falseNegative" : 436,
+  "falsePositive" : 0,
+  "layoutRecall" : 0.81833333333333336,
+  "layoutRecallInterval" : {
+    "lower" : 0.80240254480180007,
+    "upper" : 0.83324665937205233
+  },
+  "mismatches" : [
+    {
+      "actual" : "ktc[jp",
+      "category" : "layout.russian",
+      "expected" : "лесхоз",
+      "id" : "calibration-06042",
+      "input" : "ktc[jp"
+    },
+    {
+      "actual" : "Ktc[jp",
+      "category" : "layout.title.russian",
+      "expected" : "Лесхоз",
+      "id" : "calibration-06043",
+      "input" : "Ktc[jp"
+    },
+    {
+      "actual" : "rfhjnf;",
+      "category" : "layout.russian",
+      "expected" : "каротаж",
+      "id" : "calibration-06047",
+      "input" : "rfhjnf;"
+    },
+    {
+      "actual" : "Rfhjnf;",
+      "category" : "layout.title.russian",
+      "expected" : "Каротаж",
+      "id" : "calibration-06048",
+      "input" : "Rfhjnf;"
+    },
+    {
+      "actual" : "gjyf,tuen",
+      "category" : "layout.russian",
+      "expected" : "понабегут",
+      "id" : "calibration-06082",
+      "input" : "gjyf,tuen"
+    },
+    {
+      "actual" : "Gjyf,tuen",
+      "category" : "layout.title.russian",
+      "expected" : "Понабегут",
+      "id" : "calibration-06083",
+      "input" : "Gjyf,tuen"
+    },
+    {
+      "actual" : "gj,fuhjdtdibq",
+      "category" : "layout.russian",
+      "expected" : "побагровевший",
+      "id" : "calibration-06087",
+      "input" : "gj,fuhjdtdibq"
+    },
+    {
+      "actual" : "Gj,fuhjdtdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Побагровевший",
+      "id" : "calibration-06088",
+      "input" : "Gj,fuhjdtdibq"
+    },
+    {
+      "actual" : "jnz;tktdibq",
+      "category" : "layout.russian",
+      "expected" : "отяжелевший",
+      "id" : "calibration-06142",
+      "input" : "jnz;tktdibq"
+    },
+    {
+      "actual" : "Jnz;tktdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Отяжелевший",
+      "id" : "calibration-06143",
+      "input" : "Jnz;tktdibq"
+    },
+    {
+      "actual" : "'kbvbybhjdfybt",
+      "category" : "layout.russian",
+      "expected" : "элиминирование",
+      "id" : "calibration-06182",
+      "input" : "'kbvbybhjdfybt"
+    },
+    {
+      "actual" : "\"kbvbybhjdfybt",
+      "category" : "layout.title.russian",
+      "expected" : "Элиминирование",
+      "id" : "calibration-06183",
+      "input" : "\"kbvbybhjdfybt"
+    },
+    {
+      "actual" : ",tvjkm",
+      "category" : "layout.russian",
+      "expected" : "бемоль",
+      "id" : "calibration-06252",
+      "input" : ",tvjkm"
+    },
+    {
+      "actual" : "<tvjkm",
+      "category" : "layout.title.russian",
+      "expected" : "Бемоль",
+      "id" : "calibration-06253",
+      "input" : "<tvjkm"
+    },
+    {
+      "actual" : ",exbdibq",
+      "category" : "layout.russian",
+      "expected" : "бучивший",
+      "id" : "calibration-06317",
+      "input" : ",exbdibq"
+    },
+    {
+      "actual" : "<exbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Бучивший",
+      "id" : "calibration-06318",
+      "input" : "<exbdibq"
+    },
+    {
+      "actual" : "rj'hwbnbdysq",
+      "category" : "layout.russian",
+      "expected" : "коэрцитивный",
+      "id" : "calibration-06327",
+      "input" : "rj'hwbnbdysq"
+    },
+    {
+      "actual" : "Rj'hwbnbdysq",
+      "category" : "layout.title.russian",
+      "expected" : "Коэрцитивный",
+      "id" : "calibration-06328",
+      "input" : "Rj'hwbnbdysq"
+    },
+    {
+      "actual" : "vj;yj",
+      "category" : "layout.russian",
+      "expected" : "можно",
+      "id" : "calibration-06352",
+      "input" : "vj;yj"
+    },
+    {
+      "actual" : "Vj;yj",
+      "category" : "layout.title.russian",
+      "expected" : "Можно",
+      "id" : "calibration-06353",
+      "input" : "Vj;yj"
+    },
+    {
+      "actual" : "t;txfcysq",
+      "category" : "layout.russian",
+      "expected" : "ежечасный",
+      "id" : "calibration-06382",
+      "input" : "t;txfcysq"
+    },
+    {
+      "actual" : "T;txfcysq",
+      "category" : "layout.title.russian",
+      "expected" : "Ежечасный",
+      "id" : "calibration-06383",
+      "input" : "T;txfcysq"
+    },
+    {
+      "actual" : "p.pz",
+      "category" : "layout.russian",
+      "expected" : "зюзя",
+      "id" : "calibration-06392",
+      "input" : "p.pz"
+    },
+    {
+      "actual" : "P.pz",
+      "category" : "layout.title.russian",
+      "expected" : "Зюзя",
+      "id" : "calibration-06393",
+      "input" : "P.pz"
+    },
+    {
+      "actual" : "dth,f",
+      "category" : "layout.russian",
+      "expected" : "верба",
+      "id" : "calibration-06407",
+      "input" : "dth,f"
+    },
+    {
+      "actual" : "Dth,f",
+      "category" : "layout.title.russian",
+      "expected" : "Верба",
+      "id" : "calibration-06408",
+      "input" : "Dth,f"
+    },
+    {
+      "actual" : "jlfk;bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "одалживавший",
+      "id" : "calibration-06412",
+      "input" : "jlfk;bdfdibq"
+    },
+    {
+      "actual" : "Jlfk;bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Одалживавший",
+      "id" : "calibration-06413",
+      "input" : "Jlfk;bdfdibq"
+    },
+    {
+      "actual" : "nj[fhcrbq",
+      "category" : "layout.russian",
+      "expected" : "тохарский",
+      "id" : "calibration-06432",
+      "input" : "nj[fhcrbq"
+    },
+    {
+      "actual" : "Nj[fhcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Тохарский",
+      "id" : "calibration-06433",
+      "input" : "Nj[fhcrbq"
+    },
+    {
+      "actual" : "bv,twbkmyjcnm",
+      "category" : "layout.russian",
+      "expected" : "имбецильность",
+      "id" : "calibration-06447",
+      "input" : "bv,twbkmyjcnm"
+    },
+    {
+      "actual" : "Bv,twbkmyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Имбецильность",
+      "id" : "calibration-06448",
+      "input" : "Bv,twbkmyjcnm"
+    },
+    {
+      "actual" : ",tlth",
+      "category" : "layout.russian",
+      "expected" : "бедер",
+      "id" : "calibration-06467",
+      "input" : ",tlth"
+    },
+    {
+      "actual" : "<tlth",
+      "category" : "layout.title.russian",
+      "expected" : "Бедер",
+      "id" : "calibration-06468",
+      "input" : "<tlth"
+    },
+    {
+      "actual" : ",hbl;",
+      "category" : "layout.russian",
+      "expected" : "бридж",
+      "id" : "calibration-06482",
+      "input" : ",hbl;"
+    },
+    {
+      "actual" : "<hbl;",
+      "category" : "layout.title.russian",
+      "expected" : "Бридж",
+      "id" : "calibration-06483",
+      "input" : "<hbl;"
+    },
+    {
+      "actual" : "zrf.obq",
+      "category" : "layout.russian",
+      "expected" : "якающий",
+      "id" : "calibration-06512",
+      "input" : "zrf.obq"
+    },
+    {
+      "actual" : "Zrf.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Якающий",
+      "id" : "calibration-06513",
+      "input" : "Zrf.obq"
+    },
+    {
+      "actual" : "ie,byrf",
+      "category" : "layout.russian",
+      "expected" : "шубинка",
+      "id" : "calibration-06552",
+      "input" : "ie,byrf"
+    },
+    {
+      "actual" : "Ie,byrf",
+      "category" : "layout.title.russian",
+      "expected" : "Шубинка",
+      "id" : "calibration-06553",
+      "input" : "Ie,byrf"
+    },
+    {
+      "actual" : "ht,jhlysq",
+      "category" : "layout.russian",
+      "expected" : "ребордный",
+      "id" : "calibration-06562",
+      "input" : "ht,jhlysq"
+    },
+    {
+      "actual" : "Ht,jhlysq",
+      "category" : "layout.title.russian",
+      "expected" : "Ребордный",
+      "id" : "calibration-06563",
+      "input" : "Ht,jhlysq"
+    },
+    {
+      "actual" : "dz;tncz",
+      "category" : "layout.russian",
+      "expected" : "вяжется",
+      "id" : "calibration-06617",
+      "input" : "dz;tncz"
+    },
+    {
+      "actual" : "Dz;tncz",
+      "category" : "layout.title.russian",
+      "expected" : "Вяжется",
+      "id" : "calibration-06618",
+      "input" : "Dz;tncz"
+    },
+    {
+      "actual" : "kj,pfdibq",
+      "category" : "layout.russian",
+      "expected" : "лобзавший",
+      "id" : "calibration-06637",
+      "input" : "kj,pfdibq"
+    },
+    {
+      "actual" : "Kj,pfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Лобзавший",
+      "id" : "calibration-06638",
+      "input" : "Kj,pfdibq"
+    },
+    {
+      "actual" : "kj;m",
+      "category" : "layout.russian",
+      "expected" : "ложь",
+      "id" : "calibration-06692",
+      "input" : "kj;m"
+    },
+    {
+      "actual" : "Kj;m",
+      "category" : "layout.title.russian",
+      "expected" : "Ложь",
+      "id" : "calibration-06693",
+      "input" : "Kj;m"
+    },
+    {
+      "actual" : ",futn",
+      "category" : "layout.russian",
+      "expected" : "багет",
+      "id" : "calibration-06697",
+      "input" : ",futn"
+    },
+    {
+      "actual" : "<futn",
+      "category" : "layout.title.russian",
+      "expected" : "Багет",
+      "id" : "calibration-06698",
+      "input" : "<futn"
+    },
+    {
+      "actual" : "ytcnf,bkmyjcnm",
+      "category" : "layout.russian",
+      "expected" : "нестабильность",
+      "id" : "calibration-06752",
+      "input" : "ytcnf,bkmyjcnm"
+    },
+    {
+      "actual" : "Ytcnf,bkmyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Нестабильность",
+      "id" : "calibration-06753",
+      "input" : "Ytcnf,bkmyjcnm"
+    },
+    {
+      "actual" : "bp]z,tlybxfdibqcz",
+      "category" : "layout.russian",
+      "expected" : "изъябедничавшийся",
+      "id" : "calibration-06772",
+      "input" : "bp]z,tlybxfdibqcz"
+    },
+    {
+      "actual" : "Bp]z,tlybxfdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Изъябедничавшийся",
+      "id" : "calibration-06773",
+      "input" : "Bp]z,tlybxfdibqcz"
+    },
+    {
+      "actual" : "fujhfaj,bz",
+      "category" : "layout.russian",
+      "expected" : "агорафобия",
+      "id" : "calibration-06782",
+      "input" : "fujhfaj,bz"
+    },
+    {
+      "actual" : "Fujhfaj,bz",
+      "category" : "layout.title.russian",
+      "expected" : "Агорафобия",
+      "id" : "calibration-06783",
+      "input" : "Fujhfaj,bz"
+    },
+    {
+      "actual" : "'ynfkmgbz",
+      "category" : "layout.russian",
+      "expected" : "энтальпия",
+      "id" : "calibration-06787",
+      "input" : "'ynfkmgbz"
+    },
+    {
+      "actual" : "\"ynfkmgbz",
+      "category" : "layout.title.russian",
+      "expected" : "Энтальпия",
+      "id" : "calibration-06788",
+      "input" : "\"ynfkmgbz"
+    },
+    {
+      "actual" : ",bqcrbq",
+      "category" : "layout.russian",
+      "expected" : "бийский",
+      "id" : "calibration-06807",
+      "input" : ",bqcrbq"
+    },
+    {
+      "actual" : "<bqcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Бийский",
+      "id" : "calibration-06808",
+      "input" : "<bqcrbq"
+    },
+    {
+      "actual" : "dthkb,h",
+      "category" : "layout.russian",
+      "expected" : "верлибр",
+      "id" : "calibration-06817",
+      "input" : "dthkb,h"
+    },
+    {
+      "actual" : "Dthkb,h",
+      "category" : "layout.title.russian",
+      "expected" : "Верлибр",
+      "id" : "calibration-06818",
+      "input" : "Dthkb,h"
+    },
+    {
+      "actual" : "jn,ercbhjdfdibq",
+      "category" : "layout.russian",
+      "expected" : "отбуксировавший",
+      "id" : "calibration-06857",
+      "input" : "jn,ercbhjdfdibq"
+    },
+    {
+      "actual" : "Jn,ercbhjdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Отбуксировавший",
+      "id" : "calibration-06858",
+      "input" : "Jn,ercbhjdfdibq"
+    },
+    {
+      "actual" : ",eqcndj",
+      "category" : "layout.russian",
+      "expected" : "буйство",
+      "id" : "calibration-06892",
+      "input" : ",eqcndj"
+    },
+    {
+      "actual" : "<eqcndj",
+      "category" : "layout.title.russian",
+      "expected" : "Буйство",
+      "id" : "calibration-06893",
+      "input" : "<eqcndj"
+    },
+    {
+      "actual" : ",thrkbtdcrbq",
+      "category" : "layout.russian",
+      "expected" : "берклиевский",
+      "id" : "calibration-06902",
+      "input" : ",thrkbtdcrbq"
+    },
+    {
+      "actual" : "<thrkbtdcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Берклиевский",
+      "id" : "calibration-06903",
+      "input" : "<thrkbtdcrbq"
+    },
+    {
+      "actual" : "j,cnfdbdibq",
+      "category" : "layout.russian",
+      "expected" : "обставивший",
+      "id" : "calibration-06997",
+      "input" : "j,cnfdbdibq"
+    },
+    {
+      "actual" : "J,cnfdbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обставивший",
+      "id" : "calibration-06998",
+      "input" : "J,cnfdbdibq"
+    },
+    {
+      "actual" : "juht,mt",
+      "category" : "layout.russian",
+      "expected" : "огребье",
+      "id" : "calibration-07002",
+      "input" : "juht,mt"
+    },
+    {
+      "actual" : "Juht,mt",
+      "category" : "layout.title.russian",
+      "expected" : "Огребье",
+      "id" : "calibration-07003",
+      "input" : "Juht,mt"
+    },
+    {
+      "actual" : "gtgkj;tktpj,tnjyysq",
+      "category" : "layout.russian",
+      "expected" : "пепложелезобетонный",
+      "id" : "calibration-07007",
+      "input" : "gtgkj;tktpj,tnjyysq"
+    },
+    {
+      "actual" : "Gtgkj;tktpj,tnjyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Пепложелезобетонный",
+      "id" : "calibration-07008",
+      "input" : "Gtgkj;tktpj,tnjyysq"
+    },
+    {
+      "actual" : "herj,bnmt",
+      "category" : "layout.russian",
+      "expected" : "рукобитье",
+      "id" : "calibration-07027",
+      "input" : "herj,bnmt"
+    },
+    {
+      "actual" : "Herj,bnmt",
+      "category" : "layout.title.russian",
+      "expected" : "Рукобитье",
+      "id" : "calibration-07028",
+      "input" : "Herj,bnmt"
+    },
+    {
+      "actual" : ";bnybwf",
+      "category" : "layout.russian",
+      "expected" : "житница",
+      "id" : "calibration-07032",
+      "input" : ";bnybwf"
+    },
+    {
+      "actual" : ":bnybwf",
+      "category" : "layout.title.russian",
+      "expected" : "Житница",
+      "id" : "calibration-07033",
+      "input" : ":bnybwf"
+    },
+    {
+      "actual" : ",bfnkjy",
+      "category" : "layout.russian",
+      "expected" : "биатлон",
+      "id" : "calibration-07067",
+      "input" : ",bfnkjy"
+    },
+    {
+      "actual" : "<bfnkjy",
+      "category" : "layout.title.russian",
+      "expected" : "Биатлон",
+      "id" : "calibration-07068",
+      "input" : "<bfnkjy"
+    },
+    {
+      "actual" : ",jkjvtnh",
+      "category" : "layout.russian",
+      "expected" : "болометр",
+      "id" : "calibration-07077",
+      "input" : ",jkjvtnh"
+    },
+    {
+      "actual" : "<jkjvtnh",
+      "category" : "layout.title.russian",
+      "expected" : "Болометр",
+      "id" : "calibration-07078",
+      "input" : "<jkjvtnh"
+    },
+    {
+      "actual" : ";tkfdibq",
+      "category" : "layout.russian",
+      "expected" : "желавший",
+      "id" : "calibration-07107",
+      "input" : ";tkfdibq"
+    },
+    {
+      "actual" : ":tkfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Желавший",
+      "id" : "calibration-07108",
+      "input" : ":tkfdibq"
+    },
+    {
+      "actual" : "rdt,trcrbq",
+      "category" : "layout.russian",
+      "expected" : "квебекский",
+      "id" : "calibration-07147",
+      "input" : "rdt,trcrbq"
+    },
+    {
+      "actual" : "Rdt,trcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Квебекский",
+      "id" : "calibration-07148",
+      "input" : "Rdt,trcrbq"
+    },
+    {
+      "actual" : "h;fdtdibq",
+      "category" : "layout.russian",
+      "expected" : "ржавевший",
+      "id" : "calibration-07172",
+      "input" : "h;fdtdibq"
+    },
+    {
+      "actual" : "H;fdtdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Ржавевший",
+      "id" : "calibration-07173",
+      "input" : "H;fdtdibq"
+    },
+    {
+      "actual" : "n.vtytw",
+      "category" : "layout.russian",
+      "expected" : "тюменец",
+      "id" : "calibration-07217",
+      "input" : "n.vtytw"
+    },
+    {
+      "actual" : "N.vtytw",
+      "category" : "layout.title.russian",
+      "expected" : "Тюменец",
+      "id" : "calibration-07218",
+      "input" : "N.vtytw"
+    },
+    {
+      "actual" : "[fycrbq",
+      "category" : "layout.russian",
+      "expected" : "ханский",
+      "id" : "calibration-07247",
+      "input" : "[fycrbq"
+    },
+    {
+      "actual" : "{fycrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Ханский",
+      "id" : "calibration-07248",
+      "input" : "{fycrbq"
+    },
+    {
+      "actual" : "'hjutyysq",
+      "category" : "layout.russian",
+      "expected" : "эрогенный",
+      "id" : "calibration-07272",
+      "input" : "'hjutyysq"
+    },
+    {
+      "actual" : "\"hjutyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Эрогенный",
+      "id" : "calibration-07273",
+      "input" : "\"hjutyysq"
+    },
+    {
+      "actual" : "yt'cntnbxyjcnm",
+      "category" : "layout.russian",
+      "expected" : "неэстетичность",
+      "id" : "calibration-07287",
+      "input" : "yt'cntnbxyjcnm"
+    },
+    {
+      "actual" : "Yt'cntnbxyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Неэстетичность",
+      "id" : "calibration-07288",
+      "input" : "Yt'cntnbxyjcnm"
+    },
+    {
+      "actual" : "htj'ywtafkjuhfabz",
+      "category" : "layout.russian",
+      "expected" : "реоэнцефалография",
+      "id" : "calibration-07292",
+      "input" : "htj'ywtafkjuhfabz"
+    },
+    {
+      "actual" : "Htj'ywtafkjuhfabz",
+      "category" : "layout.title.russian",
+      "expected" : "Реоэнцефалография",
+      "id" : "calibration-07293",
+      "input" : "Htj'ywtafkjuhfabz"
+    },
+    {
+      "actual" : ",kby",
+      "category" : "layout.russian",
+      "expected" : "блин",
+      "id" : "calibration-07297",
+      "input" : ",kby"
+    },
+    {
+      "actual" : "<kby",
+      "category" : "layout.title.russian",
+      "expected" : "Блин",
+      "id" : "calibration-07298",
+      "input" : "<kby"
+    },
+    {
+      "actual" : ",bkm,jrt",
+      "category" : "layout.russian",
+      "expected" : "бильбоке",
+      "id" : "calibration-07347",
+      "input" : ",bkm,jrt"
+    },
+    {
+      "actual" : "<bkm,jrt",
+      "category" : "layout.title.russian",
+      "expected" : "Бильбоке",
+      "id" : "calibration-07348",
+      "input" : "<bkm,jrt"
+    },
+    {
+      "actual" : ",f,crbq",
+      "category" : "layout.russian",
+      "expected" : "бабский",
+      "id" : "calibration-07432",
+      "input" : ",f,crbq"
+    },
+    {
+      "actual" : "<f,crbq",
+      "category" : "layout.title.russian",
+      "expected" : "Бабский",
+      "id" : "calibration-07433",
+      "input" : "<f,crbq"
+    },
+    {
+      "actual" : "ds;hfdibq",
+      "category" : "layout.russian",
+      "expected" : "выжравший",
+      "id" : "calibration-07477",
+      "input" : "ds;hfdibq"
+    },
+    {
+      "actual" : "Ds;hfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Выжравший",
+      "id" : "calibration-07478",
+      "input" : "Ds;hfdibq"
+    },
+    {
+      "actual" : "rfvytlhj,bkrf",
+      "category" : "layout.russian",
+      "expected" : "камнедробилка",
+      "id" : "calibration-07512",
+      "input" : "rfvytlhj,bkrf"
+    },
+    {
+      "actual" : "Rfvytlhj,bkrf",
+      "category" : "layout.title.russian",
+      "expected" : "Камнедробилка",
+      "id" : "calibration-07513",
+      "input" : "Rfvytlhj,bkrf"
+    },
+    {
+      "actual" : ",fujh",
+      "category" : "layout.russian",
+      "expected" : "багор",
+      "id" : "calibration-07527",
+      "input" : ",fujh"
+    },
+    {
+      "actual" : "<fujh",
+      "category" : "layout.title.russian",
+      "expected" : "Багор",
+      "id" : "calibration-07528",
+      "input" : "<fujh"
+    },
+    {
+      "actual" : "ye;ytqibq",
+      "category" : "layout.russian",
+      "expected" : "нужнейший",
+      "id" : "calibration-07552",
+      "input" : "ye;ytqibq"
+    },
+    {
+      "actual" : "Ye;ytqibq",
+      "category" : "layout.title.russian",
+      "expected" : "Нужнейший",
+      "id" : "calibration-07553",
+      "input" : "Ye;ytqibq"
+    },
+    {
+      "actual" : "c.pthty",
+      "category" : "layout.russian",
+      "expected" : "сюзерен",
+      "id" : "calibration-07557",
+      "input" : "c.pthty"
+    },
+    {
+      "actual" : "C.pthty",
+      "category" : "layout.title.russian",
+      "expected" : "Сюзерен",
+      "id" : "calibration-07558",
+      "input" : "C.pthty"
+    },
+    {
+      "actual" : "ghjj,hfp",
+      "category" : "layout.russian",
+      "expected" : "прообраз",
+      "id" : "calibration-07567",
+      "input" : "ghjj,hfp"
+    },
+    {
+      "actual" : "Ghjj,hfp",
+      "category" : "layout.title.russian",
+      "expected" : "Прообраз",
+      "id" : "calibration-07568",
+      "input" : "Ghjj,hfp"
+    },
+    {
+      "actual" : "ls,f",
+      "category" : "layout.russian",
+      "expected" : "дыба",
+      "id" : "calibration-07587",
+      "input" : "ls,f"
+    },
+    {
+      "actual" : "Ls,f",
+      "category" : "layout.title.russian",
+      "expected" : "Дыба",
+      "id" : "calibration-07588",
+      "input" : "Ls,f"
+    },
+    {
+      "actual" : "j,rjktncz",
+      "category" : "layout.russian",
+      "expected" : "обколется",
+      "id" : "calibration-07597",
+      "input" : "j,rjktncz"
+    },
+    {
+      "actual" : "J,rjktncz",
+      "category" : "layout.title.russian",
+      "expected" : "Обколется",
+      "id" : "calibration-07598",
+      "input" : "J,rjktncz"
+    },
+    {
+      "actual" : "ckj;f",
+      "category" : "layout.russian",
+      "expected" : "сложа",
+      "id" : "calibration-07612",
+      "input" : "ckj;f"
+    },
+    {
+      "actual" : "Ckj;f",
+      "category" : "layout.title.russian",
+      "expected" : "Сложа",
+      "id" : "calibration-07613",
+      "input" : "Ckj;f"
+    },
+    {
+      "actual" : "gb[fdibq",
+      "category" : "layout.russian",
+      "expected" : "пихавший",
+      "id" : "calibration-07627",
+      "input" : "gb[fdibq"
+    },
+    {
+      "actual" : "Gb[fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Пихавший",
+      "id" : "calibration-07628",
+      "input" : "Gb[fdibq"
+    },
+    {
+      "actual" : "j[fhfrnthbpjdfdibq",
+      "category" : "layout.russian",
+      "expected" : "охарактеризовавший",
+      "id" : "calibration-07667",
+      "input" : "j[fhfrnthbpjdfdibq"
+    },
+    {
+      "actual" : "J[fhfrnthbpjdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Охарактеризовавший",
+      "id" : "calibration-07668",
+      "input" : "J[fhfrnthbpjdfdibq"
+    },
+    {
+      "actual" : "c]t[fdibq",
+      "category" : "layout.russian",
+      "expected" : "съехавший",
+      "id" : "calibration-07677",
+      "input" : "c]t[fdibq"
+    },
+    {
+      "actual" : "C]t[fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Съехавший",
+      "id" : "calibration-07678",
+      "input" : "C]t[fdibq"
+    },
+    {
+      "actual" : "'gbgkfnajhvtyysq",
+      "category" : "layout.russian",
+      "expected" : "эпиплатформенный",
+      "id" : "calibration-07697",
+      "input" : "'gbgkfnajhvtyysq"
+    },
+    {
+      "actual" : "\"gbgkfnajhvtyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Эпиплатформенный",
+      "id" : "calibration-07698",
+      "input" : "\"gbgkfnajhvtyysq"
+    },
+    {
+      "actual" : ",jhn",
+      "category" : "layout.russian",
+      "expected" : "борт",
+      "id" : "calibration-07737",
+      "input" : ",jhn"
+    },
+    {
+      "actual" : "<jhn",
+      "category" : "layout.title.russian",
+      "expected" : "Борт",
+      "id" : "calibration-07738",
+      "input" : "<jhn"
+    },
+    {
+      "actual" : "rke,",
+      "category" : "layout.russian",
+      "expected" : "клуб",
+      "id" : "calibration-07747",
+      "input" : "rke,"
+    },
+    {
+      "actual" : "Rke,",
+      "category" : "layout.title.russian",
+      "expected" : "Клуб",
+      "id" : "calibration-07748",
+      "input" : "Rke,"
+    },
+    {
+      "actual" : "pfe;tyysq",
+      "category" : "layout.russian",
+      "expected" : "зауженный",
+      "id" : "calibration-07787",
+      "input" : "pfe;tyysq"
+    },
+    {
+      "actual" : "Pfe;tyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Зауженный",
+      "id" : "calibration-07788",
+      "input" : "Pfe;tyysq"
+    },
+    {
+      "actual" : "kby.xtcnm",
+      "category" : "layout.russian",
+      "expected" : "линючесть",
+      "id" : "calibration-07802",
+      "input" : "kby.xtcnm"
+    },
+    {
+      "actual" : "Kby.xtcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Линючесть",
+      "id" : "calibration-07803",
+      "input" : "Kby.xtcnm"
+    },
+    {
+      "actual" : "uk.xysq",
+      "category" : "layout.russian",
+      "expected" : "глючный",
+      "id" : "calibration-07807",
+      "input" : "uk.xysq"
+    },
+    {
+      "actual" : "Uk.xysq",
+      "category" : "layout.title.russian",
+      "expected" : "Глючный",
+      "id" : "calibration-07808",
+      "input" : "Uk.xysq"
+    },
+    {
+      "actual" : "cbv,bjp",
+      "category" : "layout.russian",
+      "expected" : "симбиоз",
+      "id" : "calibration-07862",
+      "input" : "cbv,bjp"
+    },
+    {
+      "actual" : "Cbv,bjp",
+      "category" : "layout.title.russian",
+      "expected" : "Симбиоз",
+      "id" : "calibration-07863",
+      "input" : "Cbv,bjp"
+    },
+    {
+      "actual" : "rjkkf,jhfwbjybpv",
+      "category" : "layout.russian",
+      "expected" : "коллаборационизм",
+      "id" : "calibration-07872",
+      "input" : "rjkkf,jhfwbjybpv"
+    },
+    {
+      "actual" : "Rjkkf,jhfwbjybpv",
+      "category" : "layout.title.russian",
+      "expected" : "Коллаборационизм",
+      "id" : "calibration-07873",
+      "input" : "Rjkkf,jhfwbjybpv"
+    },
+    {
+      "actual" : "hs[ktybt",
+      "category" : "layout.russian",
+      "expected" : "рыхление",
+      "id" : "calibration-07902",
+      "input" : "hs[ktybt"
+    },
+    {
+      "actual" : "Hs[ktybt",
+      "category" : "layout.title.russian",
+      "expected" : "Рыхление",
+      "id" : "calibration-07903",
+      "input" : "Hs[ktybt"
+    },
+    {
+      "actual" : "utj[bvbr",
+      "category" : "layout.russian",
+      "expected" : "геохимик",
+      "id" : "calibration-07907",
+      "input" : "utj[bvbr"
+    },
+    {
+      "actual" : "Utj[bvbr",
+      "category" : "layout.title.russian",
+      "expected" : "Геохимик",
+      "id" : "calibration-07908",
+      "input" : "Utj[bvbr"
+    },
+    {
+      "actual" : "ghb;fdibq",
+      "category" : "layout.russian",
+      "expected" : "прижавший",
+      "id" : "calibration-07917",
+      "input" : "ghb;fdibq"
+    },
+    {
+      "actual" : "Ghb;fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Прижавший",
+      "id" : "calibration-07918",
+      "input" : "Ghb;fdibq"
+    },
+    {
+      "actual" : "nfh[fy",
+      "category" : "layout.russian",
+      "expected" : "тархан",
+      "id" : "calibration-07922",
+      "input" : "nfh[fy"
+    },
+    {
+      "actual" : "Nfh[fy",
+      "category" : "layout.title.russian",
+      "expected" : "Тархан",
+      "id" : "calibration-07923",
+      "input" : "Nfh[fy"
+    },
+    {
+      "actual" : "jrf;b",
+      "category" : "layout.russian",
+      "expected" : "окажи",
+      "id" : "calibration-07932",
+      "input" : "jrf;b"
+    },
+    {
+      "actual" : "Jrf;b",
+      "category" : "layout.title.russian",
+      "expected" : "Окажи",
+      "id" : "calibration-07933",
+      "input" : "Jrf;b"
+    },
+    {
+      "actual" : "kjajnhb[b",
+      "category" : "layout.russian",
+      "expected" : "лофотрихи",
+      "id" : "calibration-07972",
+      "input" : "kjajnhb[b"
+    },
+    {
+      "actual" : "Kjajnhb[b",
+      "category" : "layout.title.russian",
+      "expected" : "Лофотрихи",
+      "id" : "calibration-07973",
+      "input" : "Kjajnhb[b"
+    },
+    {
+      "actual" : "c,jbdibq",
+      "category" : "layout.russian",
+      "expected" : "сбоивший",
+      "id" : "calibration-07997",
+      "input" : "c,jbdibq"
+    },
+    {
+      "actual" : "C,jbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Сбоивший",
+      "id" : "calibration-07998",
+      "input" : "C,jbdibq"
+    },
+    {
+      "actual" : ",hfuf",
+      "category" : "layout.russian",
+      "expected" : "брага",
+      "id" : "calibration-08002",
+      "input" : ",hfuf"
+    },
+    {
+      "actual" : "<hfuf",
+      "category" : "layout.title.russian",
+      "expected" : "Брага",
+      "id" : "calibration-08003",
+      "input" : "<hfuf"
+    },
+    {
+      "actual" : "c,jknbdibq",
+      "category" : "layout.russian",
+      "expected" : "сболтивший",
+      "id" : "calibration-08007",
+      "input" : "c,jknbdibq"
+    },
+    {
+      "actual" : "C,jknbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Сболтивший",
+      "id" : "calibration-08008",
+      "input" : "C,jknbdibq"
+    },
+    {
+      "actual" : "gfe;by",
+      "category" : "layout.russian",
+      "expected" : "паужин",
+      "id" : "calibration-08032",
+      "input" : "gfe;by"
+    },
+    {
+      "actual" : "Gfe;by",
+      "category" : "layout.title.russian",
+      "expected" : "Паужин",
+      "id" : "calibration-08033",
+      "input" : "Gfe;by"
+    },
+    {
+      "actual" : "j,ks;ysq",
+      "category" : "layout.russian",
+      "expected" : "облыжный",
+      "id" : "calibration-08052",
+      "input" : "j,ks;ysq"
+    },
+    {
+      "actual" : "J,ks;ysq",
+      "category" : "layout.title.russian",
+      "expected" : "Облыжный",
+      "id" : "calibration-08053",
+      "input" : "J,ks;ysq"
+    },
+    {
+      "actual" : "tgfh[bfkmysq",
+      "category" : "layout.russian",
+      "expected" : "епархиальный",
+      "id" : "calibration-08097",
+      "input" : "tgfh[bfkmysq"
+    },
+    {
+      "actual" : "Tgfh[bfkmysq",
+      "category" : "layout.title.russian",
+      "expected" : "Епархиальный",
+      "id" : "calibration-08098",
+      "input" : "Tgfh[bfkmysq"
+    },
+    {
+      "actual" : "fl].yrn",
+      "category" : "layout.russian",
+      "expected" : "адъюнкт",
+      "id" : "calibration-08112",
+      "input" : "fl].yrn"
+    },
+    {
+      "actual" : "Fl].yrn",
+      "category" : "layout.title.russian",
+      "expected" : "Адъюнкт",
+      "id" : "calibration-08113",
+      "input" : "Fl].yrn"
+    },
+    {
+      "actual" : ";bpytltzntkmyjcnm",
+      "category" : "layout.russian",
+      "expected" : "жизнедеятельность",
+      "id" : "calibration-08167",
+      "input" : ";bpytltzntkmyjcnm"
+    },
+    {
+      "actual" : ":bpytltzntkmyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Жизнедеятельность",
+      "id" : "calibration-08168",
+      "input" : ":bpytltzntkmyjcnm"
+    },
+    {
+      "actual" : ",'qcbr",
+      "category" : "layout.russian",
+      "expected" : "бэйсик",
+      "id" : "calibration-08187",
+      "input" : ",'qcbr"
+    },
+    {
+      "actual" : "<'qcbr",
+      "category" : "layout.title.russian",
+      "expected" : "Бэйсик",
+      "id" : "calibration-08188",
+      "input" : "<'qcbr"
+    },
+    {
+      "actual" : "ikb[",
+      "category" : "layout.russian",
+      "expected" : "шлих",
+      "id" : "calibration-08192",
+      "input" : "ikb["
+    },
+    {
+      "actual" : "Ikb[",
+      "category" : "layout.title.russian",
+      "expected" : "Шлих",
+      "id" : "calibration-08193",
+      "input" : "Ikb["
+    },
+    {
+      "actual" : "dbc.kmrf",
+      "category" : "layout.russian",
+      "expected" : "висюлька",
+      "id" : "calibration-08197",
+      "input" : "dbc.kmrf"
+    },
+    {
+      "actual" : "Dbc.kmrf",
+      "category" : "layout.title.russian",
+      "expected" : "Висюлька",
+      "id" : "calibration-08198",
+      "input" : "Dbc.kmrf"
+    },
+    {
+      "actual" : "vt[vfcnthcrbt",
+      "category" : "layout.russian",
+      "expected" : "мехмастерские",
+      "id" : "calibration-08287",
+      "input" : "vt[vfcnthcrbt"
+    },
+    {
+      "actual" : "Vt[vfcnthcrbt",
+      "category" : "layout.title.russian",
+      "expected" : "Мехмастерские",
+      "id" : "calibration-08288",
+      "input" : "Vt[vfcnthcrbt"
+    },
+    {
+      "actual" : "cce;fdibq",
+      "category" : "layout.russian",
+      "expected" : "ссужавший",
+      "id" : "calibration-08342",
+      "input" : "cce;fdibq"
+    },
+    {
+      "actual" : "Cce;fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Ссужавший",
+      "id" : "calibration-08343",
+      "input" : "Cce;fdibq"
+    },
+    {
+      "actual" : "ytbcrf;tyysq",
+      "category" : "layout.russian",
+      "expected" : "неискаженный",
+      "id" : "calibration-08357",
+      "input" : "ytbcrf;tyysq"
+    },
+    {
+      "actual" : "Ytbcrf;tyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Неискаженный",
+      "id" : "calibration-08358",
+      "input" : "Ytbcrf;tyysq"
+    },
+    {
+      "actual" : ",bjaf,hbrf",
+      "category" : "layout.russian",
+      "expected" : "биофабрика",
+      "id" : "calibration-08362",
+      "input" : ",bjaf,hbrf"
+    },
+    {
+      "actual" : "<bjaf,hbrf",
+      "category" : "layout.title.russian",
+      "expected" : "Биофабрика",
+      "id" : "calibration-08363",
+      "input" : "<bjaf,hbrf"
+    },
+    {
+      "actual" : "elhe;bdibq",
+      "category" : "layout.russian",
+      "expected" : "удруживший",
+      "id" : "calibration-08387",
+      "input" : "elhe;bdibq"
+    },
+    {
+      "actual" : "Elhe;bdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Удруживший",
+      "id" : "calibration-08388",
+      "input" : "Elhe;bdibq"
+    },
+    {
+      "actual" : "[eleobq",
+      "category" : "layout.russian",
+      "expected" : "худущий",
+      "id" : "calibration-08447",
+      "input" : "[eleobq"
+    },
+    {
+      "actual" : "{eleobq",
+      "category" : "layout.title.russian",
+      "expected" : "Худущий",
+      "id" : "calibration-08448",
+      "input" : "{eleobq"
+    },
+    {
+      "actual" : "ytc[jlyjcnm",
+      "category" : "layout.russian",
+      "expected" : "несходность",
+      "id" : "calibration-08452",
+      "input" : "ytc[jlyjcnm"
+    },
+    {
+      "actual" : "Ytc[jlyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Несходность",
+      "id" : "calibration-08453",
+      "input" : "Ytc[jlyjcnm"
+    },
+    {
+      "actual" : ",h.cctktw",
+      "category" : "layout.russian",
+      "expected" : "брюсселец",
+      "id" : "calibration-08477",
+      "input" : ",h.cctktw"
+    },
+    {
+      "actual" : "<h.cctktw",
+      "category" : "layout.title.russian",
+      "expected" : "Брюсселец",
+      "id" : "calibration-08478",
+      "input" : "<h.cctktw"
+    },
+    {
+      "actual" : "ke,zyjq",
+      "category" : "layout.russian",
+      "expected" : "лубяной",
+      "id" : "calibration-08542",
+      "input" : "ke,zyjq"
+    },
+    {
+      "actual" : "Ke,zyjq",
+      "category" : "layout.title.russian",
+      "expected" : "Лубяной",
+      "id" : "calibration-08543",
+      "input" : "Ke,zyjq"
+    },
+    {
+      "actual" : "hs,tirf",
+      "category" : "layout.russian",
+      "expected" : "рыбешка",
+      "id" : "calibration-08552",
+      "input" : "hs,tirf"
+    },
+    {
+      "actual" : "Hs,tirf",
+      "category" : "layout.title.russian",
+      "expected" : "Рыбешка",
+      "id" : "calibration-08553",
+      "input" : "Hs,tirf"
+    },
+    {
+      "actual" : "bp;fhbdibq",
+      "category" : "layout.russian",
+      "expected" : "изжаривший",
+      "id" : "calibration-08577",
+      "input" : "bp;fhbdibq"
+    },
+    {
+      "actual" : "Bp;fhbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Изжаривший",
+      "id" : "calibration-08578",
+      "input" : "Bp;fhbdibq"
+    },
+    {
+      "actual" : "bydjk.wbjyysq",
+      "category" : "layout.russian",
+      "expected" : "инволюционный",
+      "id" : "calibration-08617",
+      "input" : "bydjk.wbjyysq"
+    },
+    {
+      "actual" : "Bydjk.wbjyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Инволюционный",
+      "id" : "calibration-08618",
+      "input" : "Bydjk.wbjyysq"
+    },
+    {
+      "actual" : ",fdfhtw",
+      "category" : "layout.russian",
+      "expected" : "баварец",
+      "id" : "calibration-08622",
+      "input" : ",fdfhtw"
+    },
+    {
+      "actual" : "<fdfhtw",
+      "category" : "layout.title.russian",
+      "expected" : "Баварец",
+      "id" : "calibration-08623",
+      "input" : "<fdfhtw"
+    },
+    {
+      "actual" : "jnrf;b",
+      "category" : "layout.russian",
+      "expected" : "откажи",
+      "id" : "calibration-08637",
+      "input" : "jnrf;b"
+    },
+    {
+      "actual" : "Jnrf;b",
+      "category" : "layout.title.russian",
+      "expected" : "Откажи",
+      "id" : "calibration-08638",
+      "input" : "Jnrf;b"
+    },
+    {
+      "actual" : "l;tcgbkbn",
+      "category" : "layout.russian",
+      "expected" : "джеспилит",
+      "id" : "calibration-08672",
+      "input" : "l;tcgbkbn"
+    },
+    {
+      "actual" : "L;tcgbkbn",
+      "category" : "layout.title.russian",
+      "expected" : "Джеспилит",
+      "id" : "calibration-08673",
+      "input" : "L;tcgbkbn"
+    },
+    {
+      "actual" : "xe[jytw",
+      "category" : "layout.russian",
+      "expected" : "чухонец",
+      "id" : "calibration-08747",
+      "input" : "xe[jytw"
+    },
+    {
+      "actual" : "Xe[jytw",
+      "category" : "layout.title.russian",
+      "expected" : "Чухонец",
+      "id" : "calibration-08748",
+      "input" : "Xe[jytw"
+    },
+    {
+      "actual" : ",juj,jhtw",
+      "category" : "layout.russian",
+      "expected" : "богоборец",
+      "id" : "calibration-08757",
+      "input" : ",juj,jhtw"
+    },
+    {
+      "actual" : "<juj,jhtw",
+      "category" : "layout.title.russian",
+      "expected" : "Богоборец",
+      "id" : "calibration-08758",
+      "input" : "<juj,jhtw"
+    },
+    {
+      "actual" : ",b[hjvfn",
+      "category" : "layout.russian",
+      "expected" : "бихромат",
+      "id" : "calibration-08762",
+      "input" : ",b[hjvfn"
+    },
+    {
+      "actual" : "<b[hjvfn",
+      "category" : "layout.title.russian",
+      "expected" : "Бихромат",
+      "id" : "calibration-08763",
+      "input" : "<b[hjvfn"
+    },
+    {
+      "actual" : "dct[",
+      "category" : "layout.russian",
+      "expected" : "всех",
+      "id" : "calibration-08782",
+      "input" : "dct["
+    },
+    {
+      "actual" : "Dct[",
+      "category" : "layout.title.russian",
+      "expected" : "Всех",
+      "id" : "calibration-08783",
+      "input" : "Dct["
+    },
+    {
+      "actual" : "cgt[e",
+      "category" : "layout.russian",
+      "expected" : "спеху",
+      "id" : "calibration-08817",
+      "input" : "cgt[e"
+    },
+    {
+      "actual" : "Cgt[e",
+      "category" : "layout.title.russian",
+      "expected" : "Спеху",
+      "id" : "calibration-08818",
+      "input" : "Cgt[e"
+    },
+    {
+      "actual" : "j,[f;bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "обхаживавший",
+      "id" : "calibration-08827",
+      "input" : "j,[f;bdfdibq"
+    },
+    {
+      "actual" : "J,[f;bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обхаживавший",
+      "id" : "calibration-08828",
+      "input" : "J,[f;bdfdibq"
+    },
+    {
+      "actual" : "ytnz[",
+      "category" : "layout.russian",
+      "expected" : "нетях",
+      "id" : "calibration-08842",
+      "input" : "ytnz["
+    },
+    {
+      "actual" : "Ytnz[",
+      "category" : "layout.title.russian",
+      "expected" : "Нетях",
+      "id" : "calibration-08843",
+      "input" : "Ytnz["
+    },
+    {
+      "actual" : "f,hfpbd",
+      "category" : "layout.russian",
+      "expected" : "абразив",
+      "id" : "calibration-08852",
+      "input" : "f,hfpbd"
+    },
+    {
+      "actual" : "F,hfpbd",
+      "category" : "layout.title.russian",
+      "expected" : "Абразив",
+      "id" : "calibration-08853",
+      "input" : "F,hfpbd"
+    },
+    {
+      "actual" : "'ytwrbq",
+      "category" : "layout.russian",
+      "expected" : "энецкий",
+      "id" : "calibration-08862",
+      "input" : "'ytwrbq"
+    },
+    {
+      "actual" : "\"ytwrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Энецкий",
+      "id" : "calibration-08863",
+      "input" : "\"ytwrbq"
+    },
+    {
+      "actual" : ";tvxeu",
+      "category" : "layout.russian",
+      "expected" : "жемчуг",
+      "id" : "calibration-08872",
+      "input" : ";tvxeu"
+    },
+    {
+      "actual" : ":tvxeu",
+      "category" : "layout.title.russian",
+      "expected" : "Жемчуг",
+      "id" : "calibration-08873",
+      "input" : ":tvxeu"
+    },
+    {
+      "actual" : "ds,ehtyysq",
+      "category" : "layout.russian",
+      "expected" : "выбуренный",
+      "id" : "calibration-08877",
+      "input" : "ds,ehtyysq"
+    },
+    {
+      "actual" : "Ds,ehtyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Выбуренный",
+      "id" : "calibration-08878",
+      "input" : "Ds,ehtyysq"
+    },
+    {
+      "actual" : "gs;fobqcz",
+      "category" : "layout.russian",
+      "expected" : "пыжащийся",
+      "id" : "calibration-08892",
+      "input" : "gs;fobqcz"
+    },
+    {
+      "actual" : "Gs;fobqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Пыжащийся",
+      "id" : "calibration-08893",
+      "input" : "Gs;fobqcz"
+    },
+    {
+      "actual" : "ve;kfy",
+      "category" : "layout.russian",
+      "expected" : "мужлан",
+      "id" : "calibration-08912",
+      "input" : "ve;kfy"
+    },
+    {
+      "actual" : "Ve;kfy",
+      "category" : "layout.title.russian",
+      "expected" : "Мужлан",
+      "id" : "calibration-08913",
+      "input" : "Ve;kfy"
+    },
+    {
+      "actual" : "abl;bqcrbq",
+      "category" : "layout.russian",
+      "expected" : "фиджийский",
+      "id" : "calibration-08937",
+      "input" : "abl;bqcrbq"
+    },
+    {
+      "actual" : "Abl;bqcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Фиджийский",
+      "id" : "calibration-08938",
+      "input" : "Abl;bqcrbq"
+    },
+    {
+      "actual" : "ym.rfckcrbq",
+      "category" : "layout.russian",
+      "expected" : "ньюкаслский",
+      "id" : "calibration-08997",
+      "input" : "ym.rfckcrbq"
+    },
+    {
+      "actual" : "Ym.rfckcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Ньюкаслский",
+      "id" : "calibration-08998",
+      "input" : "Ym.rfckcrbq"
+    },
+    {
+      "actual" : "jxe[fdibqcz",
+      "category" : "layout.russian",
+      "expected" : "очухавшийся",
+      "id" : "calibration-09022",
+      "input" : "jxe[fdibqcz"
+    },
+    {
+      "actual" : "Jxe[fdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Очухавшийся",
+      "id" : "calibration-09023",
+      "input" : "Jxe[fdibqcz"
+    },
+    {
+      "actual" : ",bkkbjy",
+      "category" : "layout.russian",
+      "expected" : "биллион",
+      "id" : "calibration-09032",
+      "input" : ",bkkbjy"
+    },
+    {
+      "actual" : "<bkkbjy",
+      "category" : "layout.title.russian",
+      "expected" : "Биллион",
+      "id" : "calibration-09033",
+      "input" : "<bkkbjy"
+    },
+    {
+      "actual" : "vbrj,frnthbz",
+      "category" : "layout.russian",
+      "expected" : "микобактерия",
+      "id" : "calibration-09037",
+      "input" : "vbrj,frnthbz"
+    },
+    {
+      "actual" : "Vbrj,frnthbz",
+      "category" : "layout.title.russian",
+      "expected" : "Микобактерия",
+      "id" : "calibration-09038",
+      "input" : "Vbrj,frnthbz"
+    },
+    {
+      "actual" : "rfg.ijy",
+      "category" : "layout.russian",
+      "expected" : "капюшон",
+      "id" : "calibration-09042",
+      "input" : "rfg.ijy"
+    },
+    {
+      "actual" : "Rfg.ijy",
+      "category" : "layout.title.russian",
+      "expected" : "Капюшон",
+      "id" : "calibration-09043",
+      "input" : "Rfg.ijy"
+    },
+    {
+      "actual" : ".;fyby",
+      "category" : "layout.russian",
+      "expected" : "южанин",
+      "id" : "calibration-09062",
+      "input" : ".;fyby"
+    },
+    {
+      "actual" : ">;fyby",
+      "category" : "layout.title.russian",
+      "expected" : "Южанин",
+      "id" : "calibration-09063",
+      "input" : ">;fyby"
+    },
+    {
+      "actual" : "ekm.",
+      "category" : "layout.russian",
+      "expected" : "улью",
+      "id" : "calibration-09077",
+      "input" : "ekm."
+    },
+    {
+      "actual" : "Ekm.",
+      "category" : "layout.title.russian",
+      "expected" : "Улью",
+      "id" : "calibration-09078",
+      "input" : "Ekm."
+    },
+    {
+      "actual" : "[frth",
+      "category" : "layout.russian",
+      "expected" : "хакер",
+      "id" : "calibration-09087",
+      "input" : "[frth"
+    },
+    {
+      "actual" : "{frth",
+      "category" : "layout.title.russian",
+      "expected" : "Хакер",
+      "id" : "calibration-09088",
+      "input" : "{frth"
+    },
+    {
+      "actual" : "crjh,tdibq",
+      "category" : "layout.russian",
+      "expected" : "скорбевший",
+      "id" : "calibration-09157",
+      "input" : "crjh,tdibq"
+    },
+    {
+      "actual" : "Crjh,tdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Скорбевший",
+      "id" : "calibration-09158",
+      "input" : "Crjh,tdibq"
+    },
+    {
+      "actual" : "gj;ju",
+      "category" : "layout.russian",
+      "expected" : "пожог",
+      "id" : "calibration-09167",
+      "input" : "gj;ju"
+    },
+    {
+      "actual" : "Gj;ju",
+      "category" : "layout.title.russian",
+      "expected" : "Пожог",
+      "id" : "calibration-09168",
+      "input" : "Gj;ju"
+    },
+    {
+      "actual" : "ecf;tyysq",
+      "category" : "layout.russian",
+      "expected" : "усаженный",
+      "id" : "calibration-09177",
+      "input" : "ecf;tyysq"
+    },
+    {
+      "actual" : "Ecf;tyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Усаженный",
+      "id" : "calibration-09178",
+      "input" : "Ecf;tyysq"
+    },
+    {
+      "actual" : "ce,jh,bnfkmysq",
+      "category" : "layout.russian",
+      "expected" : "суборбитальный",
+      "id" : "calibration-09192",
+      "input" : "ce,jh,bnfkmysq"
+    },
+    {
+      "actual" : "Ce,jh,bnfkmysq",
+      "category" : "layout.title.russian",
+      "expected" : "Суборбитальный",
+      "id" : "calibration-09193",
+      "input" : "Ce,jh,bnfkmysq"
+    },
+    {
+      "actual" : "yt[dfnrf",
+      "category" : "layout.russian",
+      "expected" : "нехватка",
+      "id" : "calibration-09202",
+      "input" : "yt[dfnrf"
+    },
+    {
+      "actual" : "Yt[dfnrf",
+      "category" : "layout.title.russian",
+      "expected" : "Нехватка",
+      "id" : "calibration-09203",
+      "input" : "Yt[dfnrf"
+    },
+    {
+      "actual" : "lt,kjrflf",
+      "category" : "layout.russian",
+      "expected" : "деблокада",
+      "id" : "calibration-09292",
+      "input" : "lt,kjrflf"
+    },
+    {
+      "actual" : "Lt,kjrflf",
+      "category" : "layout.title.russian",
+      "expected" : "Деблокада",
+      "id" : "calibration-09293",
+      "input" : "Lt,kjrflf"
+    },
+    {
+      "actual" : "[bfpv",
+      "category" : "layout.russian",
+      "expected" : "хиазм",
+      "id" : "calibration-09302",
+      "input" : "[bfpv"
+    },
+    {
+      "actual" : "{bfpv",
+      "category" : "layout.title.russian",
+      "expected" : "Хиазм",
+      "id" : "calibration-09303",
+      "input" : "{bfpv"
+    },
+    {
+      "actual" : ";fhxt",
+      "category" : "layout.russian",
+      "expected" : "жарче",
+      "id" : "calibration-09307",
+      "input" : ";fhxt"
+    },
+    {
+      "actual" : ":fhxt",
+      "category" : "layout.title.russian",
+      "expected" : "Жарче",
+      "id" : "calibration-09308",
+      "input" : ":fhxt"
+    },
+    {
+      "actual" : "rjy]trnehf",
+      "category" : "layout.russian",
+      "expected" : "конъектура",
+      "id" : "calibration-09317",
+      "input" : "rjy]trnehf"
+    },
+    {
+      "actual" : "Rjy]trnehf",
+      "category" : "layout.title.russian",
+      "expected" : "Конъектура",
+      "id" : "calibration-09318",
+      "input" : "Rjy]trnehf"
+    },
+    {
+      "actual" : "r.ht",
+      "category" : "layout.russian",
+      "expected" : "кюре",
+      "id" : "calibration-09377",
+      "input" : "r.ht"
+    },
+    {
+      "actual" : "R.ht",
+      "category" : "layout.title.russian",
+      "expected" : "Кюре",
+      "id" : "calibration-09378",
+      "input" : "R.ht"
+    },
+    {
+      "actual" : "yt,hfccrbq",
+      "category" : "layout.russian",
+      "expected" : "небрасский",
+      "id" : "calibration-09392",
+      "input" : "yt,hfccrbq"
+    },
+    {
+      "actual" : "Yt,hfccrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Небрасский",
+      "id" : "calibration-09393",
+      "input" : "Yt,hfccrbq"
+    },
+    {
+      "actual" : ";ybwf",
+      "category" : "layout.russian",
+      "expected" : "жница",
+      "id" : "calibration-09432",
+      "input" : ";ybwf"
+    },
+    {
+      "actual" : ":ybwf",
+      "category" : "layout.title.russian",
+      "expected" : "Жница",
+      "id" : "calibration-09433",
+      "input" : ":ybwf"
+    },
+    {
+      "actual" : "yf,j,",
+      "category" : "layout.russian",
+      "expected" : "набоб",
+      "id" : "calibration-09437",
+      "input" : "yf,j,"
+    },
+    {
+      "actual" : "Yf,j,",
+      "category" : "layout.title.russian",
+      "expected" : "Набоб",
+      "id" : "calibration-09438",
+      "input" : "Yf,j,"
+    },
+    {
+      "actual" : "vjh;",
+      "category" : "layout.russian",
+      "expected" : "морж",
+      "id" : "calibration-09462",
+      "input" : "vjh;"
+    },
+    {
+      "actual" : "Vjh;",
+      "category" : "layout.title.russian",
+      "expected" : "Морж",
+      "id" : "calibration-09463",
+      "input" : "Vjh;"
+    },
+    {
+      "actual" : "'rkjuf",
+      "category" : "layout.russian",
+      "expected" : "эклога",
+      "id" : "calibration-09467",
+      "input" : "'rkjuf"
+    },
+    {
+      "actual" : "\"rkjuf",
+      "category" : "layout.title.russian",
+      "expected" : "Эклога",
+      "id" : "calibration-09468",
+      "input" : "\"rkjuf"
+    },
+    {
+      "actual" : "pk.xrf",
+      "category" : "layout.russian",
+      "expected" : "злючка",
+      "id" : "calibration-09487",
+      "input" : "pk.xrf"
+    },
+    {
+      "actual" : "Pk.xrf",
+      "category" : "layout.title.russian",
+      "expected" : "Злючка",
+      "id" : "calibration-09488",
+      "input" : "Pk.xrf"
+    },
+    {
+      "actual" : "'dlbfkbn",
+      "category" : "layout.russian",
+      "expected" : "эвдиалит",
+      "id" : "calibration-09517",
+      "input" : "'dlbfkbn"
+    },
+    {
+      "actual" : "\"dlbfkbn",
+      "category" : "layout.title.russian",
+      "expected" : "Эвдиалит",
+      "id" : "calibration-09518",
+      "input" : "\"dlbfkbn"
+    },
+    {
+      "actual" : "pfhj,tdibq",
+      "category" : "layout.russian",
+      "expected" : "заробевший",
+      "id" : "calibration-09532",
+      "input" : "pfhj,tdibq"
+    },
+    {
+      "actual" : "Pfhj,tdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Заробевший",
+      "id" : "calibration-09533",
+      "input" : "Pfhj,tdibq"
+    },
+    {
+      "actual" : "e;ujhjlcrbq",
+      "category" : "layout.russian",
+      "expected" : "ужгородский",
+      "id" : "calibration-09537",
+      "input" : "e;ujhjlcrbq"
+    },
+    {
+      "actual" : "E;ujhjlcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Ужгородский",
+      "id" : "calibration-09538",
+      "input" : "E;ujhjlcrbq"
+    },
+    {
+      "actual" : "f[yedibq",
+      "category" : "layout.russian",
+      "expected" : "ахнувший",
+      "id" : "calibration-09557",
+      "input" : "f[yedibq"
+    },
+    {
+      "actual" : "F[yedibq",
+      "category" : "layout.title.russian",
+      "expected" : "Ахнувший",
+      "id" : "calibration-09558",
+      "input" : "F[yedibq"
+    },
+    {
+      "actual" : ",trjy",
+      "category" : "layout.russian",
+      "expected" : "бекон",
+      "id" : "calibration-09577",
+      "input" : ",trjy"
+    },
+    {
+      "actual" : "<trjy",
+      "category" : "layout.title.russian",
+      "expected" : "Бекон",
+      "id" : "calibration-09578",
+      "input" : "<trjy"
+    },
+    {
+      "actual" : "j[fkmybr",
+      "category" : "layout.russian",
+      "expected" : "охальник",
+      "id" : "calibration-09667",
+      "input" : "j[fkmybr"
+    },
+    {
+      "actual" : "J[fkmybr",
+      "category" : "layout.title.russian",
+      "expected" : "Охальник",
+      "id" : "calibration-09668",
+      "input" : "J[fkmybr"
+    },
+    {
+      "actual" : "le'n",
+      "category" : "layout.russian",
+      "expected" : "дуэт",
+      "id" : "calibration-09677",
+      "input" : "le'n"
+    },
+    {
+      "actual" : "Le'n",
+      "category" : "layout.title.russian",
+      "expected" : "Дуэт",
+      "id" : "calibration-09678",
+      "input" : "Le'n"
+    },
+    {
+      "actual" : "pfc]tvrf",
+      "category" : "layout.russian",
+      "expected" : "засъемка",
+      "id" : "calibration-09742",
+      "input" : "pfc]tvrf"
+    },
+    {
+      "actual" : "Pfc]tvrf",
+      "category" : "layout.title.russian",
+      "expected" : "Засъемка",
+      "id" : "calibration-09743",
+      "input" : "Pfc]tvrf"
+    },
+    {
+      "actual" : "j,syltdtdibq",
+      "category" : "layout.russian",
+      "expected" : "обындевевший",
+      "id" : "calibration-09782",
+      "input" : "j,syltdtdibq"
+    },
+    {
+      "actual" : "J,syltdtdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обындевевший",
+      "id" : "calibration-09783",
+      "input" : "J,syltdtdibq"
+    },
+    {
+      "actual" : "yfcj,fxbdibqcz",
+      "category" : "layout.russian",
+      "expected" : "насобачившийся",
+      "id" : "calibration-09792",
+      "input" : "yfcj,fxbdibqcz"
+    },
+    {
+      "actual" : "Yfcj,fxbdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Насобачившийся",
+      "id" : "calibration-09793",
+      "input" : "Yfcj,fxbdibqcz"
+    },
+    {
+      "actual" : "'ltv",
+      "category" : "layout.russian",
+      "expected" : "эдем",
+      "id" : "calibration-09802",
+      "input" : "'ltv"
+    },
+    {
+      "actual" : "\"ltv",
+      "category" : "layout.title.russian",
+      "expected" : "Эдем",
+      "id" : "calibration-09803",
+      "input" : "\"ltv"
+    },
+    {
+      "actual" : ";jgf",
+      "category" : "layout.russian",
+      "expected" : "жопа",
+      "id" : "calibration-09887",
+      "input" : ";jgf"
+    },
+    {
+      "actual" : ":jgf",
+      "category" : "layout.title.russian",
+      "expected" : "Жопа",
+      "id" : "calibration-09888",
+      "input" : ":jgf"
+    },
+    {
+      "actual" : "df,br",
+      "category" : "layout.russian",
+      "expected" : "вабик",
+      "id" : "calibration-09952",
+      "input" : "df,br"
+    },
+    {
+      "actual" : "Df,br",
+      "category" : "layout.title.russian",
+      "expected" : "Вабик",
+      "id" : "calibration-09953",
+      "input" : "Df,br"
+    },
+    {
+      "actual" : ",fk,tc",
+      "category" : "layout.russian",
+      "expected" : "балбес",
+      "id" : "calibration-09957",
+      "input" : ",fk,tc"
+    },
+    {
+      "actual" : "<fk,tc",
+      "category" : "layout.title.russian",
+      "expected" : "Балбес",
+      "id" : "calibration-09958",
+      "input" : "<fk,tc"
+    },
+    {
+      "actual" : ";fnrf",
+      "category" : "layout.russian",
+      "expected" : "жатка",
+      "id" : "calibration-09982",
+      "input" : ";fnrf"
+    },
+    {
+      "actual" : ":fnrf",
+      "category" : "layout.title.russian",
+      "expected" : "Жатка",
+      "id" : "calibration-09983",
+      "input" : ":fnrf"
+    },
+    {
+      "actual" : "'n.l",
+      "category" : "layout.russian",
+      "expected" : "этюд",
+      "id" : "calibration-10017",
+      "input" : "'n.l"
+    },
+    {
+      "actual" : "\"n.l",
+      "category" : "layout.title.russian",
+      "expected" : "Этюд",
+      "id" : "calibration-10018",
+      "input" : "\"n.l"
+    },
+    {
+      "actual" : "etp;fdibq",
+      "category" : "layout.russian",
+      "expected" : "уезжавший",
+      "id" : "calibration-10047",
+      "input" : "etp;fdibq"
+    },
+    {
+      "actual" : "Etp;fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Уезжавший",
+      "id" : "calibration-10048",
+      "input" : "Etp;fdibq"
+    },
+    {
+      "actual" : "f,lbrfwbz",
+      "category" : "layout.russian",
+      "expected" : "абдикация",
+      "id" : "calibration-10062",
+      "input" : "f,lbrfwbz"
+    },
+    {
+      "actual" : "F,lbrfwbz",
+      "category" : "layout.title.russian",
+      "expected" : "Абдикация",
+      "id" : "calibration-10063",
+      "input" : "F,lbrfwbz"
+    },
+    {
+      "actual" : "gf[nf",
+      "category" : "layout.russian",
+      "expected" : "пахта",
+      "id" : "calibration-10082",
+      "input" : "gf[nf"
+    },
+    {
+      "actual" : "Gf[nf",
+      "category" : "layout.title.russian",
+      "expected" : "Пахта",
+      "id" : "calibration-10083",
+      "input" : "Gf[nf"
+    },
+    {
+      "actual" : ",eqhtg",
+      "category" : "layout.russian",
+      "expected" : "буйреп",
+      "id" : "calibration-10087",
+      "input" : ",eqhtg"
+    },
+    {
+      "actual" : "<eqhtg",
+      "category" : "layout.title.russian",
+      "expected" : "Буйреп",
+      "id" : "calibration-10088",
+      "input" : "<eqhtg"
+    },
+    {
+      "actual" : ",jnekbpv",
+      "category" : "layout.russian",
+      "expected" : "ботулизм",
+      "id" : "calibration-10222",
+      "input" : ",jnekbpv"
+    },
+    {
+      "actual" : "<jnekbpv",
+      "category" : "layout.title.russian",
+      "expected" : "Ботулизм",
+      "id" : "calibration-10223",
+      "input" : "<jnekbpv"
+    },
+    {
+      "actual" : "pfib,",
+      "category" : "layout.russian",
+      "expected" : "зашиб",
+      "id" : "calibration-10307",
+      "input" : "pfib,"
+    },
+    {
+      "actual" : "Pfib,",
+      "category" : "layout.title.russian",
+      "expected" : "Зашиб",
+      "id" : "calibration-10308",
+      "input" : "Pfib,"
+    },
+    {
+      "actual" : ",fnhfr",
+      "category" : "layout.russian",
+      "expected" : "батрак",
+      "id" : "calibration-10322",
+      "input" : ",fnhfr"
+    },
+    {
+      "actual" : "<fnhfr",
+      "category" : "layout.title.russian",
+      "expected" : "Батрак",
+      "id" : "calibration-10323",
+      "input" : "<fnhfr"
+    },
+    {
+      "actual" : "pfc.c.rfdibq",
+      "category" : "layout.russian",
+      "expected" : "засюсюкавший",
+      "id" : "calibration-10342",
+      "input" : "pfc.c.rfdibq"
+    },
+    {
+      "actual" : "Pfc.c.rfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Засюсюкавший",
+      "id" : "calibration-10343",
+      "input" : "Pfc.c.rfdibq"
+    },
+    {
+      "actual" : "kj,,b",
+      "category" : "layout.russian",
+      "expected" : "лобби",
+      "id" : "calibration-10407",
+      "input" : "kj,,b"
+    },
+    {
+      "actual" : "Kj,,b",
+      "category" : "layout.title.russian",
+      "expected" : "Лобби",
+      "id" : "calibration-10408",
+      "input" : "Kj,,b"
+    },
+    {
+      "actual" : "ce,cdtnjdjq",
+      "category" : "layout.russian",
+      "expected" : "субсветовой",
+      "id" : "calibration-10412",
+      "input" : "ce,cdtnjdjq"
+    },
+    {
+      "actual" : "Ce,cdtnjdjq",
+      "category" : "layout.title.russian",
+      "expected" : "Субсветовой",
+      "id" : "calibration-10413",
+      "input" : "Ce,cdtnjdjq"
+    },
+    {
+      "actual" : "l;jyfnfy",
+      "category" : "layout.russian",
+      "expected" : "джонатан",
+      "id" : "calibration-10482",
+      "input" : "l;jyfnfy"
+    },
+    {
+      "actual" : "L;jyfnfy",
+      "category" : "layout.title.russian",
+      "expected" : "Джонатан",
+      "id" : "calibration-10483",
+      "input" : "L;jyfnfy"
+    },
+    {
+      "actual" : "'gcbkjy",
+      "category" : "layout.russian",
+      "expected" : "эпсилон",
+      "id" : "calibration-10507",
+      "input" : "'gcbkjy"
+    },
+    {
+      "actual" : "\"gcbkjy",
+      "category" : "layout.title.russian",
+      "expected" : "Эпсилон",
+      "id" : "calibration-10508",
+      "input" : "\"gcbkjy"
+    },
+    {
+      "actual" : ",hsr",
+      "category" : "layout.russian",
+      "expected" : "брык",
+      "id" : "calibration-10547",
+      "input" : ",hsr"
+    },
+    {
+      "actual" : "<hsr",
+      "category" : "layout.title.russian",
+      "expected" : "Брык",
+      "id" : "calibration-10548",
+      "input" : "<hsr"
+    },
+    {
+      "actual" : "clf.obq",
+      "category" : "layout.russian",
+      "expected" : "сдающий",
+      "id" : "calibration-10577",
+      "input" : "clf.obq"
+    },
+    {
+      "actual" : "Clf.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Сдающий",
+      "id" : "calibration-10578",
+      "input" : "Clf.obq"
+    },
+    {
+      "actual" : ",fnbfkmysq",
+      "category" : "layout.russian",
+      "expected" : "батиальный",
+      "id" : "calibration-10587",
+      "input" : ",fnbfkmysq"
+    },
+    {
+      "actual" : "<fnbfkmysq",
+      "category" : "layout.title.russian",
+      "expected" : "Батиальный",
+      "id" : "calibration-10588",
+      "input" : "<fnbfkmysq"
+    },
+    {
+      "actual" : "rfu','iybr",
+      "category" : "layout.russian",
+      "expected" : "кагэбэшник",
+      "id" : "calibration-10607",
+      "input" : "rfu','iybr"
+    },
+    {
+      "actual" : "Rfu','iybr",
+      "category" : "layout.title.russian",
+      "expected" : "Кагэбэшник",
+      "id" : "calibration-10608",
+      "input" : "Rfu','iybr"
+    },
+    {
+      "actual" : "[kz,ftn",
+      "category" : "layout.russian",
+      "expected" : "хлябает",
+      "id" : "calibration-10637",
+      "input" : "[kz,ftn"
+    },
+    {
+      "actual" : "{kz,ftn",
+      "category" : "layout.title.russian",
+      "expected" : "Хлябает",
+      "id" : "calibration-10638",
+      "input" : "{kz,ftn"
+    },
+    {
+      "actual" : "pjjnt[ybr",
+      "category" : "layout.russian",
+      "expected" : "зоотехник",
+      "id" : "calibration-10647",
+      "input" : "pjjnt[ybr"
+    },
+    {
+      "actual" : "Pjjnt[ybr",
+      "category" : "layout.title.russian",
+      "expected" : "Зоотехник",
+      "id" : "calibration-10648",
+      "input" : "Pjjnt[ybr"
+    },
+    {
+      "actual" : "ehj;fq",
+      "category" : "layout.russian",
+      "expected" : "урожай",
+      "id" : "calibration-10692",
+      "input" : "ehj;fq"
+    },
+    {
+      "actual" : "Ehj;fq",
+      "category" : "layout.title.russian",
+      "expected" : "Урожай",
+      "id" : "calibration-10693",
+      "input" : "Ehj;fq"
+    },
+    {
+      "actual" : ",fczobq",
+      "category" : "layout.russian",
+      "expected" : "басящий",
+      "id" : "calibration-10697",
+      "input" : ",fczobq"
+    },
+    {
+      "actual" : "<fczobq",
+      "category" : "layout.title.russian",
+      "expected" : "Басящий",
+      "id" : "calibration-10698",
+      "input" : "<fczobq"
+    },
+    {
+      "actual" : "ljt[fdibq",
+      "category" : "layout.russian",
+      "expected" : "доехавший",
+      "id" : "calibration-10767",
+      "input" : "ljt[fdibq"
+    },
+    {
+      "actual" : "Ljt[fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Доехавший",
+      "id" : "calibration-10768",
+      "input" : "Ljt[fdibq"
+    },
+    {
+      "actual" : "e,brdbcn",
+      "category" : "layout.russian",
+      "expected" : "убиквист",
+      "id" : "calibration-10772",
+      "input" : "e,brdbcn"
+    },
+    {
+      "actual" : "E,brdbcn",
+      "category" : "layout.title.russian",
+      "expected" : "Убиквист",
+      "id" : "calibration-10773",
+      "input" : "E,brdbcn"
+    },
+    {
+      "actual" : "cb,fhbn",
+      "category" : "layout.russian",
+      "expected" : "сибарит",
+      "id" : "calibration-10827",
+      "input" : "cb,fhbn"
+    },
+    {
+      "actual" : "Cb,fhbn",
+      "category" : "layout.title.russian",
+      "expected" : "Сибарит",
+      "id" : "calibration-10828",
+      "input" : "Cb,fhbn"
+    },
+    {
+      "actual" : "kf,bfkbpfwbz",
+      "category" : "layout.russian",
+      "expected" : "лабиализация",
+      "id" : "calibration-10902",
+      "input" : "kf,bfkbpfwbz"
+    },
+    {
+      "actual" : "Kf,bfkbpfwbz",
+      "category" : "layout.title.russian",
+      "expected" : "Лабиализация",
+      "id" : "calibration-10903",
+      "input" : "Kf,bfkbpfwbz"
+    },
+    {
+      "actual" : "pe,br",
+      "category" : "layout.russian",
+      "expected" : "зубик",
+      "id" : "calibration-10987",
+      "input" : "pe,br"
+    },
+    {
+      "actual" : "Pe,br",
+      "category" : "layout.title.russian",
+      "expected" : "Зубик",
+      "id" : "calibration-10988",
+      "input" : "Pe,br"
+    },
+    {
+      "actual" : "cnf,bkbpfnjh",
+      "category" : "layout.russian",
+      "expected" : "стабилизатор",
+      "id" : "calibration-11027",
+      "input" : "cnf,bkbpfnjh"
+    },
+    {
+      "actual" : "Cnf,bkbpfnjh",
+      "category" : "layout.title.russian",
+      "expected" : "Стабилизатор",
+      "id" : "calibration-11028",
+      "input" : "Cnf,bkbpfnjh"
+    },
+    {
+      "actual" : "f,hjufwbz",
+      "category" : "layout.russian",
+      "expected" : "аброгация",
+      "id" : "calibration-11032",
+      "input" : "f,hjufwbz"
+    },
+    {
+      "actual" : "F,hjufwbz",
+      "category" : "layout.title.russian",
+      "expected" : "Аброгация",
+      "id" : "calibration-11033",
+      "input" : "F,hjufwbz"
+    },
+    {
+      "actual" : "d]tlfdibqcz",
+      "category" : "layout.russian",
+      "expected" : "въедавшийся",
+      "id" : "calibration-11082",
+      "input" : "d]tlfdibqcz"
+    },
+    {
+      "actual" : "D]tlfdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Въедавшийся",
+      "id" : "calibration-11083",
+      "input" : "D]tlfdibqcz"
+    },
+    {
+      "actual" : ";fhtyysq",
+      "category" : "layout.russian",
+      "expected" : "жаренный",
+      "id" : "calibration-11092",
+      "input" : ";fhtyysq"
+    },
+    {
+      "actual" : ":fhtyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Жаренный",
+      "id" : "calibration-11093",
+      "input" : ":fhtyysq"
+    },
+    {
+      "actual" : ";heobq",
+      "category" : "layout.russian",
+      "expected" : "жрущий",
+      "id" : "calibration-11097",
+      "input" : ";heobq"
+    },
+    {
+      "actual" : ":heobq",
+      "category" : "layout.title.russian",
+      "expected" : "Жрущий",
+      "id" : "calibration-11098",
+      "input" : ":heobq"
+    },
+    {
+      "actual" : "vfh;f",
+      "category" : "layout.russian",
+      "expected" : "маржа",
+      "id" : "calibration-11137",
+      "input" : "vfh;f"
+    },
+    {
+      "actual" : "Vfh;f",
+      "category" : "layout.title.russian",
+      "expected" : "Маржа",
+      "id" : "calibration-11138",
+      "input" : "Vfh;f"
+    },
+    {
+      "actual" : "[djqybr",
+      "category" : "layout.russian",
+      "expected" : "хвойник",
+      "id" : "calibration-11197",
+      "input" : "[djqybr"
+    },
+    {
+      "actual" : "{djqybr",
+      "category" : "layout.title.russian",
+      "expected" : "Хвойник",
+      "id" : "calibration-11198",
+      "input" : "{djqybr"
+    },
+    {
+      "actual" : "crt,",
+      "category" : "layout.russian",
+      "expected" : "скеб",
+      "id" : "calibration-11207",
+      "input" : "crt,"
+    },
+    {
+      "actual" : "Crt,",
+      "category" : "layout.title.russian",
+      "expected" : "Скеб",
+      "id" : "calibration-11208",
+      "input" : "Crt,"
+    },
+    {
+      "actual" : ",jypf",
+      "category" : "layout.russian",
+      "expected" : "бонза",
+      "id" : "calibration-11212",
+      "input" : ",jypf"
+    },
+    {
+      "actual" : "<jypf",
+      "category" : "layout.title.russian",
+      "expected" : "Бонза",
+      "id" : "calibration-11213",
+      "input" : "<jypf"
+    },
+    {
+      "actual" : "[j,,b",
+      "category" : "layout.russian",
+      "expected" : "хобби",
+      "id" : "calibration-11217",
+      "input" : "[j,,b"
+    },
+    {
+      "actual" : "{j,,b",
+      "category" : "layout.title.russian",
+      "expected" : "Хобби",
+      "id" : "calibration-11218",
+      "input" : "{j,,b"
+    },
+    {
+      "actual" : "j,ensq",
+      "category" : "layout.russian",
+      "expected" : "обутый",
+      "id" : "calibration-11252",
+      "input" : "j,ensq"
+    },
+    {
+      "actual" : "J,ensq",
+      "category" : "layout.title.russian",
+      "expected" : "Обутый",
+      "id" : "calibration-11253",
+      "input" : "J,ensq"
+    },
+    {
+      "actual" : ",jxrf",
+      "category" : "layout.russian",
+      "expected" : "бочка",
+      "id" : "calibration-11272",
+      "input" : ",jxrf"
+    },
+    {
+      "actual" : "<jxrf",
+      "category" : "layout.title.russian",
+      "expected" : "Бочка",
+      "id" : "calibration-11273",
+      "input" : "<jxrf"
+    },
+    {
+      "actual" : "ceuhj,",
+      "category" : "layout.russian",
+      "expected" : "сугроб",
+      "id" : "calibration-11357",
+      "input" : "ceuhj,"
+    },
+    {
+      "actual" : "Ceuhj,",
+      "category" : "layout.title.russian",
+      "expected" : "Сугроб",
+      "id" : "calibration-11358",
+      "input" : "Ceuhj,"
+    },
+    {
+      "actual" : "j[vehtybt",
+      "category" : "layout.russian",
+      "expected" : "охмурение",
+      "id" : "calibration-11417",
+      "input" : "j[vehtybt"
+    },
+    {
+      "actual" : "J[vehtybt",
+      "category" : "layout.title.russian",
+      "expected" : "Охмурение",
+      "id" : "calibration-11418",
+      "input" : "J[vehtybt"
+    },
+    {
+      "actual" : "nhb'lh",
+      "category" : "layout.russian",
+      "expected" : "триэдр",
+      "id" : "calibration-11447",
+      "input" : "nhb'lh"
+    },
+    {
+      "actual" : "Nhb'lh",
+      "category" : "layout.title.russian",
+      "expected" : "Триэдр",
+      "id" : "calibration-11448",
+      "input" : "Nhb'lh"
+    },
+    {
+      "actual" : "[fjc",
+      "category" : "layout.russian",
+      "expected" : "хаос",
+      "id" : "calibration-11452",
+      "input" : "[fjc"
+    },
+    {
+      "actual" : "{fjc",
+      "category" : "layout.title.russian",
+      "expected" : "Хаос",
+      "id" : "calibration-11453",
+      "input" : "{fjc"
+    },
+    {
+      "actual" : "utyinf,",
+      "category" : "layout.russian",
+      "expected" : "генштаб",
+      "id" : "calibration-11477",
+      "input" : "utyinf,"
+    },
+    {
+      "actual" : "Utyinf,",
+      "category" : "layout.title.russian",
+      "expected" : "Генштаб",
+      "id" : "calibration-11478",
+      "input" : "Utyinf,"
+    },
+    {
+      "actual" : "lj;bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "доживавший",
+      "id" : "calibration-11502",
+      "input" : "lj;bdfdibq"
+    },
+    {
+      "actual" : "Lj;bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Доживавший",
+      "id" : "calibration-11503",
+      "input" : "Lj;bdfdibq"
+    },
+    {
+      "actual" : "'cgthfynbcn",
+      "category" : "layout.russian",
+      "expected" : "эсперантист",
+      "id" : "calibration-11522",
+      "input" : "'cgthfynbcn"
+    },
+    {
+      "actual" : "\"cgthfynbcn",
+      "category" : "layout.title.russian",
+      "expected" : "Эсперантист",
+      "id" : "calibration-11523",
+      "input" : "\"cgthfynbcn"
+    },
+    {
+      "actual" : "cnt;rf",
+      "category" : "layout.russian",
+      "expected" : "стежка",
+      "id" : "calibration-11542",
+      "input" : "cnt;rf"
+    },
+    {
+      "actual" : "Cnt;rf",
+      "category" : "layout.title.russian",
+      "expected" : "Стежка",
+      "id" : "calibration-11543",
+      "input" : "Cnt;rf"
+    },
+    {
+      "actual" : "jukj,tkm",
+      "category" : "layout.russian",
+      "expected" : "оглобель",
+      "id" : "calibration-11627",
+      "input" : "jukj,tkm"
+    },
+    {
+      "actual" : "Jukj,tkm",
+      "category" : "layout.title.russian",
+      "expected" : "Оглобель",
+      "id" : "calibration-11628",
+      "input" : "Jukj,tkm"
+    },
+    {
+      "actual" : "uj,jbcn",
+      "category" : "layout.russian",
+      "expected" : "гобоист",
+      "id" : "calibration-11632",
+      "input" : "uj,jbcn"
+    },
+    {
+      "actual" : "Uj,jbcn",
+      "category" : "layout.title.russian",
+      "expected" : "Гобоист",
+      "id" : "calibration-11633",
+      "input" : "Uj,jbcn"
+    },
+    {
+      "actual" : ";bdibq",
+      "category" : "layout.russian",
+      "expected" : "живший",
+      "id" : "calibration-11697",
+      "input" : ";bdibq"
+    },
+    {
+      "actual" : ":bdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Живший",
+      "id" : "calibration-11698",
+      "input" : ":bdibq"
+    },
+    {
+      "actual" : "crf,htpyjcnm",
+      "category" : "layout.russian",
+      "expected" : "скабрезность",
+      "id" : "calibration-11737",
+      "input" : "crf,htpyjcnm"
+    },
+    {
+      "actual" : "Crf,htpyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Скабрезность",
+      "id" : "calibration-11738",
+      "input" : "Crf,htpyjcnm"
+    },
+    {
+      "actual" : "db[jh",
+      "category" : "layout.russian",
+      "expected" : "вихор",
+      "id" : "calibration-11747",
+      "input" : "db[jh"
+    },
+    {
+      "actual" : "Db[jh",
+      "category" : "layout.title.russian",
+      "expected" : "Вихор",
+      "id" : "calibration-11748",
+      "input" : "Db[jh"
+    },
+    {
+      "actual" : "igf;bcn",
+      "category" : "layout.russian",
+      "expected" : "шпажист",
+      "id" : "calibration-11817",
+      "input" : "igf;bcn"
+    },
+    {
+      "actual" : "Igf;bcn",
+      "category" : "layout.title.russian",
+      "expected" : "Шпажист",
+      "id" : "calibration-11818",
+      "input" : "Igf;bcn"
+    },
+    {
+      "actual" : "lj;lfdibqcz",
+      "category" : "layout.russian",
+      "expected" : "дождавшийся",
+      "id" : "calibration-11832",
+      "input" : "lj;lfdibqcz"
+    },
+    {
+      "actual" : "Lj;lfdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Дождавшийся",
+      "id" : "calibration-11833",
+      "input" : "Lj;lfdibqcz"
+    },
+    {
+      "actual" : ",scnhtqibq",
+      "category" : "layout.russian",
+      "expected" : "быстрейший",
+      "id" : "calibration-11837",
+      "input" : ",scnhtqibq"
+    },
+    {
+      "actual" : "<scnhtqibq",
+      "category" : "layout.title.russian",
+      "expected" : "Быстрейший",
+      "id" : "calibration-11838",
+      "input" : "<scnhtqibq"
+    },
+    {
+      "actual" : "cfy,fn",
+      "category" : "layout.russian",
+      "expected" : "санбат",
+      "id" : "calibration-11862",
+      "input" : "cfy,fn"
+    },
+    {
+      "actual" : "Cfy,fn",
+      "category" : "layout.title.russian",
+      "expected" : "Санбат",
+      "id" : "calibration-11863",
+      "input" : "Cfy,fn"
+    },
+    {
+      "actual" : "'hufnbdysq",
+      "category" : "layout.russian",
+      "expected" : "эргативный",
+      "id" : "calibration-11902",
+      "input" : "'hufnbdysq"
+    },
+    {
+      "actual" : "\"hufnbdysq",
+      "category" : "layout.title.russian",
+      "expected" : "Эргативный",
+      "id" : "calibration-11903",
+      "input" : "\"hufnbdysq"
+    },
+    {
+      "actual" : ",bvjktrekzhysq",
+      "category" : "layout.russian",
+      "expected" : "бимолекулярный",
+      "id" : "calibration-11907",
+      "input" : ",bvjktrekzhysq"
+    },
+    {
+      "actual" : "<bvjktrekzhysq",
+      "category" : "layout.title.russian",
+      "expected" : "Бимолекулярный",
+      "id" : "calibration-11908",
+      "input" : "<bvjktrekzhysq"
+    },
+    {
+      "actual" : ",jpt",
+      "category" : "layout.russian",
+      "expected" : "бозе",
+      "id" : "calibration-11962",
+      "input" : ",jpt"
+    },
+    {
+      "actual" : "<jpt",
+      "category" : "layout.title.russian",
+      "expected" : "Бозе",
+      "id" : "calibration-11963",
+      "input" : "<jpt"
+    },
+    {
+      "actual" : "xb;jdsq",
+      "category" : "layout.russian",
+      "expected" : "чижовый",
+      "id" : "calibration-11967",
+      "input" : "xb;jdsq"
+    },
+    {
+      "actual" : "Xb;jdsq",
+      "category" : "layout.title.russian",
+      "expected" : "Чижовый",
+      "id" : "calibration-11968",
+      "input" : "Xb;jdsq"
+    },
+    {
+      "actual" : "fk,fytw",
+      "category" : "layout.russian",
+      "expected" : "албанец",
+      "id" : "calibration-11972",
+      "input" : "fk,fytw"
+    },
+    {
+      "actual" : "Fk,fytw",
+      "category" : "layout.title.russian",
+      "expected" : "Албанец",
+      "id" : "calibration-11973",
+      "input" : "Fk,fytw"
+    },
+    {
+      "actual" : "uel;fhjd",
+      "category" : "layout.russian",
+      "expected" : "гуджаров",
+      "id" : "calibration-11992",
+      "input" : "uel;fhjd"
+    },
+    {
+      "actual" : "Uel;fhjd",
+      "category" : "layout.title.russian",
+      "expected" : "Гуджаров",
+      "id" : "calibration-11993",
+      "input" : "Uel;fhjd"
+    }
+  ],
+  "modelVersion" : 1,
+  "passed" : false,
+  "perCategory" : {
+    "acronym.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 460,
+      "total" : 460,
+      "trueNegative" : 460,
+      "truePositive" : 0
+    },
+    "acronym.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 740,
+      "total" : 740,
+      "trueNegative" : 740,
+      "truePositive" : 0
+    },
+    "correct.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 460,
+      "total" : 460,
+      "trueNegative" : 460,
+      "truePositive" : 0
+    },
+    "correct.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 740,
+      "total" : 740,
+      "trueNegative" : 740,
+      "truePositive" : 0
+    },
+    "doubleCaps" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 0,
+      "trueNegative" : 0,
+      "truePositive" : 0
+    },
+    "guard.code" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.email" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.mixed" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.number" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.path" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.url" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "layout.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 460,
+      "trueNegative" : 0,
+      "truePositive" : 460
+    },
+    "layout.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 218,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 740,
+      "trueNegative" : 0,
+      "truePositive" : 522
+    },
+    "layout.title.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 460,
+      "trueNegative" : 0,
+      "truePositive" : 460
+    },
+    "layout.title.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 218,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 740,
+      "trueNegative" : 0,
+      "truePositive" : 522
+    },
+    "typo" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 1,
+      "trueNegative" : 0,
+      "truePositive" : 1
+    },
+    "yo" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 1,
+      "trueNegative" : 0,
+      "truePositive" : 1
+    }
+  },
+  "precision" : 1,
+  "precisionInterval" : {
+    "lower" : 0.99804979243001057,
+    "upper" : 0.99999999999999989
+  },
+  "recall" : 0.81848459616985847,
+  "releaseReady" : false,
+  "rulesSHA256" : "c5b8ffaae684f053cb57203bc364115fec413224f659d0bbac8b9b2d1b04a133",
+  "split" : "calibration",
+  "total" : 6002,
+  "truePositive" : 1966
+}

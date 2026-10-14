@@ -1,0 +1,3453 @@
+{
+  "corpusTotal" : 18010,
+  "corpusVersion" : "independent-v1-frozen",
+  "counts" : {
+    "falseChanges" : 0,
+    "falseNegative" : 461,
+    "falsePositive" : 0,
+    "noChange" : 3602,
+    "total" : 6006,
+    "trueNegative" : 3602,
+    "truePositive" : 1943
+  },
+  "evaluationMode" : "token-only synthetic replay; physical-input/editor differential unrun",
+  "failures" : [
+    "layout recall undefined or below 0.95"
+  ],
+  "falseChangeInterval" : {
+    "lower" : 0,
+    "upper" : 0.001065382350683402
+  },
+  "falseChangeRate" : 0,
+  "falseNegative" : 461,
+  "falsePositive" : 0,
+  "layoutRecall" : 0.80867027928303459,
+  "layoutRecallInterval" : {
+    "lower" : 0.79244115518945357,
+    "upper" : 0.82391241551616423
+  },
+  "mismatches" : [
+    {
+      "actual" : "ytclth;fy",
+      "category" : "layout.russian",
+      "expected" : "несдержан",
+      "id" : "holdout-12012",
+      "input" : "ytclth;fy"
+    },
+    {
+      "actual" : "Ytclth;fy",
+      "category" : "layout.title.russian",
+      "expected" : "Несдержан",
+      "id" : "holdout-12013",
+      "input" : "Ytclth;fy"
+    },
+    {
+      "actual" : ",jhpjdobr",
+      "category" : "layout.russian",
+      "expected" : "борзовщик",
+      "id" : "holdout-12032",
+      "input" : ",jhpjdobr"
+    },
+    {
+      "actual" : ",jhpjdobr",
+      "category" : "layout.title.russian",
+      "expected" : "Борзовщик",
+      "id" : "holdout-12033",
+      "input" : ",jhpjdobr"
+    },
+    {
+      "actual" : "pfv,tpbqcrbq",
+      "category" : "layout.russian",
+      "expected" : "замбезийский",
+      "id" : "holdout-12087",
+      "input" : "pfv,tpbqcrbq"
+    },
+    {
+      "actual" : "Pfv,tpbqcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Замбезийский",
+      "id" : "holdout-12088",
+      "input" : "Pfv,tpbqcrbq"
+    },
+    {
+      "actual" : ";ehy",
+      "category" : "layout.russian",
+      "expected" : "журн",
+      "id" : "holdout-12092",
+      "input" : ";ehy"
+    },
+    {
+      "actual" : ";ehy",
+      "category" : "layout.title.russian",
+      "expected" : "Журн",
+      "id" : "holdout-12093",
+      "input" : ";ehy"
+    },
+    {
+      "actual" : "'kbydfh",
+      "category" : "layout.russian",
+      "expected" : "элинвар",
+      "id" : "holdout-12102",
+      "input" : "'kbydfh"
+    },
+    {
+      "actual" : "'kbydfh",
+      "category" : "layout.title.russian",
+      "expected" : "Элинвар",
+      "id" : "holdout-12103",
+      "input" : "'kbydfh"
+    },
+    {
+      "actual" : "xe;,byf",
+      "category" : "layout.russian",
+      "expected" : "чужбина",
+      "id" : "holdout-12167",
+      "input" : "xe;,byf"
+    },
+    {
+      "actual" : "Xe;,byf",
+      "category" : "layout.title.russian",
+      "expected" : "Чужбина",
+      "id" : "holdout-12168",
+      "input" : "Xe;,byf"
+    },
+    {
+      "actual" : "e[fnm",
+      "category" : "layout.russian",
+      "expected" : "ухать",
+      "id" : "holdout-12172",
+      "input" : "e[fnm"
+    },
+    {
+      "actual" : "E[fnm",
+      "category" : "layout.title.russian",
+      "expected" : "Ухать",
+      "id" : "holdout-12173",
+      "input" : "E[fnm"
+    },
+    {
+      "actual" : ",fkn",
+      "category" : "layout.russian",
+      "expected" : "балт",
+      "id" : "holdout-12247",
+      "input" : ",fkn"
+    },
+    {
+      "actual" : ",fkn",
+      "category" : "layout.title.russian",
+      "expected" : "Балт",
+      "id" : "holdout-12248",
+      "input" : ",fkn"
+    },
+    {
+      "actual" : "bc[bnhbdibqcz",
+      "category" : "layout.russian",
+      "expected" : "исхитрившийся",
+      "id" : "holdout-12302",
+      "input" : "bc[bnhbdibqcz"
+    },
+    {
+      "actual" : "Bc[bnhbdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Исхитрившийся",
+      "id" : "holdout-12303",
+      "input" : "Bc[bnhbdibqcz"
+    },
+    {
+      "actual" : "p'rjdcrbq",
+      "category" : "layout.russian",
+      "expected" : "зэковский",
+      "id" : "holdout-12307",
+      "input" : "p'rjdcrbq"
+    },
+    {
+      "actual" : "P'rjdcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Зэковский",
+      "id" : "holdout-12308",
+      "input" : "P'rjdcrbq"
+    },
+    {
+      "actual" : "[fzyysq",
+      "category" : "layout.russian",
+      "expected" : "хаянный",
+      "id" : "holdout-12337",
+      "input" : "[fzyysq"
+    },
+    {
+      "actual" : "[fzyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Хаянный",
+      "id" : "holdout-12338",
+      "input" : "[fzyysq"
+    },
+    {
+      "actual" : "j,eckfdkbdfdibq",
+      "category" : "layout.russian",
+      "expected" : "обуславливавший",
+      "id" : "holdout-12362",
+      "input" : "j,eckfdkbdfdibq"
+    },
+    {
+      "actual" : "J,eckfdkbdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обуславливавший",
+      "id" : "holdout-12363",
+      "input" : "J,eckfdkbdfdibq"
+    },
+    {
+      "actual" : ",frinjdysq",
+      "category" : "layout.russian",
+      "expected" : "бакштовный",
+      "id" : "holdout-12382",
+      "input" : ",frinjdysq"
+    },
+    {
+      "actual" : ",frinjdysq",
+      "category" : "layout.title.russian",
+      "expected" : "Бакштовный",
+      "id" : "holdout-12383",
+      "input" : ",frinjdysq"
+    },
+    {
+      "actual" : ",eyrth",
+      "category" : "layout.russian",
+      "expected" : "бункер",
+      "id" : "holdout-12417",
+      "input" : ",eyrth"
+    },
+    {
+      "actual" : ",eyrth",
+      "category" : "layout.title.russian",
+      "expected" : "Бункер",
+      "id" : "holdout-12418",
+      "input" : ",eyrth"
+    },
+    {
+      "actual" : "u.hpf",
+      "category" : "layout.russian",
+      "expected" : "гюрза",
+      "id" : "holdout-12437",
+      "input" : "u.hpf"
+    },
+    {
+      "actual" : "U.hpf",
+      "category" : "layout.title.russian",
+      "expected" : "Гюрза",
+      "id" : "holdout-12438",
+      "input" : "U.hpf"
+    },
+    {
+      "actual" : ",eljhf;fobq",
+      "category" : "layout.russian",
+      "expected" : "будоражащий",
+      "id" : "holdout-12447",
+      "input" : ",eljhf;fobq"
+    },
+    {
+      "actual" : ",eljhf;fobq",
+      "category" : "layout.title.russian",
+      "expected" : "Будоражащий",
+      "id" : "holdout-12448",
+      "input" : ",eljhf;fobq"
+    },
+    {
+      "actual" : "n.xjr",
+      "category" : "layout.russian",
+      "expected" : "тючок",
+      "id" : "holdout-12462",
+      "input" : "n.xjr"
+    },
+    {
+      "actual" : "N.xjr",
+      "category" : "layout.title.russian",
+      "expected" : "Тючок",
+      "id" : "holdout-12463",
+      "input" : "N.xjr"
+    },
+    {
+      "actual" : "gk.yedibq",
+      "category" : "layout.russian",
+      "expected" : "плюнувший",
+      "id" : "holdout-12502",
+      "input" : "gk.yedibq"
+    },
+    {
+      "actual" : "Gk.yedibq",
+      "category" : "layout.title.russian",
+      "expected" : "Плюнувший",
+      "id" : "holdout-12503",
+      "input" : "Gk.yedibq"
+    },
+    {
+      "actual" : ",fnfkbcn",
+      "category" : "layout.russian",
+      "expected" : "баталист",
+      "id" : "holdout-12562",
+      "input" : ",fnfkbcn"
+    },
+    {
+      "actual" : ",fnfkbcn",
+      "category" : "layout.title.russian",
+      "expected" : "Баталист",
+      "id" : "holdout-12563",
+      "input" : ",fnfkbcn"
+    },
+    {
+      "actual" : "'gbujy",
+      "category" : "layout.russian",
+      "expected" : "эпигон",
+      "id" : "holdout-12567",
+      "input" : "'gbujy"
+    },
+    {
+      "actual" : "'gbujy",
+      "category" : "layout.title.russian",
+      "expected" : "Эпигон",
+      "id" : "holdout-12568",
+      "input" : "'gbujy"
+    },
+    {
+      "actual" : "vj;;tdtkbyf",
+      "category" : "layout.russian",
+      "expected" : "можжевелина",
+      "id" : "holdout-12607",
+      "input" : "vj;;tdtkbyf"
+    },
+    {
+      "actual" : "Vj;;tdtkbyf",
+      "category" : "layout.title.russian",
+      "expected" : "Можжевелина",
+      "id" : "holdout-12608",
+      "input" : "Vj;;tdtkbyf"
+    },
+    {
+      "actual" : ",bctrcefkmyjcnm",
+      "category" : "layout.russian",
+      "expected" : "бисексуальность",
+      "id" : "holdout-12632",
+      "input" : ",bctrcefkmyjcnm"
+    },
+    {
+      "actual" : ",bctrcefkmyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Бисексуальность",
+      "id" : "holdout-12633",
+      "input" : ",bctrcefkmyjcnm"
+    },
+    {
+      "actual" : "ce;bdfdibqcz",
+      "category" : "layout.russian",
+      "expected" : "суживавшийся",
+      "id" : "holdout-12652",
+      "input" : "ce;bdfdibqcz"
+    },
+    {
+      "actual" : "Ce;bdfdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Суживавшийся",
+      "id" : "holdout-12653",
+      "input" : "Ce;bdfdibqcz"
+    },
+    {
+      "actual" : "j,dbdfdibq",
+      "category" : "layout.russian",
+      "expected" : "обвивавший",
+      "id" : "holdout-12762",
+      "input" : "j,dbdfdibq"
+    },
+    {
+      "actual" : "J,dbdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обвивавший",
+      "id" : "holdout-12763",
+      "input" : "J,dbdfdibq"
+    },
+    {
+      "actual" : ";fkm",
+      "category" : "layout.russian",
+      "expected" : "жаль",
+      "id" : "holdout-12767",
+      "input" : ";fkm"
+    },
+    {
+      "actual" : ";fkm",
+      "category" : "layout.title.russian",
+      "expected" : "Жаль",
+      "id" : "holdout-12768",
+      "input" : ";fkm"
+    },
+    {
+      "actual" : ",tkafcntw",
+      "category" : "layout.russian",
+      "expected" : "белфастец",
+      "id" : "holdout-12787",
+      "input" : ",tkafcntw"
+    },
+    {
+      "actual" : ",tkafcntw",
+      "category" : "layout.title.russian",
+      "expected" : "Белфастец",
+      "id" : "holdout-12788",
+      "input" : ",tkafcntw"
+    },
+    {
+      "actual" : "kbye.obq",
+      "category" : "layout.russian",
+      "expected" : "линующий",
+      "id" : "holdout-12812",
+      "input" : "kbye.obq"
+    },
+    {
+      "actual" : "Kbye.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Линующий",
+      "id" : "holdout-12813",
+      "input" : "Kbye.obq"
+    },
+    {
+      "actual" : ",htdt",
+      "category" : "layout.russian",
+      "expected" : "бреве",
+      "id" : "holdout-12822",
+      "input" : ",htdt"
+    },
+    {
+      "actual" : ",htdt",
+      "category" : "layout.title.russian",
+      "expected" : "Бреве",
+      "id" : "holdout-12823",
+      "input" : ",htdt"
+    },
+    {
+      "actual" : "gjl'nf;",
+      "category" : "layout.russian",
+      "expected" : "подэтаж",
+      "id" : "holdout-12852",
+      "input" : "gjl'nf;"
+    },
+    {
+      "actual" : "Gjl'nf;",
+      "category" : "layout.title.russian",
+      "expected" : "Подэтаж",
+      "id" : "holdout-12853",
+      "input" : "Gjl'nf;"
+    },
+    {
+      "actual" : "'v,fhuj",
+      "category" : "layout.russian",
+      "expected" : "эмбарго",
+      "id" : "holdout-12892",
+      "input" : "'v,fhuj"
+    },
+    {
+      "actual" : "'v,fhuj",
+      "category" : "layout.title.russian",
+      "expected" : "Эмбарго",
+      "id" : "holdout-12893",
+      "input" : "'v,fhuj"
+    },
+    {
+      "actual" : "j,vzdibq",
+      "category" : "layout.russian",
+      "expected" : "обмявший",
+      "id" : "holdout-12902",
+      "input" : "j,vzdibq"
+    },
+    {
+      "actual" : "J,vzdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обмявший",
+      "id" : "holdout-12903",
+      "input" : "J,vzdibq"
+    },
+    {
+      "actual" : ".yrjh",
+      "category" : "layout.russian",
+      "expected" : "юнкор",
+      "id" : "holdout-12907",
+      "input" : ".yrjh"
+    },
+    {
+      "actual" : ".yrjh",
+      "category" : "layout.title.russian",
+      "expected" : "Юнкор",
+      "id" : "holdout-12908",
+      "input" : ".yrjh"
+    },
+    {
+      "actual" : "xf[jnrf",
+      "category" : "layout.russian",
+      "expected" : "чахотка",
+      "id" : "holdout-12927",
+      "input" : "xf[jnrf"
+    },
+    {
+      "actual" : "Xf[jnrf",
+      "category" : "layout.title.russian",
+      "expected" : "Чахотка",
+      "id" : "holdout-12928",
+      "input" : "Xf[jnrf"
+    },
+    {
+      "actual" : "dkj;tybt",
+      "category" : "layout.russian",
+      "expected" : "вложение",
+      "id" : "holdout-12952",
+      "input" : "dkj;tybt"
+    },
+    {
+      "actual" : "Dkj;tybt",
+      "category" : "layout.title.russian",
+      "expected" : "Вложение",
+      "id" : "holdout-12953",
+      "input" : "Dkj;tybt"
+    },
+    {
+      "actual" : "lhf.obq",
+      "category" : "layout.russian",
+      "expected" : "драющий",
+      "id" : "holdout-13042",
+      "input" : "lhf.obq"
+    },
+    {
+      "actual" : "Lhf.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Драющий",
+      "id" : "holdout-13043",
+      "input" : "Lhf.obq"
+    },
+    {
+      "actual" : "u;tkm",
+      "category" : "layout.russian",
+      "expected" : "гжель",
+      "id" : "holdout-13067",
+      "input" : "u;tkm"
+    },
+    {
+      "actual" : "U;tkm",
+      "category" : "layout.title.russian",
+      "expected" : "Гжель",
+      "id" : "holdout-13068",
+      "input" : "U;tkm"
+    },
+    {
+      "actual" : "dnz;rf",
+      "category" : "layout.russian",
+      "expected" : "втяжка",
+      "id" : "holdout-13092",
+      "input" : "dnz;rf"
+    },
+    {
+      "actual" : "Dnz;rf",
+      "category" : "layout.title.russian",
+      "expected" : "Втяжка",
+      "id" : "holdout-13093",
+      "input" : "Dnz;rf"
+    },
+    {
+      "actual" : "jnc.lf",
+      "category" : "layout.russian",
+      "expected" : "отсюда",
+      "id" : "holdout-13097",
+      "input" : "jnc.lf"
+    },
+    {
+      "actual" : "Jnc.lf",
+      "category" : "layout.title.russian",
+      "expected" : "Отсюда",
+      "id" : "holdout-13098",
+      "input" : "Jnc.lf"
+    },
+    {
+      "actual" : "chf,fnsdfdibq",
+      "category" : "layout.russian",
+      "expected" : "срабатывавший",
+      "id" : "holdout-13122",
+      "input" : "chf,fnsdfdibq"
+    },
+    {
+      "actual" : "Chf,fnsdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Срабатывавший",
+      "id" : "holdout-13123",
+      "input" : "Chf,fnsdfdibq"
+    },
+    {
+      "actual" : ".ysq",
+      "category" : "layout.russian",
+      "expected" : "юный",
+      "id" : "holdout-13162",
+      "input" : ".ysq"
+    },
+    {
+      "actual" : ".ysq",
+      "category" : "layout.title.russian",
+      "expected" : "Юный",
+      "id" : "holdout-13163",
+      "input" : ".ysq"
+    },
+    {
+      "actual" : "lp.lj",
+      "category" : "layout.russian",
+      "expected" : "дзюдо",
+      "id" : "holdout-13187",
+      "input" : "lp.lj"
+    },
+    {
+      "actual" : "Lp.lj",
+      "category" : "layout.title.russian",
+      "expected" : "Дзюдо",
+      "id" : "holdout-13188",
+      "input" : "Lp.lj"
+    },
+    {
+      "actual" : "dt[bcn",
+      "category" : "layout.russian",
+      "expected" : "вехист",
+      "id" : "holdout-13192",
+      "input" : "dt[bcn"
+    },
+    {
+      "actual" : "Dt[bcn",
+      "category" : "layout.title.russian",
+      "expected" : "Вехист",
+      "id" : "holdout-13193",
+      "input" : "Dt[bcn"
+    },
+    {
+      "actual" : "nf.obq",
+      "category" : "layout.russian",
+      "expected" : "тающий",
+      "id" : "holdout-13207",
+      "input" : "nf.obq"
+    },
+    {
+      "actual" : "Nf.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Тающий",
+      "id" : "holdout-13208",
+      "input" : "Nf.obq"
+    },
+    {
+      "actual" : "lhb,kbyu",
+      "category" : "layout.russian",
+      "expected" : "дриблинг",
+      "id" : "holdout-13222",
+      "input" : "lhb,kbyu"
+    },
+    {
+      "actual" : "Lhb,kbyu",
+      "category" : "layout.title.russian",
+      "expected" : "Дриблинг",
+      "id" : "holdout-13223",
+      "input" : "Lhb,kbyu"
+    },
+    {
+      "actual" : "[jlm,f",
+      "category" : "layout.russian",
+      "expected" : "ходьба",
+      "id" : "holdout-13257",
+      "input" : "[jlm,f"
+    },
+    {
+      "actual" : "[jlm,f",
+      "category" : "layout.title.russian",
+      "expected" : "Ходьба",
+      "id" : "holdout-13258",
+      "input" : "[jlm,f"
+    },
+    {
+      "actual" : "djhj,tq",
+      "category" : "layout.russian",
+      "expected" : "воробей",
+      "id" : "holdout-13277",
+      "input" : "djhj,tq"
+    },
+    {
+      "actual" : "Djhj,tq",
+      "category" : "layout.title.russian",
+      "expected" : "Воробей",
+      "id" : "holdout-13278",
+      "input" : "Djhj,tq"
+    },
+    {
+      "actual" : "fyuf;tvtyn",
+      "category" : "layout.russian",
+      "expected" : "ангажемент",
+      "id" : "holdout-13322",
+      "input" : "fyuf;tvtyn"
+    },
+    {
+      "actual" : "Fyuf;tvtyn",
+      "category" : "layout.title.russian",
+      "expected" : "Ангажемент",
+      "id" : "holdout-13323",
+      "input" : "Fyuf;tvtyn"
+    },
+    {
+      "actual" : "bpybxnj;fdibq",
+      "category" : "layout.russian",
+      "expected" : "изничтожавший",
+      "id" : "holdout-13392",
+      "input" : "bpybxnj;fdibq"
+    },
+    {
+      "actual" : "Bpybxnj;fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Изничтожавший",
+      "id" : "holdout-13393",
+      "input" : "Bpybxnj;fdibq"
+    },
+    {
+      "actual" : "fkj'",
+      "category" : "layout.russian",
+      "expected" : "алоэ",
+      "id" : "holdout-13407",
+      "input" : "fkj'"
+    },
+    {
+      "actual" : "Fkj'",
+      "category" : "layout.title.russian",
+      "expected" : "Алоэ",
+      "id" : "holdout-13408",
+      "input" : "Fkj'"
+    },
+    {
+      "actual" : "hs,[jp",
+      "category" : "layout.russian",
+      "expected" : "рыбхоз",
+      "id" : "holdout-13412",
+      "input" : "hs,[jp"
+    },
+    {
+      "actual" : "Hs,[jp",
+      "category" : "layout.title.russian",
+      "expected" : "Рыбхоз",
+      "id" : "holdout-13413",
+      "input" : "Hs,[jp"
+    },
+    {
+      "actual" : "xt[kf",
+      "category" : "layout.russian",
+      "expected" : "чехла",
+      "id" : "holdout-13432",
+      "input" : "xt[kf"
+    },
+    {
+      "actual" : "Xt[kf",
+      "category" : "layout.title.russian",
+      "expected" : "Чехла",
+      "id" : "holdout-13433",
+      "input" : "Xt[kf"
+    },
+    {
+      "actual" : "ik.irf",
+      "category" : "layout.russian",
+      "expected" : "шлюшка",
+      "id" : "holdout-13572",
+      "input" : "ik.irf"
+    },
+    {
+      "actual" : "Ik.irf",
+      "category" : "layout.title.russian",
+      "expected" : "Шлюшка",
+      "id" : "holdout-13573",
+      "input" : "Ik.irf"
+    },
+    {
+      "actual" : ",hscm",
+      "category" : "layout.russian",
+      "expected" : "брысь",
+      "id" : "holdout-13607",
+      "input" : ",hscm"
+    },
+    {
+      "actual" : ",hscm",
+      "category" : "layout.title.russian",
+      "expected" : "Брысь",
+      "id" : "holdout-13608",
+      "input" : ",hscm"
+    },
+    {
+      "actual" : "c,bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "сбивавший",
+      "id" : "holdout-13617",
+      "input" : "c,bdfdibq"
+    },
+    {
+      "actual" : "C,bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Сбивавший",
+      "id" : "holdout-13618",
+      "input" : "C,bdfdibq"
+    },
+    {
+      "actual" : "jle,tksq",
+      "category" : "layout.russian",
+      "expected" : "одубелый",
+      "id" : "holdout-13627",
+      "input" : "jle,tksq"
+    },
+    {
+      "actual" : "Jle,tksq",
+      "category" : "layout.title.russian",
+      "expected" : "Одубелый",
+      "id" : "holdout-13628",
+      "input" : "Jle,tksq"
+    },
+    {
+      "actual" : "ytqpbkm,th",
+      "category" : "layout.russian",
+      "expected" : "нейзильбер",
+      "id" : "holdout-13647",
+      "input" : "ytqpbkm,th"
+    },
+    {
+      "actual" : "Ytqpbkm,th",
+      "category" : "layout.title.russian",
+      "expected" : "Нейзильбер",
+      "id" : "holdout-13648",
+      "input" : "Ytqpbkm,th"
+    },
+    {
+      "actual" : ",k..obq",
+      "category" : "layout.russian",
+      "expected" : "блюющий",
+      "id" : "holdout-13657",
+      "input" : ",k..obq"
+    },
+    {
+      "actual" : ",k..obq",
+      "category" : "layout.title.russian",
+      "expected" : "Блюющий",
+      "id" : "holdout-13658",
+      "input" : ",k..obq"
+    },
+    {
+      "actual" : "pflyt;f,thyst",
+      "category" : "layout.russian",
+      "expected" : "заднежаберные",
+      "id" : "holdout-13732",
+      "input" : "pflyt;f,thyst"
+    },
+    {
+      "actual" : "Pflyt;f,thyst",
+      "category" : "layout.title.russian",
+      "expected" : "Заднежаберные",
+      "id" : "holdout-13733",
+      "input" : "Pflyt;f,thyst"
+    },
+    {
+      "actual" : "kj;rf",
+      "category" : "layout.russian",
+      "expected" : "ложка",
+      "id" : "holdout-13742",
+      "input" : "kj;rf"
+    },
+    {
+      "actual" : "Kj;rf",
+      "category" : "layout.title.russian",
+      "expected" : "Ложка",
+      "id" : "holdout-13743",
+      "input" : "Kj;rf"
+    },
+    {
+      "actual" : "hj;bcnsq",
+      "category" : "layout.russian",
+      "expected" : "рожистый",
+      "id" : "holdout-13797",
+      "input" : "hj;bcnsq"
+    },
+    {
+      "actual" : "Hj;bcnsq",
+      "category" : "layout.title.russian",
+      "expected" : "Рожистый",
+      "id" : "holdout-13798",
+      "input" : "Hj;bcnsq"
+    },
+    {
+      "actual" : "nkt.obq",
+      "category" : "layout.russian",
+      "expected" : "тлеющий",
+      "id" : "holdout-13812",
+      "input" : "nkt.obq"
+    },
+    {
+      "actual" : "Nkt.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Тлеющий",
+      "id" : "holdout-13813",
+      "input" : "Nkt.obq"
+    },
+    {
+      "actual" : "elf.ncz",
+      "category" : "layout.russian",
+      "expected" : "удаются",
+      "id" : "holdout-13842",
+      "input" : "elf.ncz"
+    },
+    {
+      "actual" : "Elf.ncz",
+      "category" : "layout.title.russian",
+      "expected" : "Удаются",
+      "id" : "holdout-13843",
+      "input" : "Elf.ncz"
+    },
+    {
+      "actual" : "pf;bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "заживавший",
+      "id" : "holdout-13862",
+      "input" : "pf;bdfdibq"
+    },
+    {
+      "actual" : "Pf;bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Заживавший",
+      "id" : "holdout-13863",
+      "input" : "Pf;bdfdibq"
+    },
+    {
+      "actual" : "atityt,tkmyjcnm",
+      "category" : "layout.russian",
+      "expected" : "фешенебельность",
+      "id" : "holdout-13892",
+      "input" : "atityt,tkmyjcnm"
+    },
+    {
+      "actual" : "Atityt,tkmyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Фешенебельность",
+      "id" : "holdout-13893",
+      "input" : "Atityt,tkmyjcnm"
+    },
+    {
+      "actual" : "pe,wjd",
+      "category" : "layout.russian",
+      "expected" : "зубцов",
+      "id" : "holdout-13927",
+      "input" : "pe,wjd"
+    },
+    {
+      "actual" : "Pe,wjd",
+      "category" : "layout.title.russian",
+      "expected" : "Зубцов",
+      "id" : "holdout-13928",
+      "input" : "Pe,wjd"
+    },
+    {
+      "actual" : "yfn.hvjhn",
+      "category" : "layout.russian",
+      "expected" : "натюрморт",
+      "id" : "holdout-13952",
+      "input" : "yfn.hvjhn"
+    },
+    {
+      "actual" : "Yfn.hvjhn",
+      "category" : "layout.title.russian",
+      "expected" : "Натюрморт",
+      "id" : "holdout-13953",
+      "input" : "Yfn.hvjhn"
+    },
+    {
+      "actual" : "[fgeuf",
+      "category" : "layout.russian",
+      "expected" : "хапуга",
+      "id" : "holdout-13967",
+      "input" : "[fgeuf"
+    },
+    {
+      "actual" : "[fgeuf",
+      "category" : "layout.title.russian",
+      "expected" : "Хапуга",
+      "id" : "holdout-13968",
+      "input" : "[fgeuf"
+    },
+    {
+      "actual" : "z[njxrf",
+      "category" : "layout.russian",
+      "expected" : "яхточка",
+      "id" : "holdout-13977",
+      "input" : "z[njxrf"
+    },
+    {
+      "actual" : "Z[njxrf",
+      "category" : "layout.title.russian",
+      "expected" : "Яхточка",
+      "id" : "holdout-13978",
+      "input" : "Z[njxrf"
+    },
+    {
+      "actual" : "yfj,tofdibq",
+      "category" : "layout.russian",
+      "expected" : "наобещавший",
+      "id" : "holdout-14002",
+      "input" : "yfj,tofdibq"
+    },
+    {
+      "actual" : "Yfj,tofdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Наобещавший",
+      "id" : "holdout-14003",
+      "input" : "Yfj,tofdibq"
+    },
+    {
+      "actual" : "[jntdibq",
+      "category" : "layout.russian",
+      "expected" : "хотевший",
+      "id" : "holdout-14012",
+      "input" : "[jntdibq"
+    },
+    {
+      "actual" : "[jntdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Хотевший",
+      "id" : "holdout-14013",
+      "input" : "[jntdibq"
+    },
+    {
+      "actual" : "'rrktcbjkjubz",
+      "category" : "layout.russian",
+      "expected" : "экклесиология",
+      "id" : "holdout-14027",
+      "input" : "'rrktcbjkjubz"
+    },
+    {
+      "actual" : "'rrktcbjkjubz",
+      "category" : "layout.title.russian",
+      "expected" : "Экклесиология",
+      "id" : "holdout-14028",
+      "input" : "'rrktcbjkjubz"
+    },
+    {
+      "actual" : ",jqkth",
+      "category" : "layout.russian",
+      "expected" : "бойлер",
+      "id" : "holdout-14062",
+      "input" : ",jqkth"
+    },
+    {
+      "actual" : ",jqkth",
+      "category" : "layout.title.russian",
+      "expected" : "Бойлер",
+      "id" : "holdout-14063",
+      "input" : ",jqkth"
+    },
+    {
+      "actual" : "lh.xfobq",
+      "category" : "layout.russian",
+      "expected" : "дрючащий",
+      "id" : "holdout-14067",
+      "input" : "lh.xfobq"
+    },
+    {
+      "actual" : "Lh.xfobq",
+      "category" : "layout.title.russian",
+      "expected" : "Дрючащий",
+      "id" : "holdout-14068",
+      "input" : "Lh.xfobq"
+    },
+    {
+      "actual" : "'yljufvysq",
+      "category" : "layout.russian",
+      "expected" : "эндогамный",
+      "id" : "holdout-14122",
+      "input" : "'yljufvysq"
+    },
+    {
+      "actual" : "'yljufvysq",
+      "category" : "layout.title.russian",
+      "expected" : "Эндогамный",
+      "id" : "holdout-14123",
+      "input" : "'yljufvysq"
+    },
+    {
+      "actual" : "j,;ekbdfdibq",
+      "category" : "layout.russian",
+      "expected" : "обжуливавший",
+      "id" : "holdout-14127",
+      "input" : "j,;ekbdfdibq"
+    },
+    {
+      "actual" : "J,;ekbdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обжуливавший",
+      "id" : "holdout-14128",
+      "input" : "J,;ekbdfdibq"
+    },
+    {
+      "actual" : "cb;bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "сиживавший",
+      "id" : "holdout-14142",
+      "input" : "cb;bdfdibq"
+    },
+    {
+      "actual" : "Cb;bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Сиживавший",
+      "id" : "holdout-14143",
+      "input" : "Cb;bdfdibq"
+    },
+    {
+      "actual" : "cgj[dfnbdibqcz",
+      "category" : "layout.russian",
+      "expected" : "спохватившийся",
+      "id" : "holdout-14147",
+      "input" : "cgj[dfnbdibqcz"
+    },
+    {
+      "actual" : "Cgj[dfnbdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Спохватившийся",
+      "id" : "holdout-14148",
+      "input" : "Cgj[dfnbdibqcz"
+    },
+    {
+      "actual" : "nf[jvtnh",
+      "category" : "layout.russian",
+      "expected" : "тахометр",
+      "id" : "holdout-14157",
+      "input" : "nf[jvtnh"
+    },
+    {
+      "actual" : "Nf[jvtnh",
+      "category" : "layout.title.russian",
+      "expected" : "Тахометр",
+      "id" : "holdout-14158",
+      "input" : "Nf[jvtnh"
+    },
+    {
+      "actual" : "e[bohty",
+      "category" : "layout.russian",
+      "expected" : "ухищрен",
+      "id" : "holdout-14177",
+      "input" : "e[bohty"
+    },
+    {
+      "actual" : "E[bohty",
+      "category" : "layout.title.russian",
+      "expected" : "Ухищрен",
+      "id" : "holdout-14178",
+      "input" : "E[bohty"
+    },
+    {
+      "actual" : ";flybxfdibq",
+      "category" : "layout.russian",
+      "expected" : "жадничавший",
+      "id" : "holdout-14212",
+      "input" : ";flybxfdibq"
+    },
+    {
+      "actual" : ";flybxfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Жадничавший",
+      "id" : "holdout-14213",
+      "input" : ";flybxfdibq"
+    },
+    {
+      "actual" : "gj'vf",
+      "category" : "layout.russian",
+      "expected" : "поэма",
+      "id" : "holdout-14237",
+      "input" : "gj'vf"
+    },
+    {
+      "actual" : "Gj'vf",
+      "category" : "layout.title.russian",
+      "expected" : "Поэма",
+      "id" : "holdout-14238",
+      "input" : "Gj'vf"
+    },
+    {
+      "actual" : "bp,h",
+      "category" : "layout.russian",
+      "expected" : "избр",
+      "id" : "holdout-14322",
+      "input" : "bp,h"
+    },
+    {
+      "actual" : "Bp,h",
+      "category" : "layout.title.russian",
+      "expected" : "Избр",
+      "id" : "holdout-14323",
+      "input" : "Bp,h"
+    },
+    {
+      "actual" : "f[hjvfn",
+      "category" : "layout.russian",
+      "expected" : "ахромат",
+      "id" : "holdout-14337",
+      "input" : "f[hjvfn"
+    },
+    {
+      "actual" : "F[hjvfn",
+      "category" : "layout.title.russian",
+      "expected" : "Ахромат",
+      "id" : "holdout-14338",
+      "input" : "F[hjvfn"
+    },
+    {
+      "actual" : ".dtkbh",
+      "category" : "layout.russian",
+      "expected" : "ювелир",
+      "id" : "holdout-14347",
+      "input" : ".dtkbh"
+    },
+    {
+      "actual" : ".dtkbh",
+      "category" : "layout.title.russian",
+      "expected" : "Ювелир",
+      "id" : "holdout-14348",
+      "input" : ".dtkbh"
+    },
+    {
+      "actual" : "ve;crb",
+      "category" : "layout.russian",
+      "expected" : "мужски",
+      "id" : "holdout-14352",
+      "input" : "ve;crb"
+    },
+    {
+      "actual" : "Ve;crb",
+      "category" : "layout.title.russian",
+      "expected" : "Мужски",
+      "id" : "holdout-14353",
+      "input" : "Ve;crb"
+    },
+    {
+      "actual" : ",euekmvbytw",
+      "category" : "layout.russian",
+      "expected" : "бугульминец",
+      "id" : "holdout-14377",
+      "input" : ",euekmvbytw"
+    },
+    {
+      "actual" : ",euekmvbytw",
+      "category" : "layout.title.russian",
+      "expected" : "Бугульминец",
+      "id" : "holdout-14378",
+      "input" : ",euekmvbytw"
+    },
+    {
+      "actual" : ",fuf;",
+      "category" : "layout.russian",
+      "expected" : "багаж",
+      "id" : "holdout-14392",
+      "input" : ",fuf;"
+    },
+    {
+      "actual" : ",fuf;",
+      "category" : "layout.title.russian",
+      "expected" : "Багаж",
+      "id" : "holdout-14393",
+      "input" : ",fuf;"
+    },
+    {
+      "actual" : "rf;eobq",
+      "category" : "layout.russian",
+      "expected" : "кажущий",
+      "id" : "holdout-14412",
+      "input" : "rf;eobq"
+    },
+    {
+      "actual" : "Rf;eobq",
+      "category" : "layout.title.russian",
+      "expected" : "Кажущий",
+      "id" : "holdout-14413",
+      "input" : "Rf;eobq"
+    },
+    {
+      "actual" : "gjy.[",
+      "category" : "layout.russian",
+      "expected" : "понюх",
+      "id" : "holdout-14432",
+      "input" : "gjy.["
+    },
+    {
+      "actual" : "Gjy.[",
+      "category" : "layout.title.russian",
+      "expected" : "Понюх",
+      "id" : "holdout-14433",
+      "input" : "Gjy.["
+    },
+    {
+      "actual" : "n.[f",
+      "category" : "layout.russian",
+      "expected" : "тюха",
+      "id" : "holdout-14502",
+      "input" : "n.[f"
+    },
+    {
+      "actual" : "N.[f",
+      "category" : "layout.title.russian",
+      "expected" : "Тюха",
+      "id" : "holdout-14503",
+      "input" : "N.[f"
+    },
+    {
+      "actual" : "'cnjytw",
+      "category" : "layout.russian",
+      "expected" : "эстонец",
+      "id" : "holdout-14507",
+      "input" : "'cnjytw"
+    },
+    {
+      "actual" : "'cnjytw",
+      "category" : "layout.title.russian",
+      "expected" : "Эстонец",
+      "id" : "holdout-14508",
+      "input" : "'cnjytw"
+    },
+    {
+      "actual" : "bphe,bdibq",
+      "category" : "layout.russian",
+      "expected" : "изрубивший",
+      "id" : "holdout-14512",
+      "input" : "bphe,bdibq"
+    },
+    {
+      "actual" : "Bphe,bdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Изрубивший",
+      "id" : "holdout-14513",
+      "input" : "Bphe,bdibq"
+    },
+    {
+      "actual" : "'vbuhfyn",
+      "category" : "layout.russian",
+      "expected" : "эмигрант",
+      "id" : "holdout-14527",
+      "input" : "'vbuhfyn"
+    },
+    {
+      "actual" : "'vbuhfyn",
+      "category" : "layout.title.russian",
+      "expected" : "Эмигрант",
+      "id" : "holdout-14528",
+      "input" : "'vbuhfyn"
+    },
+    {
+      "actual" : ",fkjdfdibq",
+      "category" : "layout.russian",
+      "expected" : "баловавший",
+      "id" : "holdout-14587",
+      "input" : ",fkjdfdibq"
+    },
+    {
+      "actual" : ",fkjdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Баловавший",
+      "id" : "holdout-14588",
+      "input" : ",fkjdfdibq"
+    },
+    {
+      "actual" : ";e[kjcnm",
+      "category" : "layout.russian",
+      "expected" : "жухлость",
+      "id" : "holdout-14597",
+      "input" : ";e[kjcnm"
+    },
+    {
+      "actual" : ";e[kjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Жухлость",
+      "id" : "holdout-14598",
+      "input" : ";e[kjcnm"
+    },
+    {
+      "actual" : "gj[dfkf",
+      "category" : "layout.russian",
+      "expected" : "похвала",
+      "id" : "holdout-14602",
+      "input" : "gj[dfkf"
+    },
+    {
+      "actual" : "Gj[dfkf",
+      "category" : "layout.title.russian",
+      "expected" : "Похвала",
+      "id" : "holdout-14603",
+      "input" : "Gj[dfkf"
+    },
+    {
+      "actual" : "'ytjkbn",
+      "category" : "layout.russian",
+      "expected" : "энеолит",
+      "id" : "holdout-14617",
+      "input" : "'ytjkbn"
+    },
+    {
+      "actual" : "'ytjkbn",
+      "category" : "layout.title.russian",
+      "expected" : "Энеолит",
+      "id" : "holdout-14618",
+      "input" : "'ytjkbn"
+    },
+    {
+      "actual" : "ytub,rbq",
+      "category" : "layout.russian",
+      "expected" : "негибкий",
+      "id" : "holdout-14622",
+      "input" : "ytub,rbq"
+    },
+    {
+      "actual" : "Ytub,rbq",
+      "category" : "layout.title.russian",
+      "expected" : "Негибкий",
+      "id" : "holdout-14623",
+      "input" : "Ytub,rbq"
+    },
+    {
+      "actual" : "j[kfltdfdibq",
+      "category" : "layout.russian",
+      "expected" : "охладевавший",
+      "id" : "holdout-14632",
+      "input" : "j[kfltdfdibq"
+    },
+    {
+      "actual" : "J[kfltdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Охладевавший",
+      "id" : "holdout-14633",
+      "input" : "J[kfltdfdibq"
+    },
+    {
+      "actual" : "lj[jl",
+      "category" : "layout.russian",
+      "expected" : "доход",
+      "id" : "holdout-14682",
+      "input" : "lj[jl"
+    },
+    {
+      "actual" : "Lj[jl",
+      "category" : "layout.title.russian",
+      "expected" : "Доход",
+      "id" : "holdout-14683",
+      "input" : "Lj[jl"
+    },
+    {
+      "actual" : "ytps,ktvjcnm",
+      "category" : "layout.russian",
+      "expected" : "незыблемость",
+      "id" : "holdout-14687",
+      "input" : "ytps,ktvjcnm"
+    },
+    {
+      "actual" : "Ytps,ktvjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Незыблемость",
+      "id" : "holdout-14688",
+      "input" : "Ytps,ktvjcnm"
+    },
+    {
+      "actual" : "yf[bvjdtw",
+      "category" : "layout.russian",
+      "expected" : "нахимовец",
+      "id" : "holdout-14692",
+      "input" : "yf[bvjdtw"
+    },
+    {
+      "actual" : "Yf[bvjdtw",
+      "category" : "layout.title.russian",
+      "expected" : "Нахимовец",
+      "id" : "holdout-14693",
+      "input" : "Yf[bvjdtw"
+    },
+    {
+      "actual" : "b[nbjp",
+      "category" : "layout.russian",
+      "expected" : "ихтиоз",
+      "id" : "holdout-14727",
+      "input" : "b[nbjp"
+    },
+    {
+      "actual" : "B[nbjp",
+      "category" : "layout.title.russian",
+      "expected" : "Ихтиоз",
+      "id" : "holdout-14728",
+      "input" : "B[nbjp"
+    },
+    {
+      "actual" : "'njv",
+      "category" : "layout.russian",
+      "expected" : "этом",
+      "id" : "holdout-14732",
+      "input" : "'njv"
+    },
+    {
+      "actual" : "'njv",
+      "category" : "layout.title.russian",
+      "expected" : "Этом",
+      "id" : "holdout-14733",
+      "input" : "'njv"
+    },
+    {
+      "actual" : "[fkzdf",
+      "category" : "layout.russian",
+      "expected" : "халява",
+      "id" : "holdout-14747",
+      "input" : "[fkzdf"
+    },
+    {
+      "actual" : "[fkzdf",
+      "category" : "layout.title.russian",
+      "expected" : "Халява",
+      "id" : "holdout-14748",
+      "input" : "[fkzdf"
+    },
+    {
+      "actual" : "hfcrf,fktyysq",
+      "category" : "layout.russian",
+      "expected" : "раскабаленный",
+      "id" : "holdout-14787",
+      "input" : "hfcrf,fktyysq"
+    },
+    {
+      "actual" : "Hfcrf,fktyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Раскабаленный",
+      "id" : "holdout-14788",
+      "input" : "Hfcrf,fktyysq"
+    },
+    {
+      "actual" : ",htrdfnth",
+      "category" : "layout.russian",
+      "expected" : "брекватер",
+      "id" : "holdout-14797",
+      "input" : ",htrdfnth"
+    },
+    {
+      "actual" : ",htrdfnth",
+      "category" : "layout.title.russian",
+      "expected" : "Брекватер",
+      "id" : "holdout-14798",
+      "input" : ",htrdfnth"
+    },
+    {
+      "actual" : "d.hntv,thucrbq",
+      "category" : "layout.russian",
+      "expected" : "вюртембергский",
+      "id" : "holdout-14822",
+      "input" : "d.hntv,thucrbq"
+    },
+    {
+      "actual" : "D.hntv,thucrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Вюртембергский",
+      "id" : "holdout-14823",
+      "input" : "D.hntv,thucrbq"
+    },
+    {
+      "actual" : ",b;enthbz",
+      "category" : "layout.russian",
+      "expected" : "бижутерия",
+      "id" : "holdout-14897",
+      "input" : ",b;enthbz"
+    },
+    {
+      "actual" : ",b;enthbz",
+      "category" : "layout.title.russian",
+      "expected" : "Бижутерия",
+      "id" : "holdout-14898",
+      "input" : ",b;enthbz"
+    },
+    {
+      "actual" : ",b,k",
+      "category" : "layout.russian",
+      "expected" : "библ",
+      "id" : "holdout-14927",
+      "input" : ",b,k"
+    },
+    {
+      "actual" : ",b,k",
+      "category" : "layout.title.russian",
+      "expected" : "Библ",
+      "id" : "holdout-14928",
+      "input" : ",b,k"
+    },
+    {
+      "actual" : "yth.yuhbycrbq",
+      "category" : "layout.russian",
+      "expected" : "нерюнгринский",
+      "id" : "holdout-14967",
+      "input" : "yth.yuhbycrbq"
+    },
+    {
+      "actual" : "Yth.yuhbycrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Нерюнгринский",
+      "id" : "holdout-14968",
+      "input" : "Yth.yuhbycrbq"
+    },
+    {
+      "actual" : ",hjeyjdcrbq",
+      "category" : "layout.russian",
+      "expected" : "броуновский",
+      "id" : "holdout-14987",
+      "input" : ",hjeyjdcrbq"
+    },
+    {
+      "actual" : ",hjeyjdcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Броуновский",
+      "id" : "holdout-14988",
+      "input" : ",hjeyjdcrbq"
+    },
+    {
+      "actual" : "ljk,fdibq",
+      "category" : "layout.russian",
+      "expected" : "долбавший",
+      "id" : "holdout-14992",
+      "input" : "ljk,fdibq"
+    },
+    {
+      "actual" : "Ljk,fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Долбавший",
+      "id" : "holdout-14993",
+      "input" : "Ljk,fdibq"
+    },
+    {
+      "actual" : "xf.obq",
+      "category" : "layout.russian",
+      "expected" : "чающий",
+      "id" : "holdout-15022",
+      "input" : "xf.obq"
+    },
+    {
+      "actual" : "Xf.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Чающий",
+      "id" : "holdout-15023",
+      "input" : "Xf.obq"
+    },
+    {
+      "actual" : "eyf,b",
+      "category" : "layout.russian",
+      "expected" : "унаби",
+      "id" : "holdout-15107",
+      "input" : "eyf,b"
+    },
+    {
+      "actual" : "Eyf,b",
+      "category" : "layout.title.russian",
+      "expected" : "Унаби",
+      "id" : "holdout-15108",
+      "input" : "Eyf,b"
+    },
+    {
+      "actual" : "j,epf",
+      "category" : "layout.russian",
+      "expected" : "обуза",
+      "id" : "holdout-15112",
+      "input" : "j,epf"
+    },
+    {
+      "actual" : "J,epf",
+      "category" : "layout.title.russian",
+      "expected" : "Обуза",
+      "id" : "holdout-15113",
+      "input" : "J,epf"
+    },
+    {
+      "actual" : "cb.vbyenyjcnm",
+      "category" : "layout.russian",
+      "expected" : "сиюминутность",
+      "id" : "holdout-15117",
+      "input" : "cb.vbyenyjcnm"
+    },
+    {
+      "actual" : "Cb.vbyenyjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Сиюминутность",
+      "id" : "holdout-15118",
+      "input" : "Cb.vbyenyjcnm"
+    },
+    {
+      "actual" : "cnf[",
+      "category" : "layout.russian",
+      "expected" : "стах",
+      "id" : "holdout-15147",
+      "input" : "cnf["
+    },
+    {
+      "actual" : "Cnf[",
+      "category" : "layout.title.russian",
+      "expected" : "Стах",
+      "id" : "holdout-15148",
+      "input" : "Cnf["
+    },
+    {
+      "actual" : "rjkt,fdibqcz",
+      "category" : "layout.russian",
+      "expected" : "колебавшийся",
+      "id" : "holdout-15162",
+      "input" : "rjkt,fdibqcz"
+    },
+    {
+      "actual" : "Rjkt,fdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Колебавшийся",
+      "id" : "holdout-15163",
+      "input" : "Rjkt,fdibqcz"
+    },
+    {
+      "actual" : "'itkjy",
+      "category" : "layout.russian",
+      "expected" : "эшелон",
+      "id" : "holdout-15222",
+      "input" : "'itkjy"
+    },
+    {
+      "actual" : "'itkjy",
+      "category" : "layout.title.russian",
+      "expected" : "Эшелон",
+      "id" : "holdout-15223",
+      "input" : "'itkjy"
+    },
+    {
+      "actual" : ";ehxf",
+      "category" : "layout.russian",
+      "expected" : "журча",
+      "id" : "holdout-15282",
+      "input" : ";ehxf"
+    },
+    {
+      "actual" : ";ehxf",
+      "category" : "layout.title.russian",
+      "expected" : "Журча",
+      "id" : "holdout-15283",
+      "input" : ";ehxf"
+    },
+    {
+      "actual" : "r.hfcj",
+      "category" : "layout.russian",
+      "expected" : "кюрасо",
+      "id" : "holdout-15302",
+      "input" : "r.hfcj"
+    },
+    {
+      "actual" : "R.hfcj",
+      "category" : "layout.title.russian",
+      "expected" : "Кюрасо",
+      "id" : "holdout-15303",
+      "input" : "R.hfcj"
+    },
+    {
+      "actual" : ",eath",
+      "category" : "layout.russian",
+      "expected" : "буфер",
+      "id" : "holdout-15307",
+      "input" : ",eath"
+    },
+    {
+      "actual" : ",eath",
+      "category" : "layout.title.russian",
+      "expected" : "Буфер",
+      "id" : "holdout-15308",
+      "input" : ",eath"
+    },
+    {
+      "actual" : "e;bdfdibqcz",
+      "category" : "layout.russian",
+      "expected" : "уживавшийся",
+      "id" : "holdout-15357",
+      "input" : "e;bdfdibqcz"
+    },
+    {
+      "actual" : "E;bdfdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Уживавшийся",
+      "id" : "holdout-15358",
+      "input" : "E;bdfdibqcz"
+    },
+    {
+      "actual" : ",tqkba",
+      "category" : "layout.russian",
+      "expected" : "бейлиф",
+      "id" : "holdout-15397",
+      "input" : ",tqkba"
+    },
+    {
+      "actual" : ",tqkba",
+      "category" : "layout.title.russian",
+      "expected" : "Бейлиф",
+      "id" : "holdout-15398",
+      "input" : ",tqkba"
+    },
+    {
+      "actual" : "'drfkbgn",
+      "category" : "layout.russian",
+      "expected" : "эвкалипт",
+      "id" : "holdout-15452",
+      "input" : "'drfkbgn"
+    },
+    {
+      "actual" : "'drfkbgn",
+      "category" : "layout.title.russian",
+      "expected" : "Эвкалипт",
+      "id" : "holdout-15453",
+      "input" : "'drfkbgn"
+    },
+    {
+      "actual" : "rjy.[",
+      "category" : "layout.russian",
+      "expected" : "конюх",
+      "id" : "holdout-15462",
+      "input" : "rjy.["
+    },
+    {
+      "actual" : "Rjy.[",
+      "category" : "layout.title.russian",
+      "expected" : "Конюх",
+      "id" : "holdout-15463",
+      "input" : "Rjy.["
+    },
+    {
+      "actual" : ",jnajhn",
+      "category" : "layout.russian",
+      "expected" : "ботфорт",
+      "id" : "holdout-15507",
+      "input" : ",jnajhn"
+    },
+    {
+      "actual" : ",jnajhn",
+      "category" : "layout.title.russian",
+      "expected" : "Ботфорт",
+      "id" : "holdout-15508",
+      "input" : ",jnajhn"
+    },
+    {
+      "actual" : "cyflj,mt",
+      "category" : "layout.russian",
+      "expected" : "снадобье",
+      "id" : "holdout-15522",
+      "input" : "cyflj,mt"
+    },
+    {
+      "actual" : "Cyflj,mt",
+      "category" : "layout.title.russian",
+      "expected" : "Снадобье",
+      "id" : "holdout-15523",
+      "input" : "Cyflj,mt"
+    },
+    {
+      "actual" : ",baehrfwbz",
+      "category" : "layout.russian",
+      "expected" : "бифуркация",
+      "id" : "holdout-15687",
+      "input" : ",baehrfwbz"
+    },
+    {
+      "actual" : ",baehrfwbz",
+      "category" : "layout.title.russian",
+      "expected" : "Бифуркация",
+      "id" : "holdout-15688",
+      "input" : ",baehrfwbz"
+    },
+    {
+      "actual" : "yf,sxbdibqcz",
+      "category" : "layout.russian",
+      "expected" : "набычившийся",
+      "id" : "holdout-15742",
+      "input" : "yf,sxbdibqcz"
+    },
+    {
+      "actual" : "Yf,sxbdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Набычившийся",
+      "id" : "holdout-15743",
+      "input" : "Yf,sxbdibqcz"
+    },
+    {
+      "actual" : "eljhj;fdibq",
+      "category" : "layout.russian",
+      "expected" : "удорожавший",
+      "id" : "holdout-15762",
+      "input" : "eljhj;fdibq"
+    },
+    {
+      "actual" : "Eljhj;fdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Удорожавший",
+      "id" : "holdout-15763",
+      "input" : "Eljhj;fdibq"
+    },
+    {
+      "actual" : "k.lcrb",
+      "category" : "layout.russian",
+      "expected" : "людски",
+      "id" : "holdout-15832",
+      "input" : "k.lcrb"
+    },
+    {
+      "actual" : "K.lcrb",
+      "category" : "layout.title.russian",
+      "expected" : "Людски",
+      "id" : "holdout-15833",
+      "input" : "K.lcrb"
+    },
+    {
+      "actual" : "[htcnjvfnbqysq",
+      "category" : "layout.russian",
+      "expected" : "хрестоматийный",
+      "id" : "holdout-15837",
+      "input" : "[htcnjvfnbqysq"
+    },
+    {
+      "actual" : "[htcnjvfnbqysq",
+      "category" : "layout.title.russian",
+      "expected" : "Хрестоматийный",
+      "id" : "holdout-15838",
+      "input" : "[htcnjvfnbqysq"
+    },
+    {
+      "actual" : "nz;,f",
+      "category" : "layout.russian",
+      "expected" : "тяжба",
+      "id" : "holdout-15877",
+      "input" : "nz;,f"
+    },
+    {
+      "actual" : "Nz;,f",
+      "category" : "layout.title.russian",
+      "expected" : "Тяжба",
+      "id" : "holdout-15878",
+      "input" : "Nz;,f"
+    },
+    {
+      "actual" : "hz,rb",
+      "category" : "layout.russian",
+      "expected" : "рябки",
+      "id" : "holdout-15897",
+      "input" : "hz,rb"
+    },
+    {
+      "actual" : "Hz,rb",
+      "category" : "layout.title.russian",
+      "expected" : "Рябки",
+      "id" : "holdout-15898",
+      "input" : "Hz,rb"
+    },
+    {
+      "actual" : "j,j,hfdibq",
+      "category" : "layout.russian",
+      "expected" : "обобравший",
+      "id" : "holdout-15937",
+      "input" : "j,j,hfdibq"
+    },
+    {
+      "actual" : "J,j,hfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обобравший",
+      "id" : "holdout-15938",
+      "input" : "J,j,hfdibq"
+    },
+    {
+      "actual" : ",e,yf",
+      "category" : "layout.russian",
+      "expected" : "бубна",
+      "id" : "holdout-15947",
+      "input" : ",e,yf"
+    },
+    {
+      "actual" : ",e,yf",
+      "category" : "layout.title.russian",
+      "expected" : "Бубна",
+      "id" : "holdout-15948",
+      "input" : ",e,yf"
+    },
+    {
+      "actual" : "bkk.dbfkmysq",
+      "category" : "layout.russian",
+      "expected" : "иллювиальный",
+      "id" : "holdout-15982",
+      "input" : "bkk.dbfkmysq"
+    },
+    {
+      "actual" : "Bkk.dbfkmysq",
+      "category" : "layout.title.russian",
+      "expected" : "Иллювиальный",
+      "id" : "holdout-15983",
+      "input" : "Bkk.dbfkmysq"
+    },
+    {
+      "actual" : ",ehz",
+      "category" : "layout.russian",
+      "expected" : "буря",
+      "id" : "holdout-15997",
+      "input" : ",ehz"
+    },
+    {
+      "actual" : ",ehz",
+      "category" : "layout.title.russian",
+      "expected" : "Буря",
+      "id" : "holdout-15998",
+      "input" : ",ehz"
+    },
+    {
+      "actual" : "e;jyjr",
+      "category" : "layout.russian",
+      "expected" : "ужонок",
+      "id" : "holdout-16037",
+      "input" : "e;jyjr"
+    },
+    {
+      "actual" : "E;jyjr",
+      "category" : "layout.title.russian",
+      "expected" : "Ужонок",
+      "id" : "holdout-16038",
+      "input" : "E;jyjr"
+    },
+    {
+      "actual" : "lhj,tcnheqysq",
+      "category" : "layout.russian",
+      "expected" : "дробеструйный",
+      "id" : "holdout-16042",
+      "input" : "lhj,tcnheqysq"
+    },
+    {
+      "actual" : "Lhj,tcnheqysq",
+      "category" : "layout.title.russian",
+      "expected" : "Дробеструйный",
+      "id" : "holdout-16043",
+      "input" : "Lhj,tcnheqysq"
+    },
+    {
+      "actual" : "ds,mtv",
+      "category" : "layout.russian",
+      "expected" : "выбьем",
+      "id" : "holdout-16062",
+      "input" : "ds,mtv"
+    },
+    {
+      "actual" : "Ds,mtv",
+      "category" : "layout.title.russian",
+      "expected" : "Выбьем",
+      "id" : "holdout-16063",
+      "input" : "Ds,mtv"
+    },
+    {
+      "actual" : ",j,h",
+      "category" : "layout.russian",
+      "expected" : "бобр",
+      "id" : "holdout-16112",
+      "input" : ",j,h"
+    },
+    {
+      "actual" : ",j,h",
+      "category" : "layout.title.russian",
+      "expected" : "Бобр",
+      "id" : "holdout-16113",
+      "input" : ",j,h"
+    },
+    {
+      "actual" : "dp]tdibqcz",
+      "category" : "layout.russian",
+      "expected" : "взъевшийся",
+      "id" : "holdout-16122",
+      "input" : "dp]tdibqcz"
+    },
+    {
+      "actual" : "Dp]tdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Взъевшийся",
+      "id" : "holdout-16123",
+      "input" : "Dp]tdibqcz"
+    },
+    {
+      "actual" : "[jklbyu",
+      "category" : "layout.russian",
+      "expected" : "холдинг",
+      "id" : "holdout-16137",
+      "input" : "[jklbyu"
+    },
+    {
+      "actual" : "[jklbyu",
+      "category" : "layout.title.russian",
+      "expected" : "Холдинг",
+      "id" : "holdout-16138",
+      "input" : "[jklbyu"
+    },
+    {
+      "actual" : "cj,kfujdjktybt",
+      "category" : "layout.russian",
+      "expected" : "соблаговоление",
+      "id" : "holdout-16187",
+      "input" : "cj,kfujdjktybt"
+    },
+    {
+      "actual" : "Cj,kfujdjktybt",
+      "category" : "layout.title.russian",
+      "expected" : "Соблаговоление",
+      "id" : "holdout-16188",
+      "input" : "Cj,kfujdjktybt"
+    },
+    {
+      "actual" : "[ht,tn",
+      "category" : "layout.russian",
+      "expected" : "хребет",
+      "id" : "holdout-16212",
+      "input" : "[ht,tn"
+    },
+    {
+      "actual" : "[ht,tn",
+      "category" : "layout.title.russian",
+      "expected" : "Хребет",
+      "id" : "holdout-16213",
+      "input" : "[ht,tn"
+    },
+    {
+      "actual" : "jn'rpfvtyjdfdibq",
+      "category" : "layout.russian",
+      "expected" : "отэкзаменовавший",
+      "id" : "holdout-16217",
+      "input" : "jn'rpfvtyjdfdibq"
+    },
+    {
+      "actual" : "Jn'rpfvtyjdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Отэкзаменовавший",
+      "id" : "holdout-16218",
+      "input" : "Jn'rpfvtyjdfdibq"
+    },
+    {
+      "actual" : ",bpytc",
+      "category" : "layout.russian",
+      "expected" : "бизнес",
+      "id" : "holdout-16227",
+      "input" : ",bpytc"
+    },
+    {
+      "actual" : ",bpytc",
+      "category" : "layout.title.russian",
+      "expected" : "Бизнес",
+      "id" : "holdout-16228",
+      "input" : ",bpytc"
+    },
+    {
+      "actual" : "nz;jv",
+      "category" : "layout.russian",
+      "expected" : "тяжом",
+      "id" : "holdout-16242",
+      "input" : "nz;jv"
+    },
+    {
+      "actual" : "Nz;jv",
+      "category" : "layout.title.russian",
+      "expected" : "Тяжом",
+      "id" : "holdout-16243",
+      "input" : "Nz;jv"
+    },
+    {
+      "actual" : ",fzy",
+      "category" : "layout.russian",
+      "expected" : "баян",
+      "id" : "holdout-16262",
+      "input" : ",fzy"
+    },
+    {
+      "actual" : ",fzy",
+      "category" : "layout.title.russian",
+      "expected" : "Баян",
+      "id" : "holdout-16263",
+      "input" : ",fzy"
+    },
+    {
+      "actual" : ",elnj",
+      "category" : "layout.russian",
+      "expected" : "будто",
+      "id" : "holdout-16282",
+      "input" : ",elnj"
+    },
+    {
+      "actual" : ",elnj",
+      "category" : "layout.title.russian",
+      "expected" : "Будто",
+      "id" : "holdout-16283",
+      "input" : ",elnj"
+    },
+    {
+      "actual" : "pyf[fhrf",
+      "category" : "layout.russian",
+      "expected" : "знахарка",
+      "id" : "holdout-16307",
+      "input" : "pyf[fhrf"
+    },
+    {
+      "actual" : "Pyf[fhrf",
+      "category" : "layout.title.russian",
+      "expected" : "Знахарка",
+      "id" : "holdout-16308",
+      "input" : "Pyf[fhrf"
+    },
+    {
+      "actual" : "ib,xt",
+      "category" : "layout.russian",
+      "expected" : "шибче",
+      "id" : "holdout-16312",
+      "input" : "ib,xt"
+    },
+    {
+      "actual" : "Ib,xt",
+      "category" : "layout.title.russian",
+      "expected" : "Шибче",
+      "id" : "holdout-16313",
+      "input" : "Ib,xt"
+    },
+    {
+      "actual" : "'drkfp",
+      "category" : "layout.russian",
+      "expected" : "эвклаз",
+      "id" : "holdout-16337",
+      "input" : "'drkfp"
+    },
+    {
+      "actual" : "'drkfp",
+      "category" : "layout.title.russian",
+      "expected" : "Эвклаз",
+      "id" : "holdout-16338",
+      "input" : "'drkfp"
+    },
+    {
+      "actual" : ",fkf,fy",
+      "category" : "layout.russian",
+      "expected" : "балабан",
+      "id" : "holdout-16342",
+      "input" : ",fkf,fy"
+    },
+    {
+      "actual" : ",fkf,fy",
+      "category" : "layout.title.russian",
+      "expected" : "Балабан",
+      "id" : "holdout-16343",
+      "input" : ",fkf,fy"
+    },
+    {
+      "actual" : "d]zdt",
+      "category" : "layout.russian",
+      "expected" : "въяве",
+      "id" : "holdout-16367",
+      "input" : "d]zdt"
+    },
+    {
+      "actual" : "D]zdt",
+      "category" : "layout.title.russian",
+      "expected" : "Въяве",
+      "id" : "holdout-16368",
+      "input" : "D]zdt"
+    },
+    {
+      "actual" : "j;blfdibq",
+      "category" : "layout.russian",
+      "expected" : "ожидавший",
+      "id" : "holdout-16422",
+      "input" : "j;blfdibq"
+    },
+    {
+      "actual" : "J;blfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Ожидавший",
+      "id" : "holdout-16423",
+      "input" : "J;blfdibq"
+    },
+    {
+      "actual" : ",jncdfytw",
+      "category" : "layout.russian",
+      "expected" : "ботсванец",
+      "id" : "holdout-16457",
+      "input" : ",jncdfytw"
+    },
+    {
+      "actual" : ",jncdfytw",
+      "category" : "layout.title.russian",
+      "expected" : "Ботсванец",
+      "id" : "holdout-16458",
+      "input" : ",jncdfytw"
+    },
+    {
+      "actual" : "'crflhf",
+      "category" : "layout.russian",
+      "expected" : "эскадра",
+      "id" : "holdout-16477",
+      "input" : "'crflhf"
+    },
+    {
+      "actual" : "'crflhf",
+      "category" : "layout.title.russian",
+      "expected" : "Эскадра",
+      "id" : "holdout-16478",
+      "input" : "'crflhf"
+    },
+    {
+      "actual" : ",bjgjkt",
+      "category" : "layout.russian",
+      "expected" : "биополе",
+      "id" : "holdout-16482",
+      "input" : ",bjgjkt"
+    },
+    {
+      "actual" : ",bjgjkt",
+      "category" : "layout.title.russian",
+      "expected" : "Биополе",
+      "id" : "holdout-16483",
+      "input" : ",bjgjkt"
+    },
+    {
+      "actual" : "c[ksytn",
+      "category" : "layout.russian",
+      "expected" : "схлынет",
+      "id" : "holdout-16507",
+      "input" : "c[ksytn"
+    },
+    {
+      "actual" : "C[ksytn",
+      "category" : "layout.title.russian",
+      "expected" : "Схлынет",
+      "id" : "holdout-16508",
+      "input" : "C[ksytn"
+    },
+    {
+      "actual" : "hf,f",
+      "category" : "layout.russian",
+      "expected" : "раба",
+      "id" : "holdout-16512",
+      "input" : "hf,f"
+    },
+    {
+      "actual" : "Hf,f",
+      "category" : "layout.title.russian",
+      "expected" : "Раба",
+      "id" : "holdout-16513",
+      "input" : "Hf,f"
+    },
+    {
+      "actual" : "djy.xtcnm",
+      "category" : "layout.russian",
+      "expected" : "вонючесть",
+      "id" : "holdout-16542",
+      "input" : "djy.xtcnm"
+    },
+    {
+      "actual" : "Djy.xtcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Вонючесть",
+      "id" : "holdout-16543",
+      "input" : "Djy.xtcnm"
+    },
+    {
+      "actual" : ",byn",
+      "category" : "layout.russian",
+      "expected" : "бинт",
+      "id" : "holdout-16582",
+      "input" : ",byn"
+    },
+    {
+      "actual" : ",byn",
+      "category" : "layout.title.russian",
+      "expected" : "Бинт",
+      "id" : "holdout-16583",
+      "input" : ",byn"
+    },
+    {
+      "actual" : "xe.ncz",
+      "category" : "layout.russian",
+      "expected" : "чуются",
+      "id" : "holdout-16642",
+      "input" : "xe.ncz"
+    },
+    {
+      "actual" : "Xe.ncz",
+      "category" : "layout.title.russian",
+      "expected" : "Чуются",
+      "id" : "holdout-16643",
+      "input" : "Xe.ncz"
+    },
+    {
+      "actual" : "[ktot",
+      "category" : "layout.russian",
+      "expected" : "хлеще",
+      "id" : "holdout-16677",
+      "input" : "[ktot"
+    },
+    {
+      "actual" : "[ktot",
+      "category" : "layout.title.russian",
+      "expected" : "Хлеще",
+      "id" : "holdout-16678",
+      "input" : "[ktot"
+    },
+    {
+      "actual" : "rjklj,byf",
+      "category" : "layout.russian",
+      "expected" : "колдобина",
+      "id" : "holdout-16687",
+      "input" : "rjklj,byf"
+    },
+    {
+      "actual" : "Rjklj,byf",
+      "category" : "layout.title.russian",
+      "expected" : "Колдобина",
+      "id" : "holdout-16688",
+      "input" : "Rjklj,byf"
+    },
+    {
+      "actual" : "'ujbpv",
+      "category" : "layout.russian",
+      "expected" : "эгоизм",
+      "id" : "holdout-16697",
+      "input" : "'ujbpv"
+    },
+    {
+      "actual" : "'ujbpv",
+      "category" : "layout.title.russian",
+      "expected" : "Эгоизм",
+      "id" : "holdout-16698",
+      "input" : "'ujbpv"
+    },
+    {
+      "actual" : "c]tim",
+      "category" : "layout.russian",
+      "expected" : "съешь",
+      "id" : "holdout-16707",
+      "input" : "c]tim"
+    },
+    {
+      "actual" : "C]tim",
+      "category" : "layout.title.russian",
+      "expected" : "Съешь",
+      "id" : "holdout-16708",
+      "input" : "C]tim"
+    },
+    {
+      "actual" : "bpub,",
+      "category" : "layout.russian",
+      "expected" : "изгиб",
+      "id" : "holdout-16712",
+      "input" : "bpub,"
+    },
+    {
+      "actual" : "Bpub,",
+      "category" : "layout.title.russian",
+      "expected" : "Изгиб",
+      "id" : "holdout-16713",
+      "input" : "Bpub,"
+    },
+    {
+      "actual" : "qj[fyytc,ehucrbq",
+      "category" : "layout.russian",
+      "expected" : "йоханнесбургский",
+      "id" : "holdout-16742",
+      "input" : "qj[fyytc,ehucrbq"
+    },
+    {
+      "actual" : "Qj[fyytc,ehucrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Йоханнесбургский",
+      "id" : "holdout-16743",
+      "input" : "Qj[fyytc,ehucrbq"
+    },
+    {
+      "actual" : "l;bg",
+      "category" : "layout.russian",
+      "expected" : "джип",
+      "id" : "holdout-16762",
+      "input" : "l;bg"
+    },
+    {
+      "actual" : "L;bg",
+      "category" : "layout.title.russian",
+      "expected" : "Джип",
+      "id" : "holdout-16763",
+      "input" : "L;bg"
+    },
+    {
+      "actual" : ",eccjkm",
+      "category" : "layout.russian",
+      "expected" : "буссоль",
+      "id" : "holdout-16777",
+      "input" : ",eccjkm"
+    },
+    {
+      "actual" : ",eccjkm",
+      "category" : "layout.title.russian",
+      "expected" : "Буссоль",
+      "id" : "holdout-16778",
+      "input" : ",eccjkm"
+    },
+    {
+      "actual" : "c]tdibq",
+      "category" : "layout.russian",
+      "expected" : "съевший",
+      "id" : "holdout-16792",
+      "input" : "c]tdibq"
+    },
+    {
+      "actual" : "C]tdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Съевший",
+      "id" : "holdout-16793",
+      "input" : "C]tdibq"
+    },
+    {
+      "actual" : "eh;evcrbq",
+      "category" : "layout.russian",
+      "expected" : "уржумский",
+      "id" : "holdout-16797",
+      "input" : "eh;evcrbq"
+    },
+    {
+      "actual" : "Eh;evcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Уржумский",
+      "id" : "holdout-16798",
+      "input" : "Eh;evcrbq"
+    },
+    {
+      "actual" : "ce[tymrbq",
+      "category" : "layout.russian",
+      "expected" : "сухенький",
+      "id" : "holdout-16802",
+      "input" : "ce[tymrbq"
+    },
+    {
+      "actual" : "Ce[tymrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Сухенький",
+      "id" : "holdout-16803",
+      "input" : "Ce[tymrbq"
+    },
+    {
+      "actual" : ".dtyfkmysq",
+      "category" : "layout.russian",
+      "expected" : "ювенальный",
+      "id" : "holdout-16812",
+      "input" : ".dtyfkmysq"
+    },
+    {
+      "actual" : ".dtyfkmysq",
+      "category" : "layout.title.russian",
+      "expected" : "Ювенальный",
+      "id" : "holdout-16813",
+      "input" : ".dtyfkmysq"
+    },
+    {
+      "actual" : "bgj[jylhbr",
+      "category" : "layout.russian",
+      "expected" : "ипохондрик",
+      "id" : "holdout-16887",
+      "input" : "bgj[jylhbr"
+    },
+    {
+      "actual" : "Bgj[jylhbr",
+      "category" : "layout.title.russian",
+      "expected" : "Ипохондрик",
+      "id" : "holdout-16888",
+      "input" : "Bgj[jylhbr"
+    },
+    {
+      "actual" : "h.iysq",
+      "category" : "layout.russian",
+      "expected" : "рюшный",
+      "id" : "holdout-16902",
+      "input" : "h.iysq"
+    },
+    {
+      "actual" : "H.iysq",
+      "category" : "layout.title.russian",
+      "expected" : "Рюшный",
+      "id" : "holdout-16903",
+      "input" : "H.iysq"
+    },
+    {
+      "actual" : "ctlj,jhjlsq",
+      "category" : "layout.russian",
+      "expected" : "седобородый",
+      "id" : "holdout-16917",
+      "input" : "ctlj,jhjlsq"
+    },
+    {
+      "actual" : "Ctlj,jhjlsq",
+      "category" : "layout.title.russian",
+      "expected" : "Седобородый",
+      "id" : "holdout-16918",
+      "input" : "Ctlj,jhjlsq"
+    },
+    {
+      "actual" : "edkf;tyysq",
+      "category" : "layout.russian",
+      "expected" : "увлаженный",
+      "id" : "holdout-16922",
+      "input" : "edkf;tyysq"
+    },
+    {
+      "actual" : "Edkf;tyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Увлаженный",
+      "id" : "holdout-16923",
+      "input" : "Edkf;tyysq"
+    },
+    {
+      "actual" : "lzl.irf",
+      "category" : "layout.russian",
+      "expected" : "дядюшка",
+      "id" : "holdout-16942",
+      "input" : "lzl.irf"
+    },
+    {
+      "actual" : "Lzl.irf",
+      "category" : "layout.title.russian",
+      "expected" : "Дядюшка",
+      "id" : "holdout-16943",
+      "input" : "Lzl.irf"
+    },
+    {
+      "actual" : "k.nsq",
+      "category" : "layout.russian",
+      "expected" : "лютый",
+      "id" : "holdout-16957",
+      "input" : "k.nsq"
+    },
+    {
+      "actual" : "K.nsq",
+      "category" : "layout.title.russian",
+      "expected" : "Лютый",
+      "id" : "holdout-16958",
+      "input" : "K.nsq"
+    },
+    {
+      "actual" : "hfy;bh",
+      "category" : "layout.russian",
+      "expected" : "ранжир",
+      "id" : "holdout-16972",
+      "input" : "hfy;bh"
+    },
+    {
+      "actual" : "Hfy;bh",
+      "category" : "layout.title.russian",
+      "expected" : "Ранжир",
+      "id" : "holdout-16973",
+      "input" : "Hfy;bh"
+    },
+    {
+      "actual" : "bpj[fpvf",
+      "category" : "layout.russian",
+      "expected" : "изохазма",
+      "id" : "holdout-17002",
+      "input" : "bpj[fpvf"
+    },
+    {
+      "actual" : "Bpj[fpvf",
+      "category" : "layout.title.russian",
+      "expected" : "Изохазма",
+      "id" : "holdout-17003",
+      "input" : "Bpj[fpvf"
+    },
+    {
+      "actual" : "akz;txysq",
+      "category" : "layout.russian",
+      "expected" : "фляжечный",
+      "id" : "holdout-17012",
+      "input" : "akz;txysq"
+    },
+    {
+      "actual" : "Akz;txysq",
+      "category" : "layout.title.russian",
+      "expected" : "Фляжечный",
+      "id" : "holdout-17013",
+      "input" : "Akz;txysq"
+    },
+    {
+      "actual" : "nt,t",
+      "category" : "layout.russian",
+      "expected" : "тебе",
+      "id" : "holdout-17017",
+      "input" : "nt,t"
+    },
+    {
+      "actual" : "Nt,t",
+      "category" : "layout.title.russian",
+      "expected" : "Тебе",
+      "id" : "holdout-17018",
+      "input" : "Nt,t"
+    },
+    {
+      "actual" : "'cth",
+      "category" : "layout.russian",
+      "expected" : "эсер",
+      "id" : "holdout-17022",
+      "input" : "'cth"
+    },
+    {
+      "actual" : "'cth",
+      "category" : "layout.title.russian",
+      "expected" : "Эсер",
+      "id" : "holdout-17023",
+      "input" : "'cth"
+    },
+    {
+      "actual" : "gj;;tv",
+      "category" : "layout.russian",
+      "expected" : "пожжем",
+      "id" : "holdout-17032",
+      "input" : "gj;;tv"
+    },
+    {
+      "actual" : "Gj;;tv",
+      "category" : "layout.title.russian",
+      "expected" : "Пожжем",
+      "id" : "holdout-17033",
+      "input" : "Gj;;tv"
+    },
+    {
+      "actual" : "nt[j,cke;bdfybt",
+      "category" : "layout.russian",
+      "expected" : "техобслуживание",
+      "id" : "holdout-17072",
+      "input" : "nt[j,cke;bdfybt"
+    },
+    {
+      "actual" : "Nt[j,cke;bdfybt",
+      "category" : "layout.title.russian",
+      "expected" : "Техобслуживание",
+      "id" : "holdout-17073",
+      "input" : "Nt[j,cke;bdfybt"
+    },
+    {
+      "actual" : "pfk.,jdfdibqcz",
+      "category" : "layout.russian",
+      "expected" : "залюбовавшийся",
+      "id" : "holdout-17092",
+      "input" : "pfk.,jdfdibqcz"
+    },
+    {
+      "actual" : "Pfk.,jdfdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Залюбовавшийся",
+      "id" : "holdout-17093",
+      "input" : "Pfk.,jdfdibqcz"
+    },
+    {
+      "actual" : ",kj[f",
+      "category" : "layout.russian",
+      "expected" : "блоха",
+      "id" : "holdout-17102",
+      "input" : ",kj[f"
+    },
+    {
+      "actual" : ",kj[f",
+      "category" : "layout.title.russian",
+      "expected" : "Блоха",
+      "id" : "holdout-17103",
+      "input" : ",kj[f"
+    },
+    {
+      "actual" : "[bggb",
+      "category" : "layout.russian",
+      "expected" : "хиппи",
+      "id" : "holdout-17107",
+      "input" : "[bggb"
+    },
+    {
+      "actual" : "[bggb",
+      "category" : "layout.title.russian",
+      "expected" : "Хиппи",
+      "id" : "holdout-17108",
+      "input" : "[bggb"
+    },
+    {
+      "actual" : "pfve;",
+      "category" : "layout.russian",
+      "expected" : "замуж",
+      "id" : "holdout-17112",
+      "input" : "pfve;"
+    },
+    {
+      "actual" : "Pfve;",
+      "category" : "layout.title.russian",
+      "expected" : "Замуж",
+      "id" : "holdout-17113",
+      "input" : "Pfve;"
+    },
+    {
+      "actual" : "re.obq",
+      "category" : "layout.russian",
+      "expected" : "кующий",
+      "id" : "holdout-17132",
+      "input" : "re.obq"
+    },
+    {
+      "actual" : "Re.obq",
+      "category" : "layout.title.russian",
+      "expected" : "Кующий",
+      "id" : "holdout-17133",
+      "input" : "Re.obq"
+    },
+    {
+      "actual" : "ltwb,tk",
+      "category" : "layout.russian",
+      "expected" : "децибел",
+      "id" : "holdout-17152",
+      "input" : "ltwb,tk"
+    },
+    {
+      "actual" : "Ltwb,tk",
+      "category" : "layout.title.russian",
+      "expected" : "Децибел",
+      "id" : "holdout-17153",
+      "input" : "Ltwb,tk"
+    },
+    {
+      "actual" : "pk.rf",
+      "category" : "layout.russian",
+      "expected" : "злюка",
+      "id" : "holdout-17212",
+      "input" : "pk.rf"
+    },
+    {
+      "actual" : "Pk.rf",
+      "category" : "layout.title.russian",
+      "expected" : "Злюка",
+      "id" : "holdout-17213",
+      "input" : "Pk.rf"
+    },
+    {
+      "actual" : "'hbntvf",
+      "category" : "layout.russian",
+      "expected" : "эритема",
+      "id" : "holdout-17302",
+      "input" : "'hbntvf"
+    },
+    {
+      "actual" : "'hbntvf",
+      "category" : "layout.title.russian",
+      "expected" : "Эритема",
+      "id" : "holdout-17303",
+      "input" : "'hbntvf"
+    },
+    {
+      "actual" : "j,;bdfdibq",
+      "category" : "layout.russian",
+      "expected" : "обживавший",
+      "id" : "holdout-17327",
+      "input" : "j,;bdfdibq"
+    },
+    {
+      "actual" : "J,;bdfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обживавший",
+      "id" : "holdout-17328",
+      "input" : "J,;bdfdibq"
+    },
+    {
+      "actual" : ";lfdibq",
+      "category" : "layout.russian",
+      "expected" : "ждавший",
+      "id" : "holdout-17362",
+      "input" : ";lfdibq"
+    },
+    {
+      "actual" : ";lfdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Ждавший",
+      "id" : "holdout-17363",
+      "input" : ";lfdibq"
+    },
+    {
+      "actual" : "d]timcz",
+      "category" : "layout.russian",
+      "expected" : "въешься",
+      "id" : "holdout-17417",
+      "input" : "d]timcz"
+    },
+    {
+      "actual" : "D]timcz",
+      "category" : "layout.title.russian",
+      "expected" : "Въешься",
+      "id" : "holdout-17418",
+      "input" : "D]timcz"
+    },
+    {
+      "actual" : ",sxbdibqcz",
+      "category" : "layout.russian",
+      "expected" : "бычившийся",
+      "id" : "holdout-17457",
+      "input" : ",sxbdibqcz"
+    },
+    {
+      "actual" : ",sxbdibqcz",
+      "category" : "layout.title.russian",
+      "expected" : "Бычившийся",
+      "id" : "holdout-17458",
+      "input" : ",sxbdibqcz"
+    },
+    {
+      "actual" : "ckj,jlf",
+      "category" : "layout.russian",
+      "expected" : "слобода",
+      "id" : "holdout-17487",
+      "input" : "ckj,jlf"
+    },
+    {
+      "actual" : "Ckj,jlf",
+      "category" : "layout.title.russian",
+      "expected" : "Слобода",
+      "id" : "holdout-17488",
+      "input" : "Ckj,jlf"
+    },
+    {
+      "actual" : ";tcn",
+      "category" : "layout.russian",
+      "expected" : "жест",
+      "id" : "holdout-17497",
+      "input" : ";tcn"
+    },
+    {
+      "actual" : ";tcn",
+      "category" : "layout.title.russian",
+      "expected" : "Жест",
+      "id" : "holdout-17498",
+      "input" : ";tcn"
+    },
+    {
+      "actual" : "[hbcj'ktafynbyysq",
+      "category" : "layout.russian",
+      "expected" : "хрисоэлефантинный",
+      "id" : "holdout-17512",
+      "input" : "[hbcj'ktafynbyysq"
+    },
+    {
+      "actual" : "[hbcj'ktafynbyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Хрисоэлефантинный",
+      "id" : "holdout-17513",
+      "input" : "[hbcj'ktafynbyysq"
+    },
+    {
+      "actual" : ",jlkbdjcnm",
+      "category" : "layout.russian",
+      "expected" : "бодливость",
+      "id" : "holdout-17522",
+      "input" : ",jlkbdjcnm"
+    },
+    {
+      "actual" : ",jlkbdjcnm",
+      "category" : "layout.title.russian",
+      "expected" : "Бодливость",
+      "id" : "holdout-17523",
+      "input" : ",jlkbdjcnm"
+    },
+    {
+      "actual" : "dm.hrjdsq",
+      "category" : "layout.russian",
+      "expected" : "вьюрковый",
+      "id" : "holdout-17527",
+      "input" : "dm.hrjdsq"
+    },
+    {
+      "actual" : "Dm.hrjdsq",
+      "category" : "layout.title.russian",
+      "expected" : "Вьюрковый",
+      "id" : "holdout-17528",
+      "input" : "Dm.hrjdsq"
+    },
+    {
+      "actual" : "ce,xbr",
+      "category" : "layout.russian",
+      "expected" : "субчик",
+      "id" : "holdout-17532",
+      "input" : "ce,xbr"
+    },
+    {
+      "actual" : "Ce,xbr",
+      "category" : "layout.title.russian",
+      "expected" : "Субчик",
+      "id" : "holdout-17533",
+      "input" : "Ce,xbr"
+    },
+    {
+      "actual" : "j,tufdibq",
+      "category" : "layout.russian",
+      "expected" : "обегавший",
+      "id" : "holdout-17577",
+      "input" : "j,tufdibq"
+    },
+    {
+      "actual" : "J,tufdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Обегавший",
+      "id" : "holdout-17578",
+      "input" : "J,tufdibq"
+    },
+    {
+      "actual" : "pfpe,ysq",
+      "category" : "layout.russian",
+      "expected" : "зазубный",
+      "id" : "holdout-17612",
+      "input" : "pfpe,ysq"
+    },
+    {
+      "actual" : "Pfpe,ysq",
+      "category" : "layout.title.russian",
+      "expected" : "Зазубный",
+      "id" : "holdout-17613",
+      "input" : "Pfpe,ysq"
+    },
+    {
+      "actual" : "dbnhf;",
+      "category" : "layout.russian",
+      "expected" : "витраж",
+      "id" : "holdout-17617",
+      "input" : "dbnhf;"
+    },
+    {
+      "actual" : "Dbnhf;",
+      "category" : "layout.title.russian",
+      "expected" : "Витраж",
+      "id" : "holdout-17618",
+      "input" : "Dbnhf;"
+    },
+    {
+      "actual" : ";.hb",
+      "category" : "layout.russian",
+      "expected" : "жюри",
+      "id" : "holdout-17622",
+      "input" : ";.hb"
+    },
+    {
+      "actual" : ";.hb",
+      "category" : "layout.title.russian",
+      "expected" : "Жюри",
+      "id" : "holdout-17623",
+      "input" : ";.hb"
+    },
+    {
+      "actual" : ".anm",
+      "category" : "layout.russian",
+      "expected" : "юфть",
+      "id" : "holdout-17657",
+      "input" : ".anm"
+    },
+    {
+      "actual" : ".anm",
+      "category" : "layout.title.russian",
+      "expected" : "Юфть",
+      "id" : "holdout-17658",
+      "input" : ".anm"
+    },
+    {
+      "actual" : "[jlbdibq",
+      "category" : "layout.russian",
+      "expected" : "ходивший",
+      "id" : "holdout-17687",
+      "input" : "[jlbdibq"
+    },
+    {
+      "actual" : "[jlbdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Ходивший",
+      "id" : "holdout-17688",
+      "input" : "[jlbdibq"
+    },
+    {
+      "actual" : "'rb,fcnepcrbq",
+      "category" : "layout.russian",
+      "expected" : "экибастузский",
+      "id" : "holdout-17722",
+      "input" : "'rb,fcnepcrbq"
+    },
+    {
+      "actual" : "'rb,fcnepcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Экибастузский",
+      "id" : "holdout-17723",
+      "input" : "'rb,fcnepcrbq"
+    },
+    {
+      "actual" : "hz,e[f",
+      "category" : "layout.russian",
+      "expected" : "рябуха",
+      "id" : "holdout-17737",
+      "input" : "hz,e[f"
+    },
+    {
+      "actual" : "Hz,e[f",
+      "category" : "layout.title.russian",
+      "expected" : "Рябуха",
+      "id" : "holdout-17738",
+      "input" : "Hz,e[f"
+    },
+    {
+      "actual" : ",jv,f",
+      "category" : "layout.russian",
+      "expected" : "бомба",
+      "id" : "holdout-17742",
+      "input" : ",jv,f"
+    },
+    {
+      "actual" : ",jv,f",
+      "category" : "layout.title.russian",
+      "expected" : "Бомба",
+      "id" : "holdout-17743",
+      "input" : ",jv,f"
+    },
+    {
+      "actual" : ",ktzdibq",
+      "category" : "layout.russian",
+      "expected" : "блеявший",
+      "id" : "holdout-17767",
+      "input" : ",ktzdibq"
+    },
+    {
+      "actual" : ",ktzdibq",
+      "category" : "layout.title.russian",
+      "expected" : "Блеявший",
+      "id" : "holdout-17768",
+      "input" : ",ktzdibq"
+    },
+    {
+      "actual" : "[j;ltybt",
+      "category" : "layout.russian",
+      "expected" : "хождение",
+      "id" : "holdout-17782",
+      "input" : "[j;ltybt"
+    },
+    {
+      "actual" : "[j;ltybt",
+      "category" : "layout.title.russian",
+      "expected" : "Хождение",
+      "id" : "holdout-17783",
+      "input" : "[j;ltybt"
+    },
+    {
+      "actual" : "bpk.,ktyysq",
+      "category" : "layout.russian",
+      "expected" : "излюбленный",
+      "id" : "holdout-17787",
+      "input" : "bpk.,ktyysq"
+    },
+    {
+      "actual" : "Bpk.,ktyysq",
+      "category" : "layout.title.russian",
+      "expected" : "Излюбленный",
+      "id" : "holdout-17788",
+      "input" : "Bpk.,ktyysq"
+    },
+    {
+      "actual" : ".hblbxtcrbq",
+      "category" : "layout.russian",
+      "expected" : "юридический",
+      "id" : "holdout-17802",
+      "input" : ".hblbxtcrbq"
+    },
+    {
+      "actual" : ".hblbxtcrbq",
+      "category" : "layout.title.russian",
+      "expected" : "Юридический",
+      "id" : "holdout-17803",
+      "input" : ".hblbxtcrbq"
+    },
+    {
+      "actual" : "fkf,fvtw",
+      "category" : "layout.russian",
+      "expected" : "алабамец",
+      "id" : "holdout-17822",
+      "input" : "fkf,fvtw"
+    },
+    {
+      "actual" : "Fkf,fvtw",
+      "category" : "layout.title.russian",
+      "expected" : "Алабамец",
+      "id" : "holdout-17823",
+      "input" : "Fkf,fvtw"
+    },
+    {
+      "actual" : "ctyf;ysq",
+      "category" : "layout.russian",
+      "expected" : "сенажный",
+      "id" : "holdout-17847",
+      "input" : "ctyf;ysq"
+    },
+    {
+      "actual" : "Ctyf;ysq",
+      "category" : "layout.title.russian",
+      "expected" : "Сенажный",
+      "id" : "holdout-17848",
+      "input" : "Ctyf;ysq"
+    },
+    {
+      "actual" : "lb'ktrnhbr",
+      "category" : "layout.russian",
+      "expected" : "диэлектрик",
+      "id" : "holdout-17857",
+      "input" : "lb'ktrnhbr"
+    },
+    {
+      "actual" : "Lb'ktrnhbr",
+      "category" : "layout.title.russian",
+      "expected" : "Диэлектрик",
+      "id" : "holdout-17858",
+      "input" : "Lb'ktrnhbr"
+    },
+    {
+      "actual" : "d,thtv",
+      "category" : "layout.russian",
+      "expected" : "вберем",
+      "id" : "holdout-17877",
+      "input" : "d,thtv"
+    },
+    {
+      "actual" : "D,thtv",
+      "category" : "layout.title.russian",
+      "expected" : "Вберем",
+      "id" : "holdout-17878",
+      "input" : "D,thtv"
+    },
+    {
+      "actual" : ";fhzobq",
+      "category" : "layout.russian",
+      "expected" : "жарящий",
+      "id" : "holdout-17892",
+      "input" : ";fhzobq"
+    },
+    {
+      "actual" : ";fhzobq",
+      "category" : "layout.title.russian",
+      "expected" : "Жарящий",
+      "id" : "holdout-17893",
+      "input" : ";fhzobq"
+    },
+    {
+      "actual" : "nt[pflfybt",
+      "category" : "layout.russian",
+      "expected" : "техзадание",
+      "id" : "holdout-17967",
+      "input" : "nt[pflfybt"
+    },
+    {
+      "actual" : "Nt[pflfybt",
+      "category" : "layout.title.russian",
+      "expected" : "Техзадание",
+      "id" : "holdout-17968",
+      "input" : "Nt[pflfybt"
+    },
+    {
+      "actual" : "превет",
+      "category" : "unsupported.typo",
+      "expected" : "привет",
+      "id" : "holdout-18007",
+      "input" : "превет"
+    },
+    {
+      "actual" : "helllo",
+      "category" : "unsupported.typo",
+      "expected" : "hello",
+      "id" : "holdout-18008",
+      "input" : "helllo"
+    },
+    {
+      "actual" : "ght;lt",
+      "category" : "layout.punctuation",
+      "expected" : "прежде",
+      "id" : "holdout-18009",
+      "input" : "ght;lt"
+    }
+  ],
+  "modelVersion" : 1,
+  "passed" : false,
+  "perCategory" : {
+    "acronym.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 452,
+      "total" : 452,
+      "trueNegative" : 452,
+      "truePositive" : 0
+    },
+    "acronym.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 748,
+      "total" : 748,
+      "trueNegative" : 748,
+      "truePositive" : 0
+    },
+    "ambiguous" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 2,
+      "total" : 2,
+      "trueNegative" : 2,
+      "truePositive" : 0
+    },
+    "correct.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 452,
+      "total" : 452,
+      "trueNegative" : 452,
+      "truePositive" : 0
+    },
+    "correct.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 748,
+      "total" : 748,
+      "trueNegative" : 748,
+      "truePositive" : 0
+    },
+    "doubleCaps" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 0,
+      "trueNegative" : 0,
+      "truePositive" : 0
+    },
+    "guard.code" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.email" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.mixed" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.number" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.path" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "guard.url" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 200,
+      "total" : 200,
+      "trueNegative" : 200,
+      "truePositive" : 0
+    },
+    "layout.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 451,
+      "trueNegative" : 0,
+      "truePositive" : 451
+    },
+    "layout.punctuation" : {
+      "falseChanges" : 0,
+      "falseNegative" : 1,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 1,
+      "trueNegative" : 0,
+      "truePositive" : 0
+    },
+    "layout.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 229,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 748,
+      "trueNegative" : 0,
+      "truePositive" : 519
+    },
+    "layout.title.english" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 451,
+      "trueNegative" : 0,
+      "truePositive" : 451
+    },
+    "layout.title.russian" : {
+      "falseChanges" : 0,
+      "falseNegative" : 229,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 748,
+      "trueNegative" : 0,
+      "truePositive" : 519
+    },
+    "typo" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 2,
+      "trueNegative" : 0,
+      "truePositive" : 2
+    },
+    "unsupported.typo" : {
+      "falseChanges" : 0,
+      "falseNegative" : 2,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 2,
+      "trueNegative" : 0,
+      "truePositive" : 0
+    },
+    "yo" : {
+      "falseChanges" : 0,
+      "falseNegative" : 0,
+      "falsePositive" : 0,
+      "noChange" : 0,
+      "total" : 1,
+      "trueNegative" : 0,
+      "truePositive" : 1
+    }
+  },
+  "precision" : 1,
+  "precisionInterval" : {
+    "lower" : 0.99802675266441809,
+    "upper" : 0.99999999999999989
+  },
+  "recall" : 0.80823627287853572,
+  "releaseReady" : false,
+  "rulesSHA256" : "c5b8ffaae684f053cb57203bc364115fec413224f659d0bbac8b9b2d1b04a133",
+  "split" : "holdout",
+  "total" : 6006,
+  "truePositive" : 1943
+}
