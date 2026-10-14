@@ -5,6 +5,33 @@ import 'package:necaramba/main.dart';
 import '../support/native_fakes.dart';
 
 void main() {
+  testWidgets('unknown login status still permits a registration request', (
+    tester,
+  ) async {
+    final repository = FakeNativeRepository()
+      ..current = fixture(
+        capabilities: {
+          'listen': true,
+          'post': true,
+          'axTrusted': true,
+          'secureInput': false,
+        },
+        login: {'enabled': false, 'status': 'unavailable'},
+      );
+    await tester.pumpWidget(
+      NecarambaApp(repository: repository, locale: const Locale('en')),
+    );
+    await tester.pumpAndSettle();
+    final toggle = find.byKey(const Key('launchAtLogin'));
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(
+      repository.calls.where((call) => call.method == 'setLoginEnabled').length,
+      1,
+    );
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+  });
+
   testWidgets(
     'login toggle is available in settings and sends native command',
     (tester) async {

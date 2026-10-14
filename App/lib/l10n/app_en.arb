@@ -108,6 +108,7 @@
   "blocked": "Blocked",
   "unknown": "Unknown",
   "aboutIntro": "Keyboard correction for Russian and English.\nWorks locally on your Mac.\nmacOS 12 and later",
+  "loginStatusUnknown": "Status is unavailable. You can request registration again.",
   "login": "Launch at login",
   "diagnostics": "Diagnostics",
   "privacy": "Exports contain aggregate counters and system metadata, never keyboard input. Archives contain your explicitly saved rules and settings.",

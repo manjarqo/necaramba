@@ -59,12 +59,12 @@ class SettingsPage extends SnapshotFeature {
             'enabled' => l.enabled,
             'disabled' => l.disabled,
             'requiresApproval' => l.requiresApproval,
-            _ => l.errorUnavailable,
+            _ => l.loginStatusUnknown,
           }, style: theme.textTheme.bodySmall),
           value:
               snapshot.login['enabled'] == true ||
               snapshot.login['status'] == 'requiresApproval',
-          onChanged: ui.busy || snapshot.login['status'] == 'unavailable'
+          onChanged: ui.busy
               ? null
               : (value) => ui.cubit.run('setLoginEnabled', {'enabled': value}),
         ),

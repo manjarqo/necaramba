@@ -9,6 +9,7 @@ NativeState fixture({
   String sessionID = 'test',
   String status = 'permissionRequired',
   Map<String, bool>? capabilities,
+  Map<String, Object?>? login,
 }) => NativeState(
   sessionID: sessionID,
   revision: revision,
@@ -36,7 +37,7 @@ NativeState fixture({
     'hasCustomSound': false,
     'hasHeaderImage': false,
   },
-  login: {'enabled': false, 'status': 'disabled'},
+  login: login ?? {'enabled': false, 'status': 'disabled'},
 );
 
 class FakeNativeRepository implements NativeRepository {

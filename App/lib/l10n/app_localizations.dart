@@ -746,6 +746,12 @@ abstract class AppLocalizations {
   /// **'Keyboard correction for Russian and English.\nWorks locally on your Mac.\nmacOS 12 and later'**
   String get aboutIntro;
 
+  /// No description provided for @loginStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Status is unavailable. You can request registration again.'**
+  String get loginStatusUnknown;
+
   /// No description provided for @login.
   ///
   /// In en, this message translates to:

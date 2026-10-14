@@ -348,6 +348,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Keyboard correction for Russian and English.\nWorks locally on your Mac.\nmacOS 12 and later';
 
   @override
+  String get loginStatusUnknown =>
+      'Status is unavailable. You can request registration again.';
+
+  @override
   String get login => 'Launch at login';
 
   @override
