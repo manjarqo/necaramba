@@ -3,6 +3,20 @@ import NecarambaCore
 @testable import NecarambaMac
 
 @MainActor final class ApplicationServicesTests: XCTestCase {
+    func testInjectedRulesAndSoundDriveCommandsWithoutDiskStores() async throws {
+        let rules = MemoryApplicationRules()
+        let sound = MemorySound()
+        let app = try ApplicationServices(rules: rules,
+            preferences: PreferencesController(defaults: UserDefaults(suiteName: UUID().uuidString)!, publish: { _ in }),
+            sound: sound, header: MemoryHeader(), statistics: MemoryStatistics(),
+            login: LoginController(backend: LoginFake()), permissions: PermissionFake(),
+            files: MemoryFiles(soundURL: URL(fileURLWithPath: "/virtual/chime.wav")),
+            appSelection: MemoryAppSelection(), thumbnailer: MemoryThumbnailer())
+        _ = try await app.execute("addWord", arguments: ["text": "пример"])
+        _ = try await app.execute("chooseSound", arguments: [:])
+        XCTAssertEqual((app.snapshot()["words"] as? [[String: Any]])?.first?["original"] as? String, "пример")
+        XCTAssertEqual(sound.customSoundURL?.path, "/virtual/chime.wav")
+    }
     func testCommandsPersistConfirmedStateAndRejectUnknownPreferences() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let domain = "test.necaramba." + UUID().uuidString
@@ -130,4 +144,53 @@ private final class PermissionFake: PermissionReading {
 private struct LoginFake: LoginBackend {
     func status()->LoginStatus { .disabled }
     func setEnabled(_ value:Bool) throws {}
+}
+private final class MemoryApplicationRules: ApplicationRuleStore {
+    private var rows: [WordRule] = []
+    func words() throws -> [WordRule] { rows }
+    func legacyWords() throws -> [WordRule] { [] }
+    func runtimeWordExclusions() throws -> Set<String> { Set(rows.map(\.normalized)) }
+    func addWord(_ text: String, at: Int64) throws -> WordRule {
+        let value = try RuleValidation.word(text)
+        let row = WordRule(id: UUID(), normalized: value.normalized, original: value.original, createdAt: at, shareOptIn: false)
+        rows.append(row); return row
+    }
+    func deleteWord(id: UUID) throws { rows.removeAll { $0.id == id } }
+    func clearWords() throws { rows.removeAll() }
+    func apps() throws -> [AppRule] { [] }
+    func setApp(_ rule: AppRule) throws {}
+    func deleteApp(bundleID: String) throws {}
+    func exportArchive() throws -> Data { try JSONEncoder().encode(RuleArchiveV1(words: rows, apps: [])) }
+    func importArchive(_ data: Data, preferences: Data?) throws { rows += try JSONDecoder().decode(RuleArchiveV1.self, from: data).words }
+    func preferencesData() throws -> Data? { nil }
+    func savePreferences(_ data: Data) throws {}
+}
+private final class MemorySound: ApplicationSound {
+    var customSoundURL: URL?
+    func importSound(from source: URL) throws -> URL { customSoundURL = source; return source }
+    func reset() throws { customSoundURL = nil }
+    func setEnabled(_ value: Bool) {}
+    func playCorrection(committedID: UUID) {}
+}
+private final class MemoryHeader: ApplicationHeader {
+    func importImage(data: Data) throws {}
+    func loadImageData() throws -> Data? { nil }
+    func remove() throws {}
+}
+private final class MemoryStatistics: ApplicationStatistics {
+    var totals: [CounterKind: Int] { [:] }
+    func recordCommitted(id: UUID, kind: CounterKind, day: String) throws {}
+    func reset() throws {}
+}
+@MainActor private struct MemoryFiles: ApplicationFiles {
+    let soundURL: URL
+    func choose(_ kind: ApplicationFileKind) async -> URL? { soundURL }
+    func read(_ url: URL, maximumBytes: Int) throws -> Data { Data() }
+    func save(_ data: Data, name: String) async throws {}
+}
+private struct MemoryAppSelection: ApplicationSelection {
+    func identify(_ url: URL) -> SelectedApplication? { nil }
+}
+private struct MemoryThumbnailer: ApplicationThumbnailer {
+    func thumbnail(from data: Data) throws -> ApplicationThumbnail? { nil }
 }

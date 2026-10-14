@@ -47,7 +47,7 @@ public struct StoredPreferencesV1: Codable, Equatable, Sendable {
   adoptValidated(value, bytes:bytes)
  }
  /// The caller has already committed these exact bytes in the shared database transaction.
- func adoptCommittedSettings(_ value:StoredPreferencesV1) throws {
+ public func adoptCommittedSettings(_ value:StoredPreferencesV1) throws {
   try value.validate(); adoptValidated(value,bytes:try JSONEncoder().encode(value))
  }
  private func adoptValidated(_ value:StoredPreferencesV1, bytes:Data) {

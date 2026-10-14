@@ -1,17 +1,16 @@
-import AppKit
-import UniformTypeIdentifiers
-import ImageIO
+import Foundation
 import NecarambaCore
 
 /// Application use cases compose native domain ports. Flutter transport stays outside this type.
 @MainActor public final class ApplicationServices {
-    public let rules: SQLiteStore
-    public let preferences: PreferencesController
-    public let sound: SoundStore
-    public let header: HeaderImageStore
-    public let statistics: StatisticsStore
-    public let login: LoginController
+    public let rules: any ApplicationRuleStore
+    public let preferences: any ApplicationPreferences
+    public let sound: any ApplicationSound
+    public let header: any ApplicationHeader
+    public let statistics: any ApplicationStatistics
+    public let login: any ApplicationLogin
     public let permissions: PermissionReading
+    private let version: String
     public var onRulesChanged: (() -> Void)?
     public var externalCommand: ((String, [String:Any]) async throws -> [String:Any])?
     public var runtimeRunning = false
@@ -23,29 +22,24 @@ import NecarambaCore
     public var licenseExpiresAt: String?
     public var onChanged: (() -> Void)?
     private var dropHandles: [String:(Date,Data)] = [:]
-    private let directory: URL
     private var wordRows: [WordRule] = []
     private var legacyRows: [WordRule] = []
     private var appRows: [AppRule] = []
     private var hasHeaderImage = false
-    private let chooseFile: (([UTType]) async -> URL?)?
+    private let files: any ApplicationFiles
+    private let appSelection: any ApplicationSelection
+    private let thumbnailer: any ApplicationThumbnailer
 
-    public init(directory:URL, defaults:UserDefaults, permissions:PermissionReading,
-                loginBackend:LoginBackend, onPreferences:@escaping (PreferencesSnapshot)->Void,
-                defaultSoundURL:URL? = nil, preferencesWrite: ((Data) throws -> Void)? = nil,
-                chooseFile: (([UTType]) async -> URL?)? = nil) throws {
-        self.directory = directory; self.permissions = permissions
-        self.chooseFile = chooseFile
-        try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
-        rules = try SQLiteStore(url:directory.appendingPathComponent("rules.sqlite"))
-        let store = rules
-        preferences = try PreferencesController(defaults:defaults,storedData:store.preferencesData(),persist:{ bytes in
-            try preferencesWrite?(bytes); try store.savePreferences(bytes)
-        },publish:onPreferences)
-        sound = SoundStore(directory:directory.appendingPathComponent("Sounds"),defaultSoundURL:defaultSoundURL)
-        header = try HeaderImageStore(directory:directory.appendingPathComponent("Appearance"))
-        statistics = try StatisticsStore(directory:directory.appendingPathComponent("Statistics"))
-        login = LoginController(backend:loginBackend)
+    public init(rules: any ApplicationRuleStore, preferences: any ApplicationPreferences,
+                sound: any ApplicationSound, header: any ApplicationHeader,
+                statistics: any ApplicationStatistics, login: any ApplicationLogin,
+                permissions: PermissionReading, files: any ApplicationFiles,
+                appSelection: any ApplicationSelection, thumbnailer: any ApplicationThumbnailer,
+                version: String = "development") throws {
+        self.rules = rules; self.preferences = preferences; self.sound = sound
+        self.header = header; self.statistics = statistics; self.login = login
+        self.permissions = permissions; self.files = files; self.version = version
+        self.appSelection = appSelection; self.thumbnailer = thumbnailer
         wordRows = try rules.words(); legacyRows = try rules.legacyWords(); appRows = try rules.apps()
         hasHeaderImage = try header.loadImageData() != nil
     }
@@ -92,10 +86,9 @@ import NecarambaCore
             guard try boolean(a,"confirmed") else { throw NativeCommandFailure("cancelled") }
             try rules.clearWords(); try refreshRules()
         case "chooseApp":
-            guard let url=await choose(types:[.applicationBundle]),let bundle=Bundle(url:url),let id=bundle.bundleIdentifier else { throw NativeCommandFailure("cancelled") }
+            guard let url=await files.choose(.application),let selected=appSelection.identify(url) else { throw NativeCommandFailure("cancelled") }
             try mutationGuard(a)
-            let name=bundle.object(forInfoDictionaryKey:"CFBundleDisplayName") as? String ?? url.deletingPathExtension().lastPathComponent
-            try rules.setApp(AppRule(bundleID:id,displayName:name,bookmark:nil,mode:.deny,updatedAt:Int64(Date().timeIntervalSince1970))); try refreshRules()
+            try rules.setApp(AppRule(bundleID:selected.bundleID,displayName:selected.displayName,bookmark:nil,mode:.deny,updatedAt:Int64(Date().timeIntervalSince1970))); try refreshRules()
         case "setAppMode":
             let id=try string(a,"bundleID")
             guard let mode=AppRuleMode(rawValue:try string(a,"mode")),let old=try rules.apps().first(where:{$0.bundleID==id}) else { throw invalid() }
@@ -132,7 +125,7 @@ import NecarambaCore
         case "removeHeaderImage": try header.remove(); hasHeaderImage = false
         case "getThumbnail": return try thumbnail()
         case "chooseSound":
-            guard let url=await choose(types:[.audio]) else { throw NativeCommandFailure("cancelled") }
+            guard let url=await files.choose(.audio) else { throw NativeCommandFailure("cancelled") }
             try mutationGuard(a)
             _ = try sound.importSound(from:url)
         case "resetSound": try sound.reset()
@@ -140,11 +133,10 @@ import NecarambaCore
             guard try boolean(a,"confirmed") else { throw NativeCommandFailure("cancelled") }; try statistics.reset()
         case "exportArchive":
             let archive = ApplicationArchiveV1(rules:try JSONDecoder().decode(RuleArchiveV1.self,from:rules.exportArchive()),preferences:preferences.settings)
-            try await save(JSONEncoder().encode(archive),name:"necaramba-rules.json")
+            try await files.save(JSONEncoder().encode(archive),name:"necaramba-rules.json")
         case "importArchive":
-            guard let url=await choose(types:[.json]) else { throw NativeCommandFailure("cancelled") }
-            let file=try FileHandle(forReadingFrom:url); defer { try? file.close() }
-            let data=try file.read(upToCount:10*1024*1024+1) ?? Data()
+            guard let url=await files.choose(.json) else { throw NativeCommandFailure("cancelled") }
+            let data=try files.read(url,maximumBytes:10*1024*1024)
             guard data.count<=10*1024*1024 else { throw invalid() }
             let archive=try JSONDecoder().decode(ApplicationArchiveV1.self,from:data)
             guard archive.schemaVersion == 1,archive.rules.words.count+archive.rules.legacyWords.count<=10000,archive.rules.apps.count<=1000 else { throw invalid() }
@@ -155,11 +147,11 @@ import NecarambaCore
             try refreshRules()
         case "exportDiagnostics":
             let p=permissions.current()
-            let report:[String:Any] = ["version":Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "development",
+            let report:[String:Any] = ["version":version,
                 "os":ProcessInfo.processInfo.operatingSystemVersionString,"modelVersion":modelVersion,
                 "permissions":["listen":p.listen,"post":p.post,"ax":p.ax,"secureInput":p.secureInput],
                 "reasonCodes":["qualificationPending"]]
-            try await save(JSONSerialization.data(withJSONObject:report,options:[.prettyPrinted,.sortedKeys]),name:"necaramba-diagnostics.json")
+            try await files.save(JSONSerialization.data(withJSONObject:report,options:[.prettyPrinted,.sortedKeys]),name:"necaramba-diagnostics.json")
         default:
             guard let externalCommand else { throw NativeCommandFailure("unavailable") }
             return try await externalCommand(method,a)
@@ -179,29 +171,13 @@ import NecarambaCore
     }
     public func clearHeaderDrops() { dropHandles.removeAll() }
     public func thumbnail() throws -> [String:Any] {
-        guard let data=try header.loadImageData(),let source=CGImageSourceCreateWithData(data as CFData,nil),
-              let image=CGImageSourceCreateThumbnailAtIndex(source,0,[kCGImageSourceCreateThumbnailFromImageAlways:true,kCGImageSourceThumbnailMaxPixelSize:256] as CFDictionary) else {
+        guard let data=try header.loadImageData(),let image=try thumbnailer.thumbnail(from:data) else {
             return ["bytes":Data(),"width":0,"height":0]
         }
-        let output=NSMutableData()
-        guard let target=CGImageDestinationCreateWithData(output,UTType.png.identifier as CFString,1,nil) else { throw invalid() }
-        CGImageDestinationAddImage(target,image,nil)
-        guard CGImageDestinationFinalize(target),output.length<=256*1024 else { throw invalid() }
-        return ["bytes":output as Data,"width":image.width,"height":image.height]
-    }
-    private func choose(types:[UTType]) async -> URL? {
-        if let chooseFile { return await chooseFile(types) }
-        let panel=NSOpenPanel(); panel.allowedContentTypes=types; panel.allowsMultipleSelection=false; panel.canChooseDirectories=false
-        return await withCheckedContinuation { continuation in panel.begin { response in continuation.resume(returning:response == .OK ? panel.url:nil) } }
+        return ["bytes":image.bytes,"width":image.width,"height":image.height]
     }
     private func mutationGuard(_ arguments:[String:Any]) throws {
         try (arguments["__nativeMutationGuard"] as? (() throws -> Void))?()
-    }
-    private func save(_ data:Data,name:String) async throws {
-        let panel=NSSavePanel(); panel.nameFieldStringValue=name; panel.allowedContentTypes=[.json]
-        let response=await withCheckedContinuation { continuation in panel.begin { continuation.resume(returning:$0) } }
-        guard response == .OK,let url=panel.url else { throw NativeCommandFailure("cancelled") }
-        try data.write(to:url,options:.atomic)
     }
     private func invalid()->NativeCommandFailure { NativeCommandFailure("invalidArgument") }
     private func string(_ a:[String:Any],_ key:String) throws -> String { guard let s=a[key] as? String,!s.isEmpty,s.utf8.count<=8192 else { throw invalid() }; return s }

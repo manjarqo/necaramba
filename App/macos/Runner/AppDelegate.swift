@@ -30,7 +30,7 @@ struct NecarambaMain {
       let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent(id, isDirectory: true)
       let defaults = UserDefaults.standard
-      let applicationServices = try ApplicationServices(directory: directory, defaults: defaults,
+      let applicationServices = try ApplicationComposition.make(directory: directory, defaults: defaults,
         permissions: PermissionMonitor(), loginBackend: SystemLoginBackend(mainBundleID: id, defaults: defaults),
         onPreferences: { [weak self] snapshot in self?.services?.sound.setEnabled(snapshot.soundEnabled); self?.input?.updatePreferences(snapshot) },
         defaultSoundURL: Bundle.main.url(forResource: "correction", withExtension: "wav"))
