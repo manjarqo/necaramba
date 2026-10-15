@@ -321,9 +321,28 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       return
     }
     if result == .committed {
+      // Spark may normalize the physical Space to NBSP. Journal only the
+      // exact committed boundary, proved in the same field and input generation.
+      var committedDelimiter: String? = source.delimiter
+      if source.context.bundleID == "com.readdle.SparkDesktop" {
+        committedDelimiter = nil
+        for delimiter in [source.delimiter, "\u{00a0}"] {
+          guard candidate.inputGeneration == runtime.inputGeneration(), editContext.isSafe(after) else { break }
+          let suffix = correction.replacement + delimiter
+          guard let proof = selectionAccess.suffix(suffix, in: after),
+            proof.text == suffix, proof.context == after, identity != nil, proof.identity == identity,
+            proof.inputGeneration == candidate.inputGeneration,
+            candidate.inputGeneration == runtime.inputGeneration(), editContext.isSafe(after)
+          else { continue }
+          committedDelimiter = delimiter
+          break
+        }
+      }
       let plan = EditPlan(expected: source.context, original: source.text, replacement: correction.replacement,
-        sourceLayout: source.layout, targetLayout: correction.targetLayout, delimiter: source.delimiter)
-      replacement.recordCommitted(plan, after: after)
+        sourceLayout: source.layout, targetLayout: correction.targetLayout,
+        delimiter: committedDelimiter ?? source.delimiter)
+      if committedDelimiter != nil { replacement.recordCommitted(plan, after: after) }
+      else { replacement.invalidate(.unknownInput) }
       onCommitted(plan.id, .layout)
     } else { replacement.invalidate(.unknownInput) }
     retainManualResult(original: source, text: correction.replacement, target: correction.targetLayout,
@@ -429,7 +448,12 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     }
     InputDiagnostics.event("manual.mappingExists", detail: manualMapping == nil ? 0 : 1)
     var explicitText = selected
-    if selected?.text.isEmpty != false, runtime.manualRepeatCandidate() == nil,
+    let repeated = runtime.manualRepeatCandidate()
+    // Spark can normalize the physical trailing Space to NBSP. Refresh physical
+    // candidates from AX; retain literal alternate pairs for exact repeated undo.
+    let needsCaretWord = repeated == nil ||
+      (token.bundleID == "com.readdle.SparkDesktop" && repeated?.alternateText == nil)
+    if selected?.text.isEmpty != false, needsCaretWord,
       let visibleWord = selectionAccess as? ManualCaretWordReading {
       switch visibleWord.wordBeforeCaret(in: token) {
       case .notRequired: break

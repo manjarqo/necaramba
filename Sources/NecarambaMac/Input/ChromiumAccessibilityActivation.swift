@@ -15,9 +15,16 @@ final class ChromiumAccessibilityActivation {
   }) { self.schedule = schedule }
   deinit { cancel?() }
 
-  static func supports(_ bundleID: String) -> Bool {
-    ["com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.dev", "com.google.Chrome.canary"].contains(bundleID)
+  static func attribute(for bundleID: String) -> String? {
+    // Electron documents this attribute for third-party assistive tools.
+    // https://www.electronjs.org/docs/latest/tutorial/accessibility
+    if bundleID == "com.readdle.SparkDesktop" { return "AXManualAccessibility" }
+    if ["com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.dev", "com.google.Chrome.canary"].contains(bundleID) {
+      return "AXEnhancedUserInterface"
+    }
+    return nil
   }
+  static func supports(_ bundleID: String) -> Bool { attribute(for: bundleID) != nil }
   func start(bundleID: String, activate: () -> Bool, refresh: @escaping () -> Void) {
     stop()
     guard Self.supports(bundleID), activate() else { return }

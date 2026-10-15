@@ -64,6 +64,41 @@ final class ConservativeAutomaticTests: XCTestCase {
     XCTAssertEqual(fixture.controller.manualCorrection(), .dispatched)
     XCTAssertEqual(fixture.editor.text, "ghbdtn ")
   }
+  func testSparkAutomaticNBSPHasExactUndoAndPreservesBoundary() {
+    let fixture = fixture()
+    fixture.context.token = .init(pid: 42, bundleID: "com.readdle.SparkDesktop", focusEpoch: 1, layoutEpoch: 1)
+    fixture.editor.normalizesSpace = true
+    feed("ghbdtn ", fixture)
+    drain(delay: 0.15)
+    XCTAssertEqual(fixture.editor.text, "привет\u{00a0}")
+    XCTAssertEqual(fixture.controller.undoLast(), .committed)
+    XCTAssertEqual(fixture.editor.text, "ghbdtn\u{00a0}")
+    XCTAssertEqual(fixture.layouts.value.rawValue, "US")
+  }
+
+  func testSparkAutomaticWithoutPostCommitProofDoesNotCreateUndo() {
+    let fixture = fixture()
+    fixture.context.token = .init(pid: 42, bundleID: "com.readdle.SparkDesktop", focusEpoch: 1, layoutEpoch: 1)
+    fixture.editor.hidesSuffix = true
+    feed("ghbdtn ", fixture)
+    drain(delay: 0.15)
+    XCTAssertEqual(fixture.editor.text, "привет ")
+    fixture.editor.hidesSuffix = false
+    XCTAssertEqual(fixture.controller.undoLast(), .aborted)
+    XCTAssertEqual(fixture.editor.text, "привет ")
+  }
+
+  func testSparkPostCommitInputRaceDoesNotCreateUndo() {
+    let fixture = fixture()
+    fixture.context.token = .init(pid: 42, bundleID: "com.readdle.SparkDesktop", focusEpoch: 1, layoutEpoch: 1)
+    fixture.editor.onSuffix = { fixture.controller.runtime.invalidateContext(reason: .unknownInput) }
+    feed("ghbdtn ", fixture)
+    drain(delay: 0.15)
+    fixture.editor.onSuffix = nil
+    XCTAssertEqual(fixture.controller.undoLast(), .aborted)
+    XCTAssertEqual(fixture.editor.text, "привет ")
+  }
+
   func testReadinessCallbackFollowsLoadedLexiconAndActualLayouts() {
     let fixture = fixture(install: false)
     var readiness: [Bool] = []
@@ -210,9 +245,9 @@ final class ConservativeAutomaticTests: XCTestCase {
     }
   }
 
-  private func drain() {
+  private func drain(delay: TimeInterval = 0) {
     let done = expectation(description: "boundary executor")
-    DispatchQueue.main.async { done.fulfill() }
+    DispatchQueue.main.asyncAfter(deadline: .now() + delay) { done.fulfill() }
     wait(for: [done], timeout: 2)
   }
   private func fixture(proxy: Bool = false, install: Bool = true) -> AutoFixture {
@@ -272,7 +307,7 @@ private final class AutoLayouts: LayoutAccess {
   func select(_ id: LayoutID) -> Bool {
     if id != value {
       value = id
-      context.token = .init(pid: 42, bundleID: "test", focusEpoch: 1, layoutEpoch: context.token.layoutEpoch + 1)
+      context.token = .init(pid: context.token.pid, bundleID: context.token.bundleID, focusEpoch: context.token.focusEpoch, layoutEpoch: context.token.layoutEpoch + 1)
     }
     return true
   }
@@ -287,13 +322,29 @@ private final class AutoEditor: SelectionAccess, AutomaticBoundarySuffixReplacin
   let identity = UUID()
   var text = ""
   var results: [ApplyResult] = []
+  var normalizesSpace = false
+  var hidesSuffix = false
+  var onSuffix: (() -> Void)?
   var generation: () -> UInt64 = { 0 }
   init(_ context: AutoContext, proxy: Bool) { self.context = context; self.proxy = proxy }
   func selected(in context: ContextToken) -> SelectionEvidence? {
     .init(context: context, text: "", location: proxy ? 0 : text.utf16.count, length: 0, identity: identity)
   }
-  func suffix(_ suffix: String, in context: ContextToken) -> SelectionEvidence? { nil }
-  func replace(_ evidence: SelectionEvidence, with text: String) -> ApplyResult { XCTFail("Use captured auto lease"); return .aborted }
+  func suffix(_ suffix: String, in token: ContextToken) -> SelectionEvidence? {
+    guard !proxy, !hidesSuffix, token == context.token, text.hasSuffix(suffix) else { return nil }
+    let evidence = SelectionEvidence(context: token, text: suffix,
+      location: text.utf16.count - suffix.utf16.count, length: suffix.utf16.count,
+      identity: identity, inputGeneration: generation(), mode: .suffix)
+    onSuffix?()
+    return evidence
+  }
+  func replace(_ evidence: SelectionEvidence, with replacement: String) -> ApplyResult {
+    guard evidence.context == context.token, evidence.identity == identity,
+      evidence.inputGeneration == generation(), text.hasSuffix(evidence.text) else { return .aborted }
+    text.removeLast(evidence.text.count)
+    text += replacement
+    return .committed
+  }
   func replaceTrackedSuffix(_ word: BufferedWord, with replacement: String) -> ApplyResult {
     guard word.context == context.token, text.hasSuffix(word.text + word.delimiter) else { return .aborted }
     text.removeLast(word.text.count + word.delimiter.count)
@@ -317,7 +368,7 @@ private final class AutoEditor: SelectionAccess, AutomaticBoundarySuffixReplacin
       guard prefix.isEmpty || prefix.last?.isWhitespace == true else { return .aborted }
     }
     text.removeLast(candidate.word.text.count + 1)
-    text += replacement
+    text += normalizesSpace ? String(replacement.dropLast()) + "\u{00a0}" : replacement
     let result: ApplyResult = proxy ? .dispatched : .committed
     results.append(result)
     return result

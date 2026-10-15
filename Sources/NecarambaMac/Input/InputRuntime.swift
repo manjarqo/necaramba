@@ -448,7 +448,15 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     guard !deliveryPending else { return }
     deliveryPending = true
     let expected = generation
-    DispatchQueue.main.async { [weak self] in
+    // Electron's rich-text AX range can lag the physical Space event. Defer
+    // Spark's initial read only; new input still cancels this generation and
+    // the replacement adapter must prove the exact suffix before editing.
+    let delay: TimeInterval
+    if case .automaticBoundary(let candidate, _, _) = value,
+      candidate.word.context.bundleID == "com.readdle.SparkDesktop" {
+      delay = 0.06
+    } else { delay = 0 }
+    DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
       guard let self else { return }
       self.lock.lock()
       self.deliveryPending = false

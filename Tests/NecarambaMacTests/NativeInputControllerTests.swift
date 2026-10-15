@@ -136,7 +136,9 @@ extension NativeInputControllerTests {
     controller.install(.init(modelVersion: 1,
       lexicon: [.init(word: "привет", language: .russian, frequencyBand: 1)],
       mappings: [.init(source: .init(rawValue: "US"), target: .init(rawValue: "RU"),
-        pairs: ["g": "п", "h": "р", "b": "и", "d": "в", "t": "е", "n": "т"])])) { _ in installed.fulfill() }
+        pairs: ["g": "п", "h": "р", "b": "и", "d": "в", "t": "е", "n": "т"]),
+        .init(source: .init(rawValue: "RU"), target: .init(rawValue: "US"),
+          pairs: ["п": "g", "р": "h", "и": "b", "в": "d", "е": "t", "т": "n"])])) { _ in installed.fulfill() }
     wait(for: [installed], timeout: 2)
     return (controller, context, editor)
   }
@@ -189,6 +191,22 @@ extension NativeInputControllerTests {
     editor.authoritativeCaretWord = true
     XCTAssertEqual(controller.manualCorrection(), .committed)
     XCTAssertEqual(editor.text, "привет")
+  }
+
+  func testSparkManualReversalAfterAutomaticNBSPCorrectionRemainsRepeatable() {
+    let (controller, context, editor) = installedController()
+    context.token = ContextToken(pid: 42, bundleID: "com.readdle.SparkDesktop", focusEpoch: 2, layoutEpoch: 1)
+    editor.authoritativeCaretWord = true
+    editor.text = "привет\u{00A0}"
+    let original = BufferedWord(text: "ghbdtn", events: [], context: context.token,
+      layout: .init(rawValue: "US"), delimiter: " ")
+    XCTAssertTrue(controller.runtime.retainManualResult(.init(original: original,
+      currentText: "привет", context: context.token, layout: .init(rawValue: "RU"),
+      delimiter: " ", fieldIdentity: nil), expectedGeneration: controller.runtime.inputGeneration()))
+    for expected in ["ghbdtn\u{00A0}", "привет\u{00A0}", "ghbdtn\u{00A0}", "привет\u{00A0}"] {
+      XCTAssertEqual(controller.manualCorrection(), .committed)
+      XCTAssertEqual(editor.text, expected)
+    }
   }
 
   func testEmptyProfilesAllowExplicitSelectionConversion() {

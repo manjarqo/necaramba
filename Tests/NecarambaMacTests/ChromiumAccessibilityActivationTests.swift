@@ -17,6 +17,25 @@ final class ChromiumAccessibilityActivationTests: XCTestCase {
     tick?()
     XCTAssertEqual(refreshed, 1)
   }
+  func testSparkActivatesAndRefreshesItsElectronAccessibilityTree() {
+    var tick: (() -> Void)?
+    var activated = 0
+    var refreshed = 0
+    let activation = ChromiumAccessibilityActivation { _, action in
+      tick = action; return {}
+    }
+    XCTAssertEqual(ChromiumAccessibilityActivation.attribute(for: "com.readdle.SparkDesktop"), "AXManualAccessibility")
+    XCTAssertEqual(ChromiumAccessibilityActivation.attribute(for: "com.google.Chrome"), "AXEnhancedUserInterface")
+    XCTAssertNil(ChromiumAccessibilityActivation.attribute(for: "com.apple.Safari"))
+    activation.start(bundleID: "com.readdle.SparkDesktop", activate: {
+      activated += 1; return true
+    }) { refreshed += 1 }
+    XCTAssertEqual(activated, 1)
+    XCTAssertEqual(refreshed, 0)
+    tick?()
+    XCTAssertEqual(refreshed, 1)
+  }
+
   func testDetachCancelsRefreshAndNeverDisablesSharedAccessibility() {
     var tick: (() -> Void)?
     var cancelled = 0

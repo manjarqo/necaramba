@@ -107,6 +107,8 @@ public final class ContextMonitor: ContextRefreshing {
     switch bundleID {
     case "com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.dev", "com.google.Chrome.canary":
       InputDiagnostics.event("context.application.chrome")
+    case "com.readdle.SparkDesktop":
+      InputDiagnostics.event("context.application.spark")
     case "com.apple.Safari", "com.apple.SafariTechnologyPreview":
       InputDiagnostics.event("context.application.safari")
     default:
@@ -124,8 +126,9 @@ public final class ContextMonitor: ContextRefreshing {
     observedApp = element
     if activateAccessibility {
       chromiumActivation.start(bundleID: bundleID, activate: {
-        let status = AXUIElementSetAttributeValue(element, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
-        InputDiagnostics.event("context.chrome.activation", detail: Int(status.rawValue))
+        guard let attribute = ChromiumAccessibilityActivation.attribute(for: bundleID) else { return false }
+        let status = AXUIElementSetAttributeValue(element, attribute as CFString, kCFBooleanTrue)
+        InputDiagnostics.event(bundleID == "com.readdle.SparkDesktop" ? "context.spark.activation" : "context.chrome.activation", detail: Int(status.rawValue))
         return status == .success
       }, refresh: { [weak self] in
         guard let self, self.active,
