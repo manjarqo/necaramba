@@ -20,6 +20,7 @@ NativeState fixture({
     'singleShiftEnabled': true,
     'altShiftEnabled': false,
     'controlShiftEnabled': false,
+    'commandShiftEnabled': false,
     'optionEnabled': false,
     'splitShiftEnabled': true,
     'plainPasteEnabled': true,

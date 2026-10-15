@@ -514,4 +514,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shortcutOff => 'Off';
+
+  @override
+  String get shortcutCommandShift => 'Command + Shift';
 }

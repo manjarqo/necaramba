@@ -9,6 +9,7 @@ class NativeStateDecoder {
     'singleShiftEnabled',
     'altShiftEnabled',
     'controlShiftEnabled',
+    'commandShiftEnabled',
     'optionEnabled',
     'splitShiftEnabled',
     'plainPasteEnabled',
@@ -61,11 +62,15 @@ class NativeStateDecoder {
         !values.containsKey('controlShiftEnabled')) {
       values.addAll({'altShiftEnabled': false, 'controlShiftEnabled': false});
     }
+    if (!values.containsKey('commandShiftEnabled')) {
+      values['commandShiftEnabled'] = false;
+    }
     final result = flags(values, preferenceKeys);
     if ([
           'singleShiftEnabled',
           'altShiftEnabled',
           'controlShiftEnabled',
+          'commandShiftEnabled',
         ].where((key) => result[key]!).length >
         1) {
       invalid();

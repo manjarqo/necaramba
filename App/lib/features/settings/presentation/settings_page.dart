@@ -143,12 +143,15 @@ class LayoutShortcutSelector extends StatelessWidget {
       'shift': (l.shortcutShift, '⇧'),
       'alt': (l.shortcutAltShift, '⌥ ⇧'),
       'control': (l.shortcutControlShift, '⌃ ⇧'),
+      'command': (l.shortcutCommandShift, '⌘ ⇧'),
       'off': (l.shortcutOff, ''),
     };
     final selected = preferences['altShiftEnabled'] == true
         ? 'alt'
         : preferences['controlShiftEnabled'] == true
         ? 'control'
+        : preferences['commandShiftEnabled'] == true
+        ? 'command'
         : preferences['singleShiftEnabled'] == true
         ? 'shift'
         : 'off';
@@ -176,6 +179,7 @@ class LayoutShortcutSelector extends StatelessWidget {
           'singleShiftEnabled': value == 'shift',
           'altShiftEnabled': value == 'alt',
           'controlShiftEnabled': value == 'control',
+          'commandShiftEnabled': value == 'command',
         },
       }),
       itemBuilder: (_) => [

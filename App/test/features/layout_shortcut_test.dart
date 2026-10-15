@@ -15,7 +15,8 @@ void main() {
     );
     final prefs = Map<String, Object?>.from(raw['preferences']! as Map)
       ..remove('altShiftEnabled')
-      ..remove('controlShiftEnabled');
+      ..remove('controlShiftEnabled')
+      ..remove('commandShiftEnabled');
     raw['preferences'] = prefs;
     expect(
       NativeStateDecoder.decode(raw).preferences['altShiftEnabled'],
@@ -25,10 +26,36 @@ void main() {
       NativeStateDecoder.decode(raw).preferences['controlShiftEnabled'],
       false,
     );
+    expect(
+      NativeStateDecoder.decode(raw).preferences['commandShiftEnabled'],
+      false,
+    );
     prefs['altShiftEnabled'] = true;
     prefs['controlShiftEnabled'] = false;
     expect(() => NativeStateDecoder.decode(raw), throwsA(isA<NativeFailure>()));
     prefs['altShiftEnabled'] = 'false';
+    expect(() => NativeStateDecoder.decode(raw), throwsA(isA<NativeFailure>()));
+  });
+  test('pre-Command snapshot preserves Alt and rejects Command conflicts', () {
+    final raw = NativeStateDecoder.encode(
+      fixture(sessionID: '00000000-0000-4000-8000-000000000001'),
+    );
+    final prefs = Map<String, Object?>.from(raw['preferences']! as Map)
+      ..remove('commandShiftEnabled')
+      ..['singleShiftEnabled'] = false
+      ..['altShiftEnabled'] = true;
+    raw['preferences'] = prefs;
+    final decoded = NativeStateDecoder.decode(raw);
+    expect(decoded.preferences['commandShiftEnabled'], false);
+    expect(decoded.preferences['altShiftEnabled'], true);
+    prefs['commandShiftEnabled'] = true;
+    expect(() => NativeStateDecoder.decode(raw), throwsA(isA<NativeFailure>()));
+    prefs['altShiftEnabled'] = false;
+    expect(
+      NativeStateDecoder.decode(raw).preferences['commandShiftEnabled'],
+      true,
+    );
+    prefs['commandShiftEnabled'] = 'true';
     expect(() => NativeStateDecoder.decode(raw), throwsA(isA<NativeFailure>()));
   });
   testWidgets('choices send atomic patches without optimistic changes', (
@@ -39,7 +66,7 @@ void main() {
       NecarambaApp(repository: repository, locale: const Locale('en')),
     );
     await tester.pumpAndSettle();
-    for (final choice in ['alt', 'control', 'off', 'shift']) {
+    for (final choice in ['command', 'alt', 'control', 'off', 'shift']) {
       final selector = find.byKey(const Key('layoutShortcut'));
       await tester.ensureVisible(selector);
       await tester.pumpAndSettle();
@@ -52,6 +79,7 @@ void main() {
         'singleShiftEnabled': choice == 'shift',
         'altShiftEnabled': choice == 'alt',
         'controlShiftEnabled': choice == 'control',
+        'commandShiftEnabled': choice == 'command',
       });
       expect(
         find.descendant(of: selector, matching: find.text('Shift')),
@@ -104,7 +132,7 @@ void main() {
     raw['preferences'] = {
       ...repository.current.preferences,
       'singleShiftEnabled': false,
-      'controlShiftEnabled': true,
+      'commandShiftEnabled': true,
     };
     repository.publish(NativeStateDecoder.decode(raw));
     await tester.pumpAndSettle();
@@ -112,7 +140,7 @@ void main() {
     await tester.ensureVisible(selector);
     await tester.pumpAndSettle();
     expect(
-      find.descendant(of: selector, matching: find.text('Ctrl + Shift')),
+      find.descendant(of: selector, matching: find.text('Command + Shift')),
       findsOneWidget,
     );
     await tester.tap(selector);

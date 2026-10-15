@@ -159,5 +159,6 @@
   "shortcutShift": "Shift",
   "shortcutAltShift": "Alt (Option) + Shift",
   "shortcutControlShift": "Ctrl + Shift",
-  "shortcutOff": "Off"
+  "shortcutOff": "Off",
+  "shortcutCommandShift": "Command + Shift"
 }

@@ -517,4 +517,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get shortcutOff => 'Выключено';
+
+  @override
+  String get shortcutCommandShift => 'Command + Shift';
 }

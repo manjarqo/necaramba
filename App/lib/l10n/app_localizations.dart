@@ -1057,6 +1057,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Off'**
   String get shortcutOff;
+
+  /// No description provided for @shortcutCommandShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Command + Shift'**
+  String get shortcutCommandShift;
 }
 
 class _AppLocalizationsDelegate
