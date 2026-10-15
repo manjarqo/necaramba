@@ -1,5 +1,5 @@
 public enum LayoutSwitchShortcut: String, Codable, Sendable, CaseIterable {
-    case singleShift, altShift, controlShift, disabled
+    case singleShift, altShift, controlShift, commandShift, disabled
 }
 
 public struct PreferencesSnapshot: Codable, Sendable, Equatable {

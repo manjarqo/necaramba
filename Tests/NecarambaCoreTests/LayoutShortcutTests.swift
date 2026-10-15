@@ -47,7 +47,8 @@ final class LayoutShortcutGestureTests: XCTestCase {
     func testChordsSwitchOnceAfterBothReleasedInEitherOrderAndSide() {
         for (shortcut, modifier, keys) in [
             (LayoutSwitchShortcut.altShift, Modifier.option, [UInt16(58), 61]),
-            (.controlShift, .control, [UInt16(59), 62])
+            (.controlShift, .control, [UInt16(59), 62]),
+            (.commandShift, .command, [UInt16(55), 54])
         ] {
             for shift: UInt16 in [56, 60] {
                 for partner in keys {
@@ -67,12 +68,13 @@ final class LayoutShortcutGestureTests: XCTestCase {
     }
 
     func testTypingExtraModifiersForeignEventsAndContextCancelChord() {
-        for shortcut in [LayoutSwitchShortcut.altShift, .controlShift] {
-            let key: UInt16 = shortcut == .altShift ? 58 : 59
-            let modifier: Modifier = shortcut == .altShift ? .option : .control
+        for shortcut in [LayoutSwitchShortcut.altShift, .controlShift, .commandShift] {
+            let key: UInt16 = shortcut == .altShift ? 58 : (shortcut == .controlShift ? 59 : 55)
+            let modifier: Modifier = shortcut == .altShift ? .option : (shortcut == .controlShift ? .control : .command)
             for interruption in [
                 event(0, [.shift, modifier], 3),
-                event(55, [.shift, modifier, .command], 3),
+                event(9, [.shift, modifier], 3), // Cmd+Shift+V must not switch layout.
+                event(63, [.shift, modifier, .function], 3),
                 event(0, [.shift, modifier], 3, origin: .foreignSynthetic),
                 event(0, [.shift, modifier], 3, epoch: 2),
                 event(60, [.shift, modifier], 3)
@@ -116,7 +118,8 @@ final class LayoutShortcutGestureTests: XCTestCase {
     func testOnlySelectedChordSwitchesAndOptionAloneRemainsManual() {
         for shortcut in LayoutSwitchShortcut.allCases {
             for (key, modifier, selected) in [(UInt16(58), Modifier.option, LayoutSwitchShortcut.altShift),
-                                               (UInt16(59), .control, .controlShift)] {
+                                               (UInt16(59), .control, .controlShift),
+                                               (UInt16(55), .command, .commandShift)] {
                 var r = recognizer(shortcut)
                 _ = r.consume(event(key, [modifier], 1))
                 _ = r.consume(event(56, [.shift, modifier], 2))

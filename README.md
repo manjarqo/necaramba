@@ -30,7 +30,7 @@ The application is free to use. It has no purchase or activation screen. Necaram
 | --- | --- |
 | Convert the last word | Press **Shift twice** to convert the last word to the other layout. Repeat to switch it back. |
 | Convert selected text | Select text in an editable field and press **Shift twice**. Conversion direction is inferred from the text, rather than only the active input source. |
-| Switch the input layout | Choose **Shift**, **Alt (Option) + Shift**, **Ctrl + Shift**, or **Off** in Settings. |
+| Switch the input layout | Choose **Shift**, **Alt (Option) + Shift**, **Ctrl + Shift**, **Command + Shift**, or **Off** in Settings. |
 | Automatic layout correction | Enable it in Settings. A physical **Space** completes the word and triggers a conservative dictionary-based check. |
 | Spotlight support | The app resolves the actual focused field, reads the full word before the caret and verifies the selected replacement range. |
 | Word exceptions | Add words that should be excluded from automatic correction. |
@@ -194,7 +194,7 @@ Some specifications and historical reports describe an earlier commercial design
 | --- | --- |
 | Исправление последнего слова | **Двойной Shift** переводит слово в противоположную раскладку. Повторное нажатие возвращает его обратно. |
 | Преобразование выделенного текста | Выделите текст в редактируемом поле и дважды нажмите Shift. Направление определяется по самому тексту, а не только по текущей раскладке. |
-| Смена системной раскладки | В настройках можно выбрать **Shift**, **Alt (Option) + Shift**, **Ctrl + Shift** или **Выключено**. |
+| Смена системной раскладки | В настройках можно выбрать **Shift**, **Alt (Option) + Shift**, **Ctrl + Shift**, **Command + Shift** или **Выключено**. |
 | Автоматическая коррекция | После физического нажатия **пробела** приложение проверяет завершённое слово по словарю. |
 | Поддержка Spotlight | Определяется настоящий владелец фокуса, полное слово читается из поля, диапазон замены проверяется перед вставкой. |
 | Слова-исключения | Добавляйте слова, которые не должны исправляться автоматически. |

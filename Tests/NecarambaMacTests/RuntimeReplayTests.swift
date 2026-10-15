@@ -87,7 +87,7 @@ final class RuntimeReplayTests: XCTestCase {
   }
   func testConfiguredLayoutChordSurvivesPreferencePublicationAndWorksWithoutEditor() {
     for (shortcut, key, modifier): (LayoutSwitchShortcut, UInt16, Modifier) in [
-      (.altShift, 58, .option), (.controlShift, 59, .control)
+      (.altShift, 58, .option), (.controlShift, 59, .control), (.commandShift, 55, .command)
     ] {
       let context = ContextState()
       let layout = LayoutID(rawValue: "US")

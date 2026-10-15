@@ -103,7 +103,7 @@ import NecarambaCore
         defer { defaults.removePersistentDomain(forName: domain); try? FileManager.default.removeItem(at: directory) }
         let app = try ApplicationServices(directory: directory, defaults: defaults,
             permissions: PermissionFake(), loginBackend: LoginFake(), onPreferences: { _ in })
-        let keys = ["singleShiftEnabled", "altShiftEnabled", "controlShiftEnabled"]
+        let keys = ["singleShiftEnabled", "altShiftEnabled", "controlShiftEnabled", "commandShiftEnabled"]
         for selected in keys + ["disabled"] {
             let patch = Dictionary(uniqueKeysWithValues: keys.map { ($0, $0 == selected) })
             _ = try await app.execute("setPreferences", arguments: ["patch": patch])

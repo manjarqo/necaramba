@@ -43,16 +43,18 @@ public struct GestureRecognizer: Sendable {
         let isShift = event.keyCode == 56 || event.keyCode == 60
         let isOption = event.keyCode == 58 || event.keyCode == 61
         let isControl = event.keyCode == 59 || event.keyCode == 62
-        if event.isRepeat && (isShift || isOption || isControl) { return [] }
-        guard (isShift || isOption || isControl), event.kind == .flagsChanged || event.kind == .down || event.kind == .up else {
+        let isCommand = event.keyCode == 55 || event.keyCode == 54
+        if event.isRepeat && (isShift || isOption || isControl || isCommand) { return [] }
+        guard (isShift || isOption || isControl || isCommand), event.kind == .flagsChanged || event.kind == .down || event.kind == .up else {
             pendingRelease = nil; cancelled = !held.isEmpty; second = false; return []
         }
         if event.kind == .down && held.contains(event.keyCode) { return [] }
-        let modifier: Modifier = isShift ? .shift : (isOption ? .option : .control)
+        let modifier: Modifier = isShift ? .shift : (isOption ? .option : (isControl ? .control : .command))
         let releasing = event.kind == .up || (event.kind == .flagsChanged && held.contains(event.keyCode))
         if !releasing && !event.modifiers.contains(modifier) { return [] }
         let chordModifier: Modifier? = configuration.layoutSwitchShortcut == .altShift ? .option :
-            (configuration.layoutSwitchShortcut == .controlShift ? .control : nil)
+            (configuration.layoutSwitchShortcut == .controlShift ? .control :
+             (configuration.layoutSwitchShortcut == .commandShift ? .command : nil))
         let participatesInChord = isShift || modifier == chordModifier
         let allowed: Set<Modifier> = participatesInChord && chordModifier != nil
             ? [.shift, chordModifier!] : [modifier]
@@ -68,7 +70,7 @@ public struct GestureRecognizer: Sendable {
             defer { cancelled = false; second = false; layoutChord = false }
             guard !cancelled else { return [] }
             if layoutChord { pendingRelease = nil; return [.switchLayout] }
-            if isControl { pendingRelease = nil; return [] }
+            if isControl || isCommand { pendingRelease = nil; return [] }
             if isOption { return configuration.option ? [.manualCorrection] : [] }
             if second, let release = pendingRelease, !expired(release, at: event.timestampNanos) {
                 pendingRelease = nil; return [.manualCorrection]
@@ -77,7 +79,8 @@ public struct GestureRecognizer: Sendable {
             return []
         }
         if !held.isEmpty {
-            let partnerKeys: Set<UInt16> = chordModifier == .option ? [58, 61] : [59, 62]
+            let partnerKeys: Set<UInt16> = chordModifier == .option ? [58, 61] :
+                (chordModifier == .control ? [59, 62] : [55, 54])
             let completesChord = held.count == 1 && !layoutChord && chordModifier != nil &&
                 ((isShift && !held.isDisjoint(with: partnerKeys)) ||
                  (modifier == chordModifier && !held.isDisjoint(with: [56, 60])))
@@ -96,7 +99,7 @@ public struct GestureRecognizer: Sendable {
                 pendingRelease = nil
                 if configuration.singleShift { actions = [.switchLayout] }
             } else { second = true }
-        } else if isOption || isControl { pendingRelease = nil }
+        } else if isOption || isControl || isCommand { pendingRelease = nil }
         held.insert(event.keyCode)
         return actions
     }
