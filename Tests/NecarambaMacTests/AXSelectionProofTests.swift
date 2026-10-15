@@ -1,3 +1,4 @@
+import AppKit
 import CoreFoundation
 import NecarambaCore
 import XCTest
@@ -279,6 +280,93 @@ final class AXSelectionProofTests: XCTestCase {
       return .committed
     }
     XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .committed)
+  }
+
+  func testSparkAutomaticPreservesObservedNonbreakingSpace() {
+    let (adapter, reader, token) = fixture(automatic: true, bundleID: "com.readdle.SparkDesktop")
+    reader.value = "A word\u{00a0}"
+    reader.range = NSRange(location: 7, length: 0)
+    var posts = 0
+    adapter.execute = { evidence, replacement, selected, preflight in
+      XCTAssertEqual(evidence.text, "word\u{00a0}")
+      XCTAssertEqual(replacement, "WORD\u{00a0}")
+      XCTAssertFalse(selected)
+      guard preflight() else { return .aborted }
+      posts += 1
+      reader.value = "A " + replacement
+      return .committed
+    }
+    XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .committed)
+    XCTAssertEqual(posts, 1)
+  }
+
+  func testSparkAutomaticDoesNotNormalizeLettersOrOtherWhitespace() {
+    for (bundle, suffix) in [("test", "word\u{00a0}"),
+      ("com.readdle.SparkDesktop", "wOrd\u{00a0}"),
+      ("com.readdle.SparkDesktop", "word\t"),
+      ("com.readdle.SparkDesktop", "word\u{2009}")] {
+      let (adapter, reader, token) = fixture(automatic: true, bundleID: bundle)
+      reader.value = suffix
+      reader.range = NSRange(location: suffix.utf16.count, length: 0)
+      adapter.execute = { _, _, _, _ in XCTFail("Unproven suffix must not post"); return .committed }
+      XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "), .aborted)
+    }
+  }
+
+  func testSparkNonbreakingSpaceStillRequiresExactPreflightAndReadback() {
+    for mutateBeforePosting in [true, false] {
+      let (adapter, reader, token) = fixture(automatic: true, bundleID: "com.readdle.SparkDesktop")
+      reader.value = "A word\u{00a0}"
+      reader.range = NSRange(location: 7, length: 0)
+      var attempts = 0
+      adapter.execute = { _, _, _, preflight in
+        attempts += 1
+        if mutateBeforePosting { reader.value = "B word\u{00a0}" }
+        guard preflight() else { return .aborted }
+        // An editor rewriting NBSP back to ASCII is not exact confirmation.
+        reader.value = "A WORD "
+        return .committed
+      }
+      XCTAssertEqual(adapter.replaceAutomaticBoundary(autoCandidate(token), with: "WORD "),
+        mutateBeforePosting ? .aborted : .uncertain)
+      XCTAssertEqual(attempts, 1)
+    }
+  }
+
+  func testSparkRequestsWholeCaretWordEvenWhenItIsFrontmost() {
+    let context = ContextState()
+    let frontPID = NSWorkspace.shared.frontmostApplication?.processIdentifier ?? -1
+    context.update(pid: frontPID, bundleID: "com.readdle.SparkDesktop", focusID: "a",
+      layout: .init(rawValue: "US"), qualified: true)
+    let reader = SystemAXSelectionReader(context: context, qualifies: { _, _ in true })
+    XCTAssertTrue(reader.requiresCaretWord(in: context.current()!))
+  }
+
+  func testManualCaretWordAndSelectionPreserveNonbreakingSpace() {
+    for selected in [false, true] {
+      let (adapter, reader, token) = fixture(manual: true, bundleID: "com.readdle.SparkDesktop")
+      reader.overlay = true
+      reader.value = "🙂 ghbdtn\u{00a0}"
+      reader.range = selected ? NSRange(location: 3, length: 7) : NSRange(location: 10, length: 0)
+      let evidence: SelectionEvidence
+      if selected {
+        guard let selection = adapter.selected(in: token) else { return XCTFail("Missing selection") }
+        evidence = selection
+      } else {
+        guard case .word(let word) = adapter.wordBeforeCaret(in: token) else { return XCTFail("Missing word") }
+        evidence = word
+      }
+      XCTAssertEqual(evidence.text, "ghbdtn\u{00a0}")
+      XCTAssertEqual(evidence.location, 3)
+      adapter.execute = { _, replacement, isSelected, preflight in
+        XCTAssertEqual(isSelected, selected)
+        guard preflight() else { return .aborted }
+        reader.value = "🙂 " + replacement
+        reader.range = NSRange(location: 10, length: 0)
+        return .committed
+      }
+      XCTAssertEqual(adapter.replace(evidence, with: "привет\u{00a0}"), .committed)
+    }
   }
 
   func testAutomaticSubsequentInputOrAbsentScopeNeverPosts() {
@@ -734,13 +822,13 @@ final class AXSelectionProofTests: XCTestCase {
   }
 
   private func fixture(
-    manual: Bool = false, automatic: Bool = false,
+    manual: Bool = false, automatic: Bool = false, bundleID: String = "test",
     now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
     wait: @escaping (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
   ) -> (AXSelectionAdapter, ProofReader, ContextToken) {
     let context = ContextState()
     context.update(
-      pid: 42, bundleID: "test", focusID: "a", layout: .init(rawValue: "US"), qualified: true)
+      pid: 42, bundleID: bundleID, focusID: "a", layout: .init(rawValue: "US"), qualified: true)
     let reader = ProofReader()
     let adapter = AXSelectionAdapter(context: context, qualifies: { _, _ in true }, reader: reader,
       allowMissingMarkedTextRange: { manual }, allowAutomaticBoundary: { automatic }, now: now, wait: wait)

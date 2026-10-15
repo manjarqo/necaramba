@@ -192,7 +192,10 @@ public final class SystemAXSelectionReader: AXSelectionReading {
 }
 extension SystemAXSelectionReader: AXSuffixSelectionPreparing {
   func requiresCaretWord(in token: ContextToken) -> Bool {
-    NSWorkspace.shared.frontmostApplication?.processIdentifier != token.pid
+    // Spark rich-text fields may expose a physical Space as NBSP. Read the
+    // actual bounded word so manual conversion retains its exact delimiter.
+    token.bundleID == "com.readdle.SparkDesktop" ||
+      NSWorkspace.shared.frontmostApplication?.processIdentifier != token.pid
   }
   func prepareSuffix(_ evidence: SelectionEvidence, before: AXTextSnapshot,
     authorized: () -> Bool) -> AXSuffixPreparation {
@@ -592,9 +595,15 @@ extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
     }
     let range = NSRange(location: before.range.location - original.utf16.count,
       length: original.utf16.count)
-    guard (before.value as NSString).substring(with: range) == original else {
+    let observed = (before.value as NSString).substring(with: range)
+    // Spark's contenteditable body exposes its trailing physical Space as NBSP.
+    // Match only this final code point; letters and the entire edit preflight stay exact.
+    let sparkNonbreakingBoundary = word.context.bundleID == "com.readdle.SparkDesktop" &&
+      observed == word.text + "\u{00a0}"
+    guard observed == original || sparkNonbreakingBoundary else {
       trace("ax.auto.readableSuffixMismatch"); return .aborted
     }
+    let replacement = sparkNonbreakingBoundary ? String(text.dropLast()) + "\u{00a0}" : text
     if candidate.requiresWordStartProof {
       guard let stringRange = Range(range, in: before.value),
         stringRange.lowerBound == before.value.startIndex ||
@@ -602,10 +611,10 @@ extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
       else { return .aborted }
     }
     trace("ax.auto.readableSuffix")
-    let evidence = SelectionEvidence(context: word.context, text: original,
+    let evidence = SelectionEvidence(context: word.context, text: observed,
       location: range.location, length: range.length, identity: before.identity,
       inputGeneration: candidate.inputGeneration, mode: .suffix)
-    return replace(evidence, with: text, expectedValue: before.value, authorized: automaticBoundaryActive)
+    return replace(evidence, with: replacement, expectedValue: before.value, authorized: automaticBoundaryActive)
   }
 }
 
