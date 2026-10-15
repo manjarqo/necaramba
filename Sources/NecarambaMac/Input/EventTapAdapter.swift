@@ -21,6 +21,18 @@ public final class EventTapAdapter {
   private let ownership = EditOwnership<CGEvent>()
   private let shortcut = ShortcutSession()
   private var suppressNextVUp = false
+  // Confined to the tap run loop, including ownership and gesture deadlines.
+  private lazy var deadlineScheduler = InputDeadlineScheduler { deadline, action in
+    let now = DispatchTime.now().uptimeNanoseconds
+    let delay = deadline > now ? Double(deadline - now) / 1_000_000_000 : 0
+    let timer = CFRunLoopTimerCreateWithHandler(nil, CFAbsoluteTimeGetCurrent() + delay, 0, 0, 0) { _ in action() }!
+    CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, .commonModes)
+    return { CFRunLoopTimerInvalidate(timer) }
+  }
+  private func rescheduleDeadline() {
+    let deadline = isStopped ? nil : [runtime?.nextDeadlineNanos, ownership.nextDeadlineNanos].compactMap { $0 }.min()
+    deadlineScheduler.update(deadline: deadline) { [weak self] in self?.tick() }
+  }
   public init(runtime: InputRuntime) { self.runtime = runtime }
   public func start() -> Bool {
     guard CGPreflightListenEventAccess() else { return false }
@@ -60,6 +72,7 @@ public final class EventTapAdapter {
     let runloop = loop
     let port = tap
     lock.unlock()
+    InputDiagnostics.event("tap.lifecycle.stopped")
     // Disable before the caller can create another tap. Teardown/replay stays on
     // the original run loop; no synchronous wait on that run loop or main queue.
     if let port { CGEvent.tapEnable(tap: port, enable: false) }
@@ -112,9 +125,6 @@ public final class EventTapAdapter {
       return
     }
     CFRunLoopAddSource(runloop, source, .commonModes)
-    let timer = CFRunLoopTimerCreateWithHandler(nil, CFAbsoluteTimeGetCurrent() + 0.02, 0.02, 0, 0)
-    { [weak self] _ in self?.tick() }
-    CFRunLoopAddTimer(runloop, timer, .commonModes)
     callbacks.lock()
     lock.lock()
     if !stopped {
@@ -125,7 +135,7 @@ public final class EventTapAdapter {
     callbacks.unlock()
     ready.signal()
     CFRunLoopRun()
-    CFRunLoopTimerInvalidate(timer)
+    deadlineScheduler.update(deadline: nil) {}
     CFRunLoopRemoveSource(runloop, source, .commonModes)
     CFMachPortInvalidate(port)
     lock.lock()
@@ -136,10 +146,10 @@ public final class EventTapAdapter {
     lock.unlock()
   }
   /// Preparation runs on main. The only destructive work is a prebuilt event batch on the tap run loop.
-  public func replace(
+  @MainActor public func replaceAsync(
     _ evidence: SelectionEvidence, with text: String, selected: Bool, lease: ShortcutLease? = nil,
     preflight: () -> Bool
-  ) -> ApplyResult {
+  ) async -> ApplyResult {
     precondition(Thread.isMainThread)
     guard canSuppress, CGPreflightPostEventAccess(), let runtime,
       let proofGeneration = evidence.inputGeneration,
@@ -151,7 +161,7 @@ public final class EventTapAdapter {
       lease == nil || lease?.context == evidence.context
     else { return .aborted }
     let requested = DispatchTime.now().uptimeNanoseconds
-    guard preflight() else { return .aborted }
+    guard !Task.isCancelled, preflight() else { return .aborted }
     var batch: [CGEvent] = []
     func pair(code: CGKeyCode, text: String? = nil) -> Bool {
       guard let down = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: true),
@@ -183,47 +193,73 @@ public final class EventTapAdapter {
     }
     if !chunk.isEmpty { guard pair(code: 0, text: chunk) else { return .aborted } }
     guard batch.count <= 512, !batch.isEmpty else { return .aborted }
-    lock.lock()
-    let runloop = loop
-    let active = installed && !stopped
-    lock.unlock()
-    guard active, let runloop else { return .aborted }
-    let done = DispatchSemaphore(value: 0)
-    var result: ApplyResult = .aborted
+    guard let runloop = activeRunLoop() else { return .aborted }
+    let cancellation = PostingCancellation()
+    return await withTaskCancellationHandler(operation: {
+    await withCheckedContinuation { continuation in
+    var finished = false
+    var timeout: DispatchWorkItem?
+
+    let finish: (ApplyResult) -> Void = { result in
+      guard !finished else { return }
+      finished = true
+      timeout?.cancel()
+      timeout = nil
+      continuation.resume(returning: result)
+    }
+    timeout = DispatchWorkItem {
+      guard !finished else { return }
+      runtime.invalidateContext(reason: .unknownInput)
+      finish(.uncertain)
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: timeout!)
     CFRunLoopPerformBlock(runloop, CFRunLoopMode.commonModes.rawValue) { [weak self] in
-      defer { done.signal() }
+      var result: ApplyResult = .aborted
+      defer { let outcome = result; DispatchQueue.main.async { finish(outcome) } }
       guard let self else { return }
       self.callbacks.lock()
       defer { self.callbacks.unlock() }
-      guard !self.isStopped, DispatchTime.now().uptimeNanoseconds - requested < 100_000_000,
+      guard !cancellation.isCancelled, !self.isStopped, DispatchTime.now().uptimeNanoseconds - requested < 100_000_000,
         !IsSecureEventInputEnabled(), runtime.cachedInputContext()?.0 == evidence.context,
         self.admit(
           lease, generation: generation, context: evidence.context,
           now: DispatchTime.now().uptimeNanoseconds)
       else { return }
+      var batchReport: KeyBatchPosting.Report?
       let outcome = self.ownership.commit(
         expectedGeneration: generation, currentGeneration: runtime.inputGeneration,
         now: DispatchTime.now().uptimeNanoseconds
       ) {
-        let began = DispatchTime.now().uptimeNanoseconds
-        return KeyBatchPosting.postPairs(
-          batch,
-          isSafe: {
-            !IsSecureEventInputEnabled() && runtime.cachedInputContext()?.0 == evidence.context
-              && DispatchTime.now().uptimeNanoseconds - began < 10_000_000
-          }, post: { $0.postToPid(evidence.context.pid) })
+        let report = KeyBatchPosting.postGuardedPairs(
+          batch, now: { DispatchTime.now().uptimeNanoseconds },
+          ownershipValid: { self.ownership.isActive && !self.ownership.expired(at: $0) },
+          generationValid: { !cancellation.isCancelled && runtime.inputGeneration() == generation },
+          contextValid: { runtime.cachedInputContext()?.0 == evidence.context },
+          secureInput: { IsSecureEventInputEnabled() },
+          post: { $0.postToPid(evidence.context.pid) })
+        batchReport = report
+        return report.result
         // Delivery/readback is not proven by CGEvent.post. Qualified host evidence is still required.
       }
       result = outcome.result
+      // Batch metadata only, after ownership has ended; never log text or keys.
+      if let report = batchReport {
+        InputDiagnostics.event("tap.batch.stopReason", detail: report.reason.rawValue)
+        InputDiagnostics.event("tap.batch.postedPairs", detail: report.postedPairs)
+        InputDiagnostics.event("tap.batch.elapsedMicroseconds",
+          detail: Int(clamping: report.elapsedNanos / 1_000))
+      }
       self.release(outcome.replay, result: result)
     }
     CFRunLoopWakeUp(runloop)
-    // No remote AX request or main-thread callback can occur in the destructive block.
-    if done.wait(timeout: .now() + 0.2) != .success {
-      runtime.invalidateContext(reason: .unknownInput)
-      return .uncertain
+    // No remote AX request or main-thread callback occurs inside the destructive block.
     }
-    return result
+    }, onCancel: { cancellation.cancel() })
+  }
+
+  private func activeRunLoop() -> CFRunLoop? {
+    lock.lock(); defer { lock.unlock() }
+    return installed && !stopped ? loop : nil
   }
   private var isStopped: Bool {
     lock.lock()
@@ -232,7 +268,7 @@ public final class EventTapAdapter {
   }
   func tick() {
     callbacks.lock()
-    defer { callbacks.unlock() }
+    defer { rescheduleDeadline(); callbacks.unlock() }
     guard !isStopped else { return }
     let now = DispatchTime.now().uptimeNanoseconds
     if ownership.expired(at: now) {
@@ -264,6 +300,7 @@ public final class EventTapAdapter {
     CFRunLoopWakeUp(runloop)
   }
   private func release(_ events: [CGEvent], result: ApplyResult) {
+    defer { rescheduleDeadline() }
     guard let original = shortcut.active else {
       replay(events)
       return
@@ -285,23 +322,29 @@ public final class EventTapAdapter {
     }
   }
   func receive(_ type: CGEventType, _ event: CGEvent) -> Bool {
+    let callbackStart = InputPerformanceMetrics.nowNanos()
+    defer { InputPerformanceMetrics.shared.record(.tapCallback, durationNanos: InputPerformanceMetrics.nowNanos() - callbackStart) }
     callbacks.lock()
-    defer { callbacks.unlock() }
+    defer { rescheduleDeadline(); callbacks.unlock() }
     guard !isStopped else { return true }
     guard let runtime else { return true }
     if type == .tapDisabledByUserInput {
+      InputDiagnostics.event("tap.lifecycle.disabled_user_input")
       runtime.invalidateContext(reason: .permissionRevoked)
       stop()
       return true
     }
     if type == .tapDisabledByTimeout {
+      InputDiagnostics.event("tap.lifecycle.disabled_timeout")
       let now = DispatchTime.now().uptimeNanoseconds
       timeouts = timeouts.filter { now - $0 < 60_000_000_000 }
       runtime.invalidateContext(reason: .unknownInput)
       if timeouts.count < 3, let tap {
         timeouts.append(now)
         CGEvent.tapEnable(tap: tap, enable: true)
+        InputDiagnostics.event("tap.lifecycle.reenabled", detail: timeouts.count)
       } else {
+        InputDiagnostics.event("tap.lifecycle.timeout_recovery_stopped", detail: timeouts.count)
         stop()
       }
       return true
@@ -356,4 +399,12 @@ public final class EventTapAdapter {
     }
     return true
   }
+}
+
+/// Cancellation is sampled between pairs on the tap; it never authorizes a retry.
+private final class PostingCancellation: @unchecked Sendable {
+  private let lock = NSLock()
+  private var cancelled = false
+  var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
+  func cancel() { lock.lock(); defer { lock.unlock() }; cancelled = true }
 }

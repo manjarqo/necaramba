@@ -139,7 +139,16 @@ class NativeStateDecoder {
     }
 
     final model = map(m['model']);
-    keys(model, {'version', 'lastChecked', 'state'});
+    if (!model.containsKey('additionalCorrectionsAvailable')) {
+      model['additionalCorrectionsAvailable'] = false;
+    }
+    keys(model, {
+      'version',
+      'lastChecked',
+      'state',
+      'additionalCorrectionsAvailable',
+    });
+    boolean(model['additionalCorrectionsAvailable']);
     if (!RegExp(r'^\d+$').hasMatch(string(model['version']))) invalid();
     date(model['lastChecked']);
     enumeration(model['state'], {'idle', 'checking', 'current', 'failed'});

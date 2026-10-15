@@ -4,14 +4,35 @@ import NecarambaCore
 public final class VerifiedLayoutSwitcher {
   private let access: LayoutAccess
   private let maxAttempts: Int
+  private let scheduler: @MainActor (TimeInterval) async -> Void
   private let sleeper: (TimeInterval) -> Void
   public init(
     access: LayoutAccess, maxAttempts: Int = 3,
-    sleeper: @escaping (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
+    sleeper: @escaping (TimeInterval) -> Void = { _ in },
+    scheduler: @escaping @MainActor (TimeInterval) async -> Void = { delay in
+      try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+    }
   ) {
     self.access = access
     self.maxAttempts = min(10, max(0, maxAttempts))
     self.sleeper = sleeper
+    self.scheduler = scheduler
+  }
+  @MainActor public func selectAsync(_ id: LayoutID, authorized: () -> Bool = { true }) async -> Bool {
+    guard !Task.isCancelled, authorized(), access.supported().contains(id) else { return false }
+    if access.current() == id { return true }
+    for index in 0..<maxAttempts {
+      guard !Task.isCancelled, authorized() else { return false }
+      _ = access.select(id)
+      guard !Task.isCancelled, authorized() else { return false }
+      if access.current() == id { return true }
+      if index + 1 < maxAttempts {
+        await scheduler(0.02)
+        guard !Task.isCancelled, authorized() else { return false }
+        if access.current() == id { return true }
+      }
+    }
+    return false
   }
   /// Call only outside tap callback; successful API return alone is insufficient.
   public func select(_ id: LayoutID) -> Bool {

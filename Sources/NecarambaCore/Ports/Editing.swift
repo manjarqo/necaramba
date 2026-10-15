@@ -34,9 +34,11 @@ public enum ApplyResult: Equatable, Sendable {
 /// this port is never used by automatic correction.
 public protocol ManualTrackedSuffixReplacing: AnyObject {
   func replaceTrackedSuffix(_ word: BufferedWord, with text: String) -> ApplyResult
+  @MainActor func replaceTrackedSuffixAsync(_ word: BufferedWord, with text: String) async -> ApplyResult
 }
 public protocol KeySending: AnyObject {
   func replaceVerifiedSuffix(_ plan: EditPlan) -> ApplyResult
+  @MainActor func replaceVerifiedSuffixAsync(_ plan: EditPlan) async -> ApplyResult
 }
 /// Evidence is immutable and tied to a focus token and exact UTF16 range.
 public enum SelectionMode: Sendable, Equatable { case selected, suffix }
@@ -65,6 +67,7 @@ public protocol SelectionAccess: AnyObject {
   func selected(in context: ContextToken) -> SelectionEvidence?
   func suffix(_ text: String, in context: ContextToken) -> SelectionEvidence?
   func replace(_ evidence: SelectionEvidence, with text: String) -> ApplyResult
+  @MainActor func replaceAsync(_ evidence: SelectionEvidence, with text: String) async -> ApplyResult
 }
 
 public protocol ContextRefreshing: ContextAccess {
@@ -103,6 +106,7 @@ public struct ManualRepeatCandidate: Sendable {
 public protocol ManualRepeatedSuffixReplacing: AnyObject {
   /// `text` includes delimiter. Empty proxies return dispatched, never verified committed.
   func replaceRepeatedSuffix(_ candidate: ManualRepeatCandidate, with text: String) -> ApplyResult
+  @MainActor func replaceRepeatedSuffixAsync(_ candidate: ManualRepeatCandidate, with text: String) async -> ApplyResult
 }
 
 /// A physical space boundary frozen at event consumption, before deferred AX work.
@@ -127,4 +131,40 @@ public struct AutomaticBoundaryCandidate: Sendable {
 public protocol AutomaticBoundarySuffixReplacing: AnyObject {
   /// `text` includes the physical trailing space. Empty proxy writes remain dispatched.
   func replaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with text: String) -> ApplyResult
+  @MainActor func replaceAutomaticBoundaryAsync(_ candidate: AutomaticBoundaryCandidate, with text: String) async -> ApplyResult
+}
+
+public extension ManualTrackedSuffixReplacing {
+  @MainActor func replaceTrackedSuffixAsync(_ word: BufferedWord, with text: String) async -> ApplyResult {
+    guard !Task.isCancelled else { return .aborted }
+    return replaceTrackedSuffix(word, with: text)
+  }
+}
+
+public extension KeySending {
+  @MainActor func replaceVerifiedSuffixAsync(_ plan: EditPlan) async -> ApplyResult {
+    guard !Task.isCancelled else { return .aborted }
+    return replaceVerifiedSuffix(plan)
+  }
+}
+
+public extension SelectionAccess {
+  @MainActor func replaceAsync(_ evidence: SelectionEvidence, with text: String) async -> ApplyResult {
+    guard !Task.isCancelled else { return .aborted }
+    return replace(evidence, with: text)
+  }
+}
+
+public extension ManualRepeatedSuffixReplacing {
+  @MainActor func replaceRepeatedSuffixAsync(_ candidate: ManualRepeatCandidate, with text: String) async -> ApplyResult {
+    guard !Task.isCancelled else { return .aborted }
+    return replaceRepeatedSuffix(candidate, with: text)
+  }
+}
+
+public extension AutomaticBoundarySuffixReplacing {
+  @MainActor func replaceAutomaticBoundaryAsync(_ candidate: AutomaticBoundaryCandidate, with text: String) async -> ApplyResult {
+    guard !Task.isCancelled else { return .aborted }
+    return replaceAutomaticBoundary(candidate, with: text)
+  }
 }

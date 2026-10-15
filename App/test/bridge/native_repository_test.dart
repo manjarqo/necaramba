@@ -25,7 +25,12 @@ Map<String, Object?> fixture({
   'status': 'off',
   'words': <Object?>[],
   'apps': <Object?>[],
-  'model': {'version': '1', 'lastChecked': null, 'state': 'current'},
+  'model': {
+    'version': '1',
+    'lastChecked': null,
+    'state': 'current',
+    'additionalCorrectionsAvailable': false,
+  },
   'license': {'state': 'unavailable', 'expiresAt': null},
   'statistics': <String, int>{},
   'appearance': {

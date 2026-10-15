@@ -5,6 +5,21 @@ import NecarambaCore
 public final class ContextState: ContextAccess, GestureContextReading {
   private let lock = NSLock()
   private var reconciliationDepth = 0
+  private var countedReconciliationCapture = false
+  private var captureInvalidations: UInt64 = 0
+  /// Saturating aggregate: one denied capture per outer reconciliation, even if
+  /// the caller tries current(), gestureContext() and isSafe() in succession.
+  var reconciliationCaptureInvalidations: UInt64 {
+    lock.lock()
+    defer { lock.unlock() }
+    return captureInvalidations
+  }
+  private func countDeniedCapture() {
+    guard reconciliationDepth > 0, !countedReconciliationCapture else { return }
+    countedReconciliationCapture = true
+    InputPerformanceMetrics.shared.recordCancellation(.captureDuringReconcile)
+    if captureInvalidations < .max { captureInvalidations += 1 }
+  }
   private var token: ContextToken?
   private var gestureToken: ContextToken?
   private var focusID: String?
@@ -37,6 +52,7 @@ public final class ContextState: ContextAccess, GestureContextReading {
   /// Hide cached evidence while the publisher revalidates identity and invalidates failed reads.
   public func reconcileFocus(_ readAndPublish: () -> ContextToken?) {
     lock.lock()
+    if reconciliationDepth == 0 { countedReconciliationCapture = false }
     reconciliationDepth += 1
     lock.unlock()
     defer {
@@ -49,6 +65,7 @@ public final class ContextState: ContextAccess, GestureContextReading {
   public func current() -> ContextToken? {
     lock.lock()
     defer { lock.unlock() }
+    countDeniedCapture()
     return reconciliationDepth == 0 ? token : nil
   }
   /// Only the main-thread AX publisher may inspect this while reconciling.
@@ -60,6 +77,7 @@ public final class ContextState: ContextAccess, GestureContextReading {
   public func gestureContext() -> ContextToken? {
     lock.lock()
     defer { lock.unlock() }
+    countDeniedCapture()
     return reconciliationDepth == 0 ? gestureToken : nil
   }
   public func isSafe(_ expected: ContextToken) -> Bool { current() == expected }

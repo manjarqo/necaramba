@@ -1,0 +1,187 @@
+{
+  "checksum" : 36000,
+  "iterationsPerRun" : 1000,
+  "rows" : [
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 18317.832999999999,
+      "prepared" : true,
+      "run" : 1
+    },
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 17996.958999999999,
+      "prepared" : false,
+      "run" : 1
+    },
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 18182.708999999999,
+      "prepared" : false,
+      "run" : 2
+    },
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 17892.792000000001,
+      "prepared" : true,
+      "run" : 2
+    },
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 18240.583999999999,
+      "prepared" : true,
+      "run" : 3
+    },
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 17964.208999999999,
+      "prepared" : false,
+      "run" : 3
+    },
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 18174.916000000001,
+      "prepared" : false,
+      "run" : 4
+    },
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 18030.375,
+      "prepared" : true,
+      "run" : 4
+    },
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 18518.667000000001,
+      "prepared" : true,
+      "run" : 5
+    },
+    {
+      "exclusions" : 0,
+      "nanosecondsPerDecision" : 18294,
+      "prepared" : false,
+      "run" : 5
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 18978.75,
+      "prepared" : true,
+      "run" : 1
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 120371.667,
+      "prepared" : false,
+      "run" : 1
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 118687.542,
+      "prepared" : false,
+      "run" : 2
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 18347.333999999999,
+      "prepared" : true,
+      "run" : 2
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 18706.042000000001,
+      "prepared" : true,
+      "run" : 3
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 118489.5,
+      "prepared" : false,
+      "run" : 3
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 120293.125,
+      "prepared" : false,
+      "run" : 4
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 18300,
+      "prepared" : true,
+      "run" : 4
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 18511.332999999999,
+      "prepared" : true,
+      "run" : 5
+    },
+    {
+      "exclusions" : 100,
+      "nanosecondsPerDecision" : 119218.292,
+      "prepared" : false,
+      "run" : 5
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 18308,
+      "prepared" : true,
+      "run" : 1
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 1040040.583,
+      "prepared" : false,
+      "run" : 1
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 1039775.417,
+      "prepared" : false,
+      "run" : 2
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 18341.833999999999,
+      "prepared" : true,
+      "run" : 2
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 18480.125,
+      "prepared" : true,
+      "run" : 3
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 1040337.834,
+      "prepared" : false,
+      "run" : 3
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 1039699.083,
+      "prepared" : false,
+      "run" : 4
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 18454.416000000001,
+      "prepared" : true,
+      "run" : 4
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 18653.25,
+      "prepared" : true,
+      "run" : 5
+    },
+    {
+      "exclusions" : 1000,
+      "nanosecondsPerDecision" : 1041155.917,
+      "prepared" : false,
+      "run" : 5
+    }
+  ],
+  "scope" : "Synthetic pure fallback engine only; no AX, UI or keyboard latency"
+}

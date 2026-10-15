@@ -43,3 +43,43 @@ private final class LayoutStub: LayoutAccess {
     func supported() -> [LayoutID] { [.init(rawValue: "US"), .init(rawValue: "RU")] }
     func select(_ id: LayoutID) -> Bool { attempts += 1; if reallySelect { value = id }; return true }
 }
+
+extension LayoutAdapterTests {
+  @MainActor func testAsyncLateReadbackAndCancellationNeverRetries() async {
+    let fake = LayoutStub()
+    let target = LayoutID(rawValue: "RU")
+    var waits = 0
+    let switcher = VerifiedLayoutSwitcher(access: fake, scheduler: { delay in
+      XCTAssertEqual(delay, 0.02)
+      waits += 1
+      fake.value = target
+    })
+    let result = await switcher.selectAsync(target)
+    XCTAssertTrue(result)
+    XCTAssertEqual(fake.attempts, 1)
+    XCTAssertEqual(waits, 1)
+    fake.value = .init(rawValue: "US")
+    var valid = true
+    let cancelled = VerifiedLayoutSwitcher(access: fake, scheduler: { _ in valid = false })
+    let cancelledResult = await cancelled.selectAsync(target, authorized: { valid })
+    XCTAssertFalse(cancelledResult)
+    XCTAssertEqual(fake.attempts, 2)
+  }
+}
+
+extension LayoutAdapterTests {
+  @MainActor func testAsyncAlreadySelectedUnsupportedAndExhaustedReadback() async {
+    let access = LayoutStub()
+    var waits = 0
+    let switcher = VerifiedLayoutSwitcher(access: access, scheduler: { _ in waits += 1 })
+    let already = await switcher.selectAsync(.init(rawValue: "US"))
+    let unsupported = await switcher.selectAsync(.init(rawValue: "IME"))
+    XCTAssertTrue(already)
+    XCTAssertFalse(unsupported)
+    XCTAssertEqual(access.attempts, 0)
+    let failed = await switcher.selectAsync(.init(rawValue: "RU"))
+    XCTAssertFalse(failed)
+    XCTAssertEqual(access.attempts, 3)
+    XCTAssertEqual(waits, 2)
+  }
+}

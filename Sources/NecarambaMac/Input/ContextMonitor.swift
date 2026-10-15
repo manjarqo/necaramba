@@ -6,13 +6,16 @@ import NecarambaCore
 /// AX observation occurs on the main run loop, never in the event tap callback.
 public final class ContextMonitor: ContextRefreshing {
   public let state = ContextState()
+  public var onAvailableLayoutsChanged: (() -> Void)?
   public var onLayoutChanged: ((LayoutID?) -> Void)?
   private let layouts: LayoutAccess
   private let permissions: PermissionReading
   private let qualifies: (String, String) -> Bool
+  private var observedFocusReader: ((ContextState) -> ContextToken?)?
   private let chromiumActivation = ChromiumAccessibilityActivation()
-  private let focusPolling = FocusRefreshPolling()
-  private var overlayPoll: Timer?
+  private let focusScheduler = FocusRefreshScheduler()
+  private var needsFocusRecovery = false
+  private var overlayOwnsFocus = false
   private var observer: AXObserver?
   private var observedApp: AXUIElement?
   private var lastElement: AXUIElement?
@@ -36,6 +39,34 @@ public final class ContextMonitor: ContextRefreshing {
     self.permissions = permissions
     self.qualifies = qualifies
   }
+  /// Inject an authoritative reader for notification integration tests without AX/TCC access.
+  convenience init(layouts: LayoutAccess, permissions: PermissionReading,
+                   qualifies: @escaping (String, String) -> Bool,
+                   observedFocusReader: @escaping (ContextState) -> ContextToken?) {
+    self.init(layouts: layouts, permissions: permissions, qualifies: qualifies)
+    self.observedFocusReader = observedFocusReader
+  }
+
+  func observeSelectedLayoutChanges(_ center: NotificationCenter) {
+    let name = Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String)
+    observe(center, name) { [weak self] in
+      // TIS changes do not prove a field change. Reconcile synchronously with
+      // safety hidden, preserving lineage only if AX confirms the same field.
+      self?.refreshObservedFocus()
+    }
+  }
+  func invalidateAndRequestRecovery(_ reason: InvalidationReason) {
+    precondition(Thread.isMainThread)
+    state.invalidate(reason)
+    automaticToken = nil
+    needsFocusRecovery = true
+    if active { focusScheduler.requestRefresh() }
+  }
+  var recoveryPermitted: Bool {
+    guard needsFocusRecovery else { return false }
+    let permission = permissions.current()
+    return permission.ax && !permission.secureInput
+  }
   public func current() -> ContextToken? { state.current() }
   public func isSafe(_ token: ContextToken) -> Bool { state.isSafe(token) }
   /// Static, recorded compatibility remains mandatory for automatic correction.
@@ -57,17 +88,21 @@ public final class ContextMonitor: ContextRefreshing {
     for name in [NSWorkspace.willSleepNotification, NSWorkspace.sessionDidResignActiveNotification]
     {
       observe(NSWorkspace.shared.notificationCenter, name) { [weak self] in
-        self?.state.invalidate(.sessionLock)
+        guard let self else { return }
+        self.state.invalidate(.sessionLock)
+        self.automaticToken = nil
+        self.detach()
       }
     }
     for name in [NSWorkspace.didWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
       observe(NSWorkspace.shared.notificationCenter, name) { [weak self] in self?.attach() }
     }
-    let name = Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String)
-    observe(DistributedNotificationCenter.default(), name) { [weak self] in
-      self?.refresh()
-      self?.onLayoutChanged?(self?.layouts.current())
+    let availableName = Notification.Name(kTISNotifyEnabledKeyboardInputSourcesChanged as String)
+    observe(DistributedNotificationCenter.default(), availableName) { [weak self] in
+      self?.invalidateAndRequestRecovery(.layoutChanged)
+      self?.onAvailableLayoutsChanged?()
     }
+    observeSelectedLayoutChanges(DistributedNotificationCenter.default())
     attach()
   }
   public func stop() {
@@ -85,10 +120,10 @@ public final class ContextMonitor: ContextRefreshing {
     tokens.append((center, token))
   }
   private func detach() {
-    overlayPoll?.invalidate()
-    overlayPoll = nil
+    overlayOwnsFocus = false
     chromiumActivation.stop()
-    focusPolling.stop()
+    focusScheduler.stop()
+    needsFocusRecovery = false
     if let observer {
       CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .commonModes)
     }
@@ -103,7 +138,12 @@ public final class ContextMonitor: ContextRefreshing {
     state.invalidate(.focusChanged)
     detach()
     guard let app = NSWorkspace.shared.frontmostApplication, let bundleID = app.bundleIdentifier
-    else { diagnose("context.attach.noApplication"); return }
+    else {
+      needsFocusRecovery = true
+      diagnose("context.attach.noApplication")
+      startFocusRefresh(notificationsAvailable: false)
+      return
+    }
     switch bundleID {
     case "com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.dev", "com.google.Chrome.canary":
       InputDiagnostics.event("context.application.chrome")
@@ -120,7 +160,12 @@ public final class ContextMonitor: ContextRefreshing {
         pid: app.processIdentifier, bundleID: bundleID, focusID: nil, layout: layouts.current(),
         qualified: false)
     }
-    guard permission.ax else { diagnose("context.attach.noAXPermission"); return }
+    guard permission.ax else {
+      needsFocusRecovery = true
+      diagnose("context.attach.noAXPermission")
+      startFocusRefresh(notificationsAvailable: false)
+      return
+    }
     let element = AXUIElementCreateApplication(app.processIdentifier)
     AXUIElementSetMessagingTimeout(element, 0.1)
     observedApp = element
@@ -135,7 +180,7 @@ public final class ContextMonitor: ContextRefreshing {
           NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier else { return }
         InputDiagnostics.event("context.chrome.activationRefresh")
         if self.observer != nil {
-          self.refreshObservedFocus()
+          self.invalidateAndRequestRecovery(.focusChanged)
         } else {
           self.attachObserver(to: element, pid: app.processIdentifier)
         }
@@ -144,13 +189,17 @@ public final class ContextMonitor: ContextRefreshing {
     attachObserver(to: element, pid: app.processIdentifier)
   }
   private func attachObserver(to element: AXUIElement, pid: pid_t) {
-    guard permissions.current().ax else { refreshObservedFocus(); return }
+    guard permissions.current().ax else {
+      needsFocusRecovery = true
+      startFocusRefresh(notificationsAvailable: false)
+      return
+    }
     var created: AXObserver?
     let callback: AXObserverCallback = { _, _, _, refcon in
       guard let refcon else { return }
       let monitor = Unmanaged<ContextMonitor>.fromOpaque(refcon).takeUnretainedValue()
       InputDiagnostics.event("context.refresh.focusNotification")
-      monitor.refreshObservedFocus()
+      monitor.invalidateAndRequestRecovery(.focusChanged)
     }
     let createStatus = AXObserverCreate(pid, callback, &created)
     guard createStatus == .success, let created else {
@@ -172,22 +221,49 @@ public final class ContextMonitor: ContextRefreshing {
     startFocusRefresh(notificationsAvailable: true)
   }
   private func startFocusRefresh(notificationsAvailable: Bool) {
-    focusPolling.start(notificationsAvailable: notificationsAvailable) { [weak self] in
+    focusScheduler.start(notificationsAvailable: notificationsAvailable, needsRecovery: { [weak self] in
+      guard let self, self.active else { return false }
+      // Keep the obligation even while permission/security temporarily blocks AX.
+      return self.needsFocusRecovery || self.overlayOwnsFocus
+    }) { [weak self] in
       guard let self, self.active else { return }
       self.refreshObservedFocus()
     }
   }
+
   private func refreshObservedFocus() {
-    ObservedFocusRefresh.perform(state: state, refresh: { self.refresh() }, synchronizeLayout: {
+    ObservedFocusRefresh.perform(state: state, refresh: {
+      if let reader = self.observedFocusReader { return reader(self.state) }
+      return self.refresh()
+    }, synchronizeLayout: {
       self.onLayoutChanged?(self.layouts.current())
     })
   }
   /// Explicit revalidation before an edit must be invoked on the main thread.
   @discardableResult public func refresh() -> ContextToken? {
     precondition(Thread.isMainThread)
+    let began = ProcessInfo.processInfo.systemUptime
+    let performanceBegan = InputPerformanceMetrics.nowNanos()
+    defer { InputPerformanceMetrics.shared.record(.contextRefresh, durationNanos: InputPerformanceMetrics.nowNanos() - performanceBegan) }
+    let hadFocus = state.publishedCurrent() != nil
+    defer {
+      if active { focusScheduler.updateRecovery() }
+      let hasFocus = state.publishedCurrent() != nil
+      if hadFocus != hasFocus {
+        InputDiagnostics.event(hasFocus ? "context.focus.recovered" : "context.focus.lost")
+      }
+      let elapsed = ProcessInfo.processInfo.systemUptime - began
+      if elapsed >= 0.1 {
+        InputDiagnostics.event("context.refresh.slowMilliseconds", detail: Int(min(elapsed * 1000, 60_000)))
+      }
+    }
     automaticToken = nil
+    needsFocusRecovery = false
     let permission = permissions.current()
     guard !permission.secureInput, permission.ax else {
+      // Keep recovery pending; the timer checks permission/security locally
+      // and performs no AX reads until these conditions permit them again.
+      needsFocusRecovery = true
       diagnose("context.refresh.secureOrPermissionMissing")
       state.invalidate(.unknownInput)
       return nil
@@ -195,6 +271,7 @@ public final class ContextMonitor: ContextRefreshing {
     let resolved = AXFocusedElementResolver.system.resolve(
       deadline: ProcessInfo.processInfo.systemUptime + 0.1)
     guard let focus = resolved.focus else {
+      needsFocusRecovery = true
       diagnose("context.refresh.systemFocusUnavailable", detail: Int(resolved.status.rawValue))
       state.invalidate(.unknownInput)
       return nil
@@ -205,18 +282,10 @@ public final class ContextMonitor: ContextRefreshing {
     // frontmost app. Continue observing that app, but poll while the overlay owns
     // focus so its field changes and dismissal cannot leave a stale token.
     let overlay = focus.pid != NSWorkspace.shared.frontmostApplication?.processIdentifier
-    if overlay && overlayPoll == nil && active {
-      InputDiagnostics.event("context.systemFocus.overlayOwner")
-      let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
-        self?.refreshObservedFocus()
-      }
-      overlayPoll = timer
-      RunLoop.main.add(timer, forMode: .common)
-    } else if !overlay {
-      overlayPoll?.invalidate()
-      overlayPoll = nil
-    }
+    if overlay && !overlayOwnsFocus { InputDiagnostics.event("context.systemFocus.overlayOwner") }
+    overlayOwnsFocus = overlay
     let role = stringAttribute(element, kAXRoleAttribute)
+    if role == nil { needsFocusRecovery = true }
     let subrole = stringAttribute(element, kAXSubroleAttribute)
     let allowed =
       Self.supportsManualRole(role ?? "") && subrole != kAXSecureTextFieldSubrole

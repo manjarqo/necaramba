@@ -41,6 +41,17 @@ final class ManualWordTrackingTests: XCTestCase {
       XCTAssertGreaterThan(runtime.inputGeneration(), generation)
     }
   }
+  func testManualVersionsRetainEveryDigitAndPunctuationBeforeAndAfterSpace() {
+    for text in ["1ю3ю166", "1.3.166"] {
+      let (context, runtime) = fixture()
+      type(text, into: runtime, context: context)
+      XCTAssertEqual(runtime.manualWord()?.text, text)
+      XCTAssertEqual(runtime.manualWord()?.events.count, text.count)
+      type(" ", into: runtime, context: context)
+      XCTAssertEqual(runtime.manualWord()?.text, text)
+      XCTAssertEqual(runtime.manualWord()?.delimiter, " ")
+    }
+  }
   func testManualWordIncludesRussianPhysicalPunctuation() {
     let (context, runtime) = fixture()
     type("[jhjij", into: runtime, context: context)

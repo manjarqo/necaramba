@@ -124,6 +124,12 @@ For reliable permission persistence between local builds, configure your own sta
 
 A local Release build is an optimized development artifact. It uses an explicitly marked development rule package; it is not equivalent to a notarized public release. Keep universal builds enabled when targeting Intel as well as Apple Silicon.
 
+### Independent open model
+
+An opt-in open model with independently sourced dictionaries, explicit typo/ё rules and a compact native index is available. Build with `NECARAMBA_OPEN_MODEL=YES` and leave `NECARAMBA_LOCAL_PATTERN_MODEL` unset. The Beta 3 release includes this open model. Source builds still require the flag; existing installations must be updated manually.
+
+See [model sources, licenses, reproducible generation and evaluation](Resources/OpenModel/README.md). Synthetic comparison results do not establish parity for all words or applications.
+
 ### Architecture
 
 Necaramba follows **Clean Architecture**. Domain logic is separated from macOS adapters and the UI.
@@ -287,6 +293,12 @@ App/build/macos/Build/Products/Release/Necaramba.app
 Для стабильного сохранения разрешений между локальными сборками настройте собственную подпись по [инструкции](docs/release/local-signing.md). Машинный файл подписи исключён из Git. Закрытые ключи и учётные данные не должны попадать в репозиторий.
 
 Локальная Release-сборка — оптимизированный артефакт разработки с явно помеченным development-пакетом правил. Она не равнозначна нотарифицированному публичному релизу. Сохраняйте universal-режим сборки, если нужна поддержка Intel вместе с Apple Silicon.
+
+### Независимая открытая модель
+
+Доступна опциональная открытая модель: независимые словари, собственные правила опечаток и «ё», компактный нативный индекс. Для сборки задайте `NECARAMBA_OPEN_MODEL=YES`, оставив `NECARAMBA_LOCAL_PATTERN_MODEL` незаданной. Выпуск Beta 3 включает эту открытую модель. При сборке из исходников флаг по-прежнему обязателен; существующие установки нужно обновить вручную.
+
+[Источники, лицензии, воспроизводимая генерация и проверка](Resources/OpenModel/README.md). Сравнение на синтетических примерах не доказывает равенство качества на любых словах и во всех приложениях.
 
 ### Архитектура
 

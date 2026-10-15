@@ -1,7 +1,7 @@
 name: necaramba
 description: Necaramba Flutter presentation shell.
 publish_to: none
-version: 1.0.0-beta.2+2
+version: 1.0.0-beta.3+3
 environment:
   sdk: ^3.13.1
 dependencies:

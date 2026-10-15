@@ -7,6 +7,8 @@ class SettingsPage extends SnapshotFeature {
   @override
   List<Widget> content(FeatureUI ui) {
     final l = ui.l;
+    final additionalAvailable =
+        snapshot.model['additionalCorrectionsAvailable'] == true;
     final theme = Theme.of(ui.context);
     Widget toggle(
       String key,
@@ -111,13 +113,17 @@ class SettingsPage extends SnapshotFeature {
       ]),
       heading(l.additionalCorrections),
       group([
-        toggle('typoEnabled', l.typoEnabled, available: false),
-        toggle('yoEnabled', l.yoEnabled, available: false),
+        toggle('typoEnabled', l.typo, available: additionalAvailable),
+        toggle('yoEnabled', l.yoEnabled, available: additionalAvailable),
       ]),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(2, 8, 2, 0),
-        child: Text(l.additionalUnavailable, style: theme.textTheme.bodySmall),
-      ),
+      if (!additionalAvailable)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(2, 8, 2, 0),
+          child: Text(
+            l.additionalUnavailable,
+            style: theme.textTheme.bodySmall,
+          ),
+        ),
       heading(l.sound),
       group([toggle('soundEnabled', l.soundEnabled)]),
       const SizedBox(height: 20),

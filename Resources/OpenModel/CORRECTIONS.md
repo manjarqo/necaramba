@@ -1,0 +1,18 @@
+# Open correction rules 2
+
+`corrections.json` supplements the independent vocabulary with 233 explicit spelling fixes and 67 explicit preferred ё spellings. Its schema is `schemaVersion: 1`, `version: "open-2"`, `typos` and `yo` arrays of `{source,target}`, and a `protectedWords` array. The short Russian token `ру` is explicitly protected. These data do not by themselves change the default runtime.
+
+The typo list was authored independently for this project using ordinary spelling knowledge, including English and Russian transpositions, omissions and common misspellings. No third-party correction list, proprietary model, extracted output, user typing log or holdout corpus was read or copied. The editable list is `AUTHORED_TYPOS` in `Tools/OpenModel/corrections.py`; it is GPLv3 like the repository code. It is deliberately explicit: there is no automatic edit-distance expansion that could rewrite arbitrary unknown words or names. Typo rules require a known destination, an unknown source and the same lowercase script. Ambiguous real-word typos (for example English `form` versus `from`) are intentionally excluded.
+
+Ё preferences are an independently authored, reviewed list of ordinary spellings, including `елка → ёлка`, `ежик → ёжик` and `береза → берёза`. Plain-е spellings can already be valid Russian orthography: only this explicit preference list may normalize such valid sources. This is separate from typo correction, which never changes known words. Ambiguous lexical alternatives `все/всё`, `осел/осёл`, `небо/нёбо`, and `передохнем/передохнём` are protected. Case preservation is the runtime's responsibility.
+
+An audit found that legacy upstream Russian affix conditions omitted ё from some negative character classes next to newer ё-aware rules. Literal expansion admitted malformed forms such as `жильёа` and `смышлёен`. The lexical generator now rejects derived ё forms lacking a corresponding independently generated е form, unless they are original dictionary stems. This removed 242 malformed unsupported candidates. No inferred ё corrections from that earlier expansion are shipped. The generator still contains a tested conservative inference helper for research, but the artifact uses only `AUTHORED_YO`.
+
+Rebuild from the repository root:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 Tools/OpenModel/corrections.py
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s Tools/OpenModel -p test_corrections.py
+```
+
+The generator reads only `Resources/OpenModel/open-v1.json`. Output and provenance are deterministic. `corrections-provenance.json` records the input/output SHA-256, counts and authorship. The explicit correction lists and generator are GPLv3; distribution of the complete open model must include both upstream license files and the repository GPLv3 license for independently authored rules and scripts. This is a modified selection without upstream endorsement. No corpus accuracy claim is made from these construction tests.

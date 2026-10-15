@@ -19,6 +19,9 @@ final class ChromiumAccessibilityActivation {
     // Electron documents this attribute for third-party assistive tools.
     // https://www.electronjs.org/docs/latest/tutorial/accessibility
     if bundleID == "com.readdle.SparkDesktop" { return "AXManualAccessibility" }
+    // Zen's Gecko engine may expose browser chrome without page accessibility.
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1664992
+    if bundleID == "app.zen-browser.zen" { return "AXEnhancedUserInterface" }
     if ["com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.dev", "com.google.Chrome.canary"].contains(bundleID) {
       return "AXEnhancedUserInterface"
     }

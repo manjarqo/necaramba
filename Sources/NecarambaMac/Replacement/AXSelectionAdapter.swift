@@ -230,22 +230,24 @@ extension SystemAXSelectionReader: AXSuffixSelectionPreparing {
 
 /// Selection mode, identity, context and generation are frozen when evidence is first read.
 public final class AXSelectionAdapter: SelectionAccess {
-  public typealias Mutation = (SelectionEvidence, String, Bool, () -> Bool) -> ApplyResult
-  public var execute: Mutation?
+  public typealias AsyncMutation = @MainActor (SelectionEvidence, String, Bool, () -> Bool) async -> ApplyResult
+  var onStage: @MainActor (EditTransactionCoordinator.State) -> Void = { _ in }
+  public var executeAsync: AsyncMutation?
+  public var observeLater: @MainActor (TimeInterval) async -> Void = { delay in
+    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+  }
   public var inputGeneration: (() -> UInt64)?
   private let context: ContextAccess
   private let reader: AXSelectionReading
   private let manualCommandActive: () -> Bool
   private let automaticBoundaryActive: () -> Bool
   private let now: () -> TimeInterval
-  private let wait: (TimeInterval) -> Void
   public init(
     context: ContextAccess, qualifies: @escaping (String, String) -> Bool,
     reader: AXSelectionReading? = nil,
     allowMissingMarkedTextRange: @escaping () -> Bool = { false },
     allowAutomaticBoundary: @escaping () -> Bool = { false },
-    now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
-    wait: @escaping (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
+    now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
   ) {
     self.context = context
     self.reader = reader ?? SystemAXSelectionReader(
@@ -254,12 +256,11 @@ public final class AXSelectionAdapter: SelectionAccess {
     self.manualCommandActive = allowMissingMarkedTextRange
     self.automaticBoundaryActive = allowAutomaticBoundary
     self.now = now
-    self.wait = wait
   }
   private func snapshot(
     _ token: ContextToken, generation: UInt64, deadline: TimeInterval? = nil
   ) -> AXTextSnapshot? {
-    guard inputGeneration?() == generation, context.isSafe(token),
+    guard !Task.isCancelled, inputGeneration?() == generation, context.isSafe(token),
       let value = deadline.map({ reader.read(in: token, deadline: $0) }) ?? reader.read(in: token),
       value.value.utf8.count <= 1024 * 1024, value.range.location >= 0, value.range.length >= 0,
       value.range.location <= value.value.utf16.count,
@@ -299,15 +300,15 @@ public final class AXSelectionAdapter: SelectionAccess {
       context: token, text: text, location: range.location, length: range.length,
       identity: value.identity, inputGeneration: generation, mode: .suffix)
   }
-  public func replace(_ evidence: SelectionEvidence, with text: String) -> ApplyResult {
-    replace(evidence, with: text, authorized: { true })
+  @MainActor public func replaceAsync(_ evidence: SelectionEvidence, with text: String) async -> ApplyResult {
+    await replaceAsync(evidence, with: text, authorized: { true })
   }
-  private func replace(
+  @MainActor private func replaceAsync(
     _ evidence: SelectionEvidence, with text: String, expectedValue: String? = nil, authorized: () -> Bool
-  ) -> ApplyResult {
-    guard authorized(), evidence.text.utf8.count <= 1024 * 1024, text.utf8.count <= 1024 * 1024,
+  ) async -> ApplyResult {
+    guard !Task.isCancelled, authorized(), evidence.text.utf8.count <= 1024 * 1024, text.utf8.count <= 1024 * 1024,
       let identity = evidence.identity, let generation = evidence.inputGeneration,
-      let mode = evidence.mode, let execute
+      let mode = evidence.mode, let executeAsync
     else { return .aborted }
     var selected = mode == .selected
     var dispatchEvidence = evidence
@@ -316,7 +317,7 @@ public final class AXSelectionAdapter: SelectionAccess {
       selected ? range : NSRange(location: evidence.location + evidence.length, length: 0)
     var before: AXTextSnapshot?
     func valid() -> Bool {
-      guard authorized(), let current = snapshot(evidence.context, generation: generation),
+      guard !Task.isCancelled, authorized(), let current = snapshot(evidence.context, generation: generation),
         current.identity == identity,
         current.range == observedRange, range.location >= 0, range.length >= 0,
         range.location <= current.value.utf16.count,
@@ -329,6 +330,8 @@ public final class AXSelectionAdapter: SelectionAccess {
       before = current
       return true
     }
+    onStage(.preflight)
+    let preflightStart = InputPerformanceMetrics.nowNanos()
     guard valid(), let initial = before else { return .aborted }
     if manualCommandActive(), !selected, let preparer = reader as? AXSuffixSelectionPreparing {
       switch preparer.prepareSuffix(evidence, before: initial, authorized: valid) {
@@ -348,10 +351,17 @@ public final class AXSelectionAdapter: SelectionAccess {
     guard let before else { return .aborted }
     let expectedValue = (before.value as NSString).replacingCharacters(in: range, with: text)
     let expectedRange = NSRange(location: evidence.location + text.utf16.count, length: 0)
+    InputPerformanceMetrics.shared.record(.preflight, durationNanos: InputPerformanceMetrics.nowNanos() - preflightStart)
     trace("ax.execute.begin")
-    let result = execute(dispatchEvidence, text, selected, valid)
+    onStage(.posting)
+    let postingStart = InputPerformanceMetrics.nowNanos()
+    let result = await executeAsync(dispatchEvidence, text, selected, valid)
+    InputPerformanceMetrics.shared.record(.posting, durationNanos: InputPerformanceMetrics.nowNanos() - postingStart)
     traceMutation(result)
     guard result == .committed else { return result }
+    onStage(.verifying)
+    let verificationStart = InputPerformanceMetrics.nowNanos()
+    defer { InputPerformanceMetrics.shared.record(.verification, durationNanos: InputPerformanceMetrics.nowNanos() - verificationStart) }
     // Posting is asynchronous. Only observe states derivable from the already-posted
     // batch: suffix Backspaces, then Unicode insertion prefixes, with exact surroundings
     // and caret. Nothing is posted again, and backward progress is not accepted.
@@ -402,7 +412,9 @@ public final class AXSelectionAdapter: SelectionAccess {
     var observedValueProgress = 0
     var observedRangeProgress = 0
     for _ in 0..<(manualCommandActive() ? 61 : 21) {
-      guard authorized(), now() < deadline else {
+      guard !Task.isCancelled, authorized(), now() < deadline else {
+        if now() >= deadline { InputPerformanceMetrics.shared.recordCancellation(.deadline) }
+        else { InputPerformanceMetrics.shared.recordCancellation(.unsafeContext) }
         trace("ax.readback.scopeOrDeadlineRejected"); return .uncertain
       }
       guard inputGeneration?() == generation, context.isSafe(evidence.context) else {
@@ -411,7 +423,7 @@ public final class AXSelectionAdapter: SelectionAccess {
         return .uncertain
       }
       let observation = reader.observe(in: evidence.context, deadline: deadline)
-      guard authorized(), inputGeneration?() == generation, context.isSafe(evidence.context) else {
+      guard !Task.isCancelled, authorized(), inputGeneration?() == generation, context.isSafe(evidence.context) else {
         trace("ax.readback.contextOrGenerationChanged", detail:
           (inputGeneration?() == generation ? 1 : 0) | (context.isSafe(evidence.context) ? 2 : 0))
         return .uncertain
@@ -456,7 +468,7 @@ public final class AXSelectionAdapter: SelectionAccess {
       }
       let remaining = deadline - now()
       guard remaining > 0 else { trace("ax.readback.deadlineExceeded"); return .uncertain }
-      wait(min(0.005, remaining))
+      await observeLater(min(0.005, remaining))
     }
     trace("ax.readback.attemptsExhausted")
     return .uncertain
@@ -479,11 +491,11 @@ enum AXCompositionProof {
 }
 
 extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
-  public func replaceTrackedSuffix(_ word: BufferedWord, with text: String) -> ApplyResult {
+  @MainActor public func replaceTrackedSuffixAsync(_ word: BufferedWord, with text: String) async -> ApplyResult {
     guard hasPhysicalLineage(word) else {
       trace("ax.tracked.physicalProofRejected"); return .aborted
     }
-    return replaceEmptyProxySuffix(
+    return await replaceEmptyProxySuffixAsync(
       word.text + word.delimiter, in: word.context, identity: nil, with: text)
   }
 
@@ -499,14 +511,14 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
       && word.delimiter.allSatisfy({ "!? ".contains($0) })
   }
 
-  private func replaceEmptyProxySuffix(
+  @MainActor private func replaceEmptyProxySuffixAsync(
     _ original: String, in context: ContextToken, identity: UUID?, with text: String,
     requiredGeneration: UInt64? = nil, authorized: (() -> Bool)? = nil
-  ) -> ApplyResult {
+  ) async -> ApplyResult {
     // An empty terminal AX proxy cannot prove its suffix. Explicit dispatch keeps
     // that uncertainty even when a prior explicit command supplied the current text.
     let allowed = authorized ?? manualCommandActive
-    guard allowed(), !original.isEmpty, original.count <= 128,
+    guard !Task.isCancelled, allowed(), !original.isEmpty, original.count <= 128,
       original.utf16.count <= 512, !text.isEmpty, text.count <= 128, text.utf16.count <= 512
     else { trace("ax.tracked.boundsOrScopeRejected"); return .aborted }
     guard let generation = requiredGeneration ?? inputGeneration?(),
@@ -521,9 +533,9 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
     trace("ax.tracked.nonemptyValue", detail: before.value.isEmpty ? 0 : 1)
     trace("ax.tracked.rangeZero", detail: before.range == NSRange(location: 0, length: 0) ? 1 : 0)
     guard before.value.isEmpty, before.range == NSRange(location: 0, length: 0) else { return .aborted }
-    guard let execute else { trace("ax.tracked.executeMissing"); return .aborted }
+    guard let executeAsync else { trace("ax.tracked.executeMissing"); return .aborted }
     func valid() -> Bool {
-      guard allowed(), let current = snapshot(context, generation: generation)
+      guard !Task.isCancelled, allowed(), let current = snapshot(context, generation: generation)
       else { return false }
       return current.identity == before.identity && current.value.isEmpty
         && current.range == NSRange(location: 0, length: 0)
@@ -533,10 +545,10 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
       identity: before.identity, inputGeneration: generation, mode: .suffix)
     guard valid() else { trace("ax.tracked.preflightRejected"); return .aborted }
     trace("ax.tracked.execute.begin")
-    let result = execute(evidence, text, false, valid)
+    let result = await executeAsync(evidence, text, false, valid)
     traceMutation(result)
     guard result == .committed else { return result }
-    guard allowed(), let after = snapshot(context, generation: generation),
+    guard !Task.isCancelled, allowed(), let after = snapshot(context, generation: generation),
       after.identity == before.identity
     else { return .uncertain }
     if after.value == text && after.range == NSRange(location: text.utf16.count, length: 0) {
@@ -549,7 +561,7 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
 }
 
 extension AXSelectionAdapter: ManualRepeatedSuffixReplacing {
-  public func replaceRepeatedSuffix(_ candidate: ManualRepeatCandidate, with text: String) -> ApplyResult {
+  @MainActor public func replaceRepeatedSuffixAsync(_ candidate: ManualRepeatCandidate, with text: String) async -> ApplyResult {
     // The original events remain the actual physical lineage. Never relabel the
     // transformed suffix as physically observed input to reuse the first-edit path.
     guard hasPhysicalLineage(candidate.original), !candidate.currentText.isEmpty,
@@ -559,14 +571,14 @@ extension AXSelectionAdapter: ManualRepeatedSuffixReplacing {
       candidate.context.focusEpoch == candidate.original.context.focusEpoch,
       let identity = candidate.fieldIdentity
     else { trace("ax.repeat.lineageOrContextRejected"); return .aborted }
-    return replaceEmptyProxySuffix(
+    return await replaceEmptyProxySuffixAsync(
       candidate.currentText + candidate.delimiter, in: candidate.context,
       identity: identity, with: text)
   }
 }
 
 extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
-  public func replaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with text: String) -> ApplyResult {
+  @MainActor public func replaceAutomaticBoundaryAsync(_ candidate: AutomaticBoundaryCandidate, with text: String) async -> ApplyResult {
     let word = candidate.word
     let boundary = candidate.boundary
     guard automaticBoundaryActive(), hasPhysicalLineage(word), word.delimiter == " ",
@@ -586,7 +598,7 @@ extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
       }
       if candidate.requiresWordStartProof { trace("ax.auto.freshOpaqueCapture") }
       trace("ax.auto.emptyProxy")
-      return replaceEmptyProxySuffix(
+      return await replaceEmptyProxySuffixAsync(
         original, in: word.context, identity: before.identity, with: text,
         requiredGeneration: candidate.inputGeneration, authorized: automaticBoundaryActive)
     }
@@ -614,7 +626,7 @@ extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing {
     let evidence = SelectionEvidence(context: word.context, text: observed,
       location: range.location, length: range.length, identity: before.identity,
       inputGeneration: candidate.inputGeneration, mode: .suffix)
-    return replace(evidence, with: replacement, expectedValue: before.value, authorized: automaticBoundaryActive)
+    return await replaceAsync(evidence, with: replacement, expectedValue: before.value, authorized: automaticBoundaryActive)
   }
 }
 
@@ -644,4 +656,24 @@ extension AXSelectionAdapter: ManualCaretWordReading {
     return .word(.init(context: token, text: text, location: range.location, length: range.length,
       identity: value.identity, inputGeneration: generation, mode: .suffix))
   }
+}
+
+extension AXSelectionAdapter {
+  /// Synchronous mutation is unsupported; callers must await the verified transaction.
+  public func replaceTrackedSuffix(_ word: BufferedWord, with text: String) -> ApplyResult { .aborted }
+}
+
+extension AXSelectionAdapter {
+  /// Synchronous mutation is unsupported; callers must await the verified transaction.
+  public func replace(_ evidence: SelectionEvidence, with text: String) -> ApplyResult { .aborted }
+}
+
+extension AXSelectionAdapter {
+  /// Synchronous mutation is unsupported; callers must await the verified transaction.
+  public func replaceRepeatedSuffix(_ candidate: ManualRepeatCandidate, with text: String) -> ApplyResult { .aborted }
+}
+
+extension AXSelectionAdapter {
+  /// Synchronous mutation is unsupported; callers must await the verified transaction.
+  public func replaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with text: String) -> ApplyResult { .aborted }
 }

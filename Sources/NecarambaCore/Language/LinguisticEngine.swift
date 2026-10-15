@@ -24,8 +24,12 @@ public struct LinguisticEngine: Sendable {
     }
     public func decide(word: BufferedWord, preferences: PreferencesSnapshot, excludedWords: Set<String>) -> LinguisticDecision {
         guard preferences.autoEnabled else { return .unchanged(.disabled) }
-        let excluded = Set(excludedWords.map(TokenGuard.normalized))
-        guard !excluded.contains(TokenGuard.normalized(word.text)) else { return .unchanged(.excludedWord) }
+        return decide(word: word, preferences: preferences,
+            wordPolicy: PreparedWordPolicy(excluded: excludedWords, protected: []))
+    }
+    public func decide(word: BufferedWord, preferences: PreferencesSnapshot, wordPolicy: PreparedWordPolicy) -> LinguisticDecision {
+        guard preferences.autoEnabled else { return .unchanged(.disabled) }
+        guard !wordPolicy.containsExcluded(word.text) else { return .unchanged(.excludedWord) }
         let confirmedCapsLock = !word.events.isEmpty && word.events.allSatisfy {
             $0.origin == .physical && $0.kind == .down && $0.modifiers.contains(.capsLock) && !$0.modifiers.contains(.shift)
         }
@@ -63,19 +67,19 @@ public struct LinguisticEngine: Sendable {
             candidate = chosen.0; targetLayout = chosen.1; kinds.append(.layout)
         }
         if punctuationSource && kinds.isEmpty { return .unchanged(.protectedToken) }
-        guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
+        guard !wordPolicy.containsExcluded(candidate) else { return .unchanged(.excludedWord) }
         if preferences.typoEnabled, let typo = index.typo(for: candidate), index.isKnown(typo), typo != candidate {
             candidate = typo; kinds.append(.typo)
         }
-        guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
+        guard !wordPolicy.containsExcluded(candidate) else { return .unchanged(.excludedWord) }
         if preferences.typoEnabled, let caps = RuleIndex.doubleCapsCandidate(candidate), index.isKnown(caps), caps != candidate {
             candidate = caps; kinds.append(.doubleCaps)
         }
-        guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
+        guard !wordPolicy.containsExcluded(candidate) else { return .unchanged(.excludedWord) }
         if preferences.yoEnabled, let yo = index.yo(for: candidate), index.isKnown(yo), yo != candidate {
             candidate = yo; kinds.append(.yo)
         }
-        guard !excluded.contains(TokenGuard.normalized(candidate)) else { return .unchanged(.excludedWord) }
+        guard !wordPolicy.containsExcluded(candidate) else { return .unchanged(.excludedWord) }
         guard !kinds.isEmpty else {
             if index.isKnown(word.text) { return .unchanged(.correct) }
             return .unchanged(physicalSupported ? .ambiguous : .unsupportedLayout)

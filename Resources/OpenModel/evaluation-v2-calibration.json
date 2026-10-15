@@ -1,0 +1,738 @@
+{
+  "corpusVersion" : "independent-v2-oracle-fix",
+  "evaluationMode" : "frozen corpus with simulated physical provenance; character-table candidates, not hardware capture",
+  "manualVersionSwitching" : "UNRUN; numeric cases assert automatic abstention",
+  "modelManifestSHA256" : "d98c82289647be56a92ad428a08d98053925df669e989e9ae51894a84d5cdfb6",
+  "modelVersion" : "open-2",
+  "open" : {
+    "counts" : {
+      "falseChanges" : 0,
+      "falseNegative" : 15,
+      "falsePositive" : 0,
+      "noChange" : 3600,
+      "total" : 6002,
+      "trueNegative" : 3600,
+      "truePositive" : 2387
+    },
+    "coverage" : {
+      "application.browser" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "application.chat" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "application.editor" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "application.office" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "application.terminal" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "case.doubleCaps" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 20,
+        "passed" : false,
+        "samples" : 0
+      },
+      "case.lowercase" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "case.mixed" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "case.title" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "case.uppercase" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "feature.doubleCaps" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 20,
+        "passed" : false,
+        "samples" : 0
+      },
+      "feature.layout" : {
+        "independentFamilies" : 1200,
+        "minimumIndependentFamilies" : 100,
+        "passed" : true,
+        "samples" : 2400
+      },
+      "feature.typo" : {
+        "independentFamilies" : 1,
+        "minimumIndependentFamilies" : 10,
+        "passed" : false,
+        "samples" : 1
+      },
+      "feature.yo" : {
+        "independentFamilies" : 1,
+        "minimumIndependentFamilies" : 10,
+        "passed" : false,
+        "samples" : 1
+      },
+      "language.english" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      },
+      "language.russian" : {
+        "independentFamilies" : 0,
+        "minimumIndependentFamilies" : 100,
+        "passed" : false,
+        "samples" : 0
+      }
+    },
+    "failures" : [
+      "coverage application.chat: 0 independent families < 100",
+      "coverage language.english: 0 independent families < 100",
+      "coverage application.editor: 0 independent families < 100",
+      "coverage application.office: 0 independent families < 100",
+      "coverage feature.typo: 1 independent families < 10",
+      "coverage feature.doubleCaps: 0 independent families < 20",
+      "coverage language.russian: 0 independent families < 100",
+      "coverage case.doubleCaps: 0 independent families < 20",
+      "coverage case.uppercase: 0 independent families < 100",
+      "coverage case.title: 0 independent families < 100",
+      "coverage application.browser: 0 independent families < 100",
+      "coverage case.lowercase: 0 independent families < 100",
+      "coverage application.terminal: 0 independent families < 100",
+      "coverage case.mixed: 0 independent families < 100",
+      "coverage feature.yo: 1 independent families < 10",
+      "physical differential UNRUN or unqualified"
+    ],
+    "falseChangeInterval" : {
+      "lower" : 1.0842021724855044e-19,
+      "upper" : 0.001065973598839638
+    },
+    "falseChangeRate" : 0,
+    "falseNegative" : 15,
+    "falsePositive" : 0,
+    "layoutRecall" : 0.99375000000000002,
+    "layoutRecallInterval" : {
+      "lower" : 0.9897131071813251,
+      "upper" : 0.99620876054906116
+    },
+    "mismatches" : [
+      {
+        "actual" : "<hbl;",
+        "category" : "layout.title.russian",
+        "expected" : "Бридж",
+        "id" : "calibration-06483",
+        "input" : "<hbl;"
+      },
+      {
+        "actual" : "<bkm,jrt",
+        "category" : "layout.title.russian",
+        "expected" : "Бильбоке",
+        "id" : "calibration-07348",
+        "input" : "<bkm,jrt"
+      },
+      {
+        "actual" : "<f,crbq",
+        "category" : "layout.title.russian",
+        "expected" : "Бабский",
+        "id" : "calibration-07433",
+        "input" : "<f,crbq"
+      },
+      {
+        "actual" : "<'qcbr",
+        "category" : "layout.title.russian",
+        "expected" : "Бэйсик",
+        "id" : "calibration-08188",
+        "input" : "<'qcbr"
+      },
+      {
+        "actual" : "<bjaf,hbrf",
+        "category" : "layout.title.russian",
+        "expected" : "Биофабрика",
+        "id" : "calibration-08363",
+        "input" : "<bjaf,hbrf"
+      },
+      {
+        "actual" : "<h.cctktw",
+        "category" : "layout.title.russian",
+        "expected" : "Брюсселец",
+        "id" : "calibration-08478",
+        "input" : "<h.cctktw"
+      },
+      {
+        "actual" : "<juj,jhtw",
+        "category" : "layout.title.russian",
+        "expected" : "Богоборец",
+        "id" : "calibration-08758",
+        "input" : "<juj,jhtw"
+      },
+      {
+        "actual" : "<b[hjvfn",
+        "category" : "layout.title.russian",
+        "expected" : "Бихромат",
+        "id" : "calibration-08763",
+        "input" : "<b[hjvfn"
+      },
+      {
+        "actual" : ">;fyby",
+        "category" : "layout.title.russian",
+        "expected" : "Южанин",
+        "id" : "calibration-09063",
+        "input" : ">;fyby"
+      },
+      {
+        "actual" : "<fk,tc",
+        "category" : "layout.title.russian",
+        "expected" : "Балбес",
+        "id" : "calibration-09958",
+        "input" : "<fk,tc"
+      },
+      {
+        "actual" : "\"n.l",
+        "category" : "layout.title.russian",
+        "expected" : "Этюд",
+        "id" : "calibration-10018",
+        "input" : "\"n.l"
+      },
+      {
+        "actual" : "pfc.c.rfdibq",
+        "category" : "layout.russian",
+        "expected" : "засюсюкавший",
+        "id" : "calibration-10342",
+        "input" : "pfc.c.rfdibq"
+      },
+      {
+        "actual" : "Pfc.c.rfdibq",
+        "category" : "layout.title.russian",
+        "expected" : "Засюсюкавший",
+        "id" : "calibration-10343",
+        "input" : "Pfc.c.rfdibq"
+      },
+      {
+        "actual" : "{kz,ftn",
+        "category" : "layout.title.russian",
+        "expected" : "Хлябает",
+        "id" : "calibration-10638",
+        "input" : "{kz,ftn"
+      },
+      {
+        "actual" : "{j,,b",
+        "category" : "layout.title.russian",
+        "expected" : "Хобби",
+        "id" : "calibration-11218",
+        "input" : "{j,,b"
+      }
+    ],
+    "passed" : false,
+    "perCategory" : {
+      "acronym.english" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 460,
+        "total" : 460,
+        "trueNegative" : 460,
+        "truePositive" : 0
+      },
+      "acronym.russian" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 740,
+        "total" : 740,
+        "trueNegative" : 740,
+        "truePositive" : 0
+      },
+      "correct.english" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 460,
+        "total" : 460,
+        "trueNegative" : 460,
+        "truePositive" : 0
+      },
+      "correct.russian" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 740,
+        "total" : 740,
+        "trueNegative" : 740,
+        "truePositive" : 0
+      },
+      "doubleCaps" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 0,
+        "trueNegative" : 0,
+        "truePositive" : 0
+      },
+      "guard.code" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 200,
+        "total" : 200,
+        "trueNegative" : 200,
+        "truePositive" : 0
+      },
+      "guard.email" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 200,
+        "total" : 200,
+        "trueNegative" : 200,
+        "truePositive" : 0
+      },
+      "guard.mixed" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 200,
+        "total" : 200,
+        "trueNegative" : 200,
+        "truePositive" : 0
+      },
+      "guard.number" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 200,
+        "total" : 200,
+        "trueNegative" : 200,
+        "truePositive" : 0
+      },
+      "guard.path" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 200,
+        "total" : 200,
+        "trueNegative" : 200,
+        "truePositive" : 0
+      },
+      "guard.url" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 200,
+        "total" : 200,
+        "trueNegative" : 200,
+        "truePositive" : 0
+      },
+      "layout.english" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 460,
+        "trueNegative" : 0,
+        "truePositive" : 460
+      },
+      "layout.russian" : {
+        "falseChanges" : 0,
+        "falseNegative" : 1,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 740,
+        "trueNegative" : 0,
+        "truePositive" : 739
+      },
+      "layout.title.english" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 460,
+        "trueNegative" : 0,
+        "truePositive" : 460
+      },
+      "layout.title.russian" : {
+        "falseChanges" : 0,
+        "falseNegative" : 14,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 740,
+        "trueNegative" : 0,
+        "truePositive" : 726
+      },
+      "typo" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 1,
+        "trueNegative" : 0,
+        "truePositive" : 1
+      },
+      "yo" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 1,
+        "trueNegative" : 0,
+        "truePositive" : 1
+      }
+    },
+    "perStratum" : {
+      "feature.layout" : {
+        "falseChanges" : 0,
+        "falseNegative" : 15,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 2400,
+        "trueNegative" : 0,
+        "truePositive" : 2385
+      },
+      "feature.typo" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 1,
+        "trueNegative" : 0,
+        "truePositive" : 1
+      },
+      "feature.yo" : {
+        "falseChanges" : 0,
+        "falseNegative" : 0,
+        "falsePositive" : 0,
+        "noChange" : 0,
+        "total" : 1,
+        "trueNegative" : 0,
+        "truePositive" : 1
+      }
+    },
+    "physicalDifferentialQualified" : false,
+    "precision" : 1,
+    "precisionInterval" : {
+      "lower" : 0.99839320179136926,
+      "upper" : 1
+    },
+    "recall" : 0.99375520399666939,
+    "tokenQualityPassed" : false,
+    "total" : 6002,
+    "truePositive" : 2387
+  },
+  "openCasesPerSecond" : 38725.214369822526,
+  "openEvaluationSeconds" : 0.15498945835861377,
+  "openInitializationSeconds" : 0.12270145834190771,
+  "physicalDifferentialEvidence" : "UNRUN",
+  "preferences" : "automatic, typo and yo enabled; no excluded words",
+  "reference" : {
+    "counts" : {
+      "falseChanges" : 22,
+      "falseNegative" : 452,
+      "falsePositive" : 57,
+      "noChange" : 3600,
+      "total" : 6002,
+      "trueNegative" : 3578,
+      "truePositive" : 1950
+    },
+    "falseChangeInterval" : {
+      "lower" : 0.004039190488081365,
+      "upper" : 0.009235976766772456
+    },
+    "falseChangeRate" : 0.006111111111111111,
+    "falseNegative" : 452,
+    "falsePositive" : 57,
+    "layoutRecall" : 0.81166666666666665,
+    "layoutRecallInterval" : {
+      "lower" : 0.79553077695344721,
+      "upper" : 0.82680640200210465
+    },
+    "passed" : false,
+    "physicalDifferentialQualified" : false,
+    "precision" : 0.97159940209267559,
+    "precisionInterval" : {
+      "lower" : 0.96338211833876064,
+      "upper" : 0.97801475747681821
+    },
+    "recall" : 0.81182348043297248,
+    "tokenQualityPassed" : false,
+    "total" : 6002,
+    "truePositive" : 1950
+  },
+  "referenceEvaluationSeconds" : 0.19677987499744631,
+  "referenceInitializationSeconds" : 0.67133437498705462,
+  "referencePolicy" : "optional local reference; aggregate metrics only, never model extraction or per-token outputs",
+  "regressions" : [
+    {
+      "actual" : "ground",
+      "expected" : "ground",
+      "id" : "ground-correct",
+      "input" : "ground",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "ground",
+      "expected" : "ground",
+      "id" : "ground-wrong",
+      "input" : "пкщгтв",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "connector",
+      "expected" : "connector",
+      "id" : "connector-correct",
+      "input" : "connector",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "connector",
+      "expected" : "connector",
+      "id" : "connector-wrong",
+      "input" : "сщттусещк",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "тоже",
+      "expected" : "тоже",
+      "id" : "also-correct",
+      "input" : "тоже",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "тоже",
+      "expected" : "тоже",
+      "id" : "also-wrong",
+      "input" : "nj;t",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "переключилось",
+      "expected" : "переключилось",
+      "id" : "switched-correct",
+      "input" : "переключилось",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "переключилось",
+      "expected" : "переключилось",
+      "id" : "switched-wrong",
+      "input" : "gthtrk.xbkjcm",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "периодически",
+      "expected" : "периодически",
+      "id" : "periodically-correct",
+      "input" : "периодически",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "периодически",
+      "expected" : "периодически",
+      "id" : "periodically-wrong",
+      "input" : "gthbjlbxtcrb",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "не",
+      "expected" : "не",
+      "id" : "not-wrong",
+      "input" : "yt",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "1.3.166",
+      "expected" : "1.3.166",
+      "id" : "version",
+      "input" : "1.3.166",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "1ю3ю166",
+      "expected" : "1ю3ю166",
+      "id" : "version-ru",
+      "input" : "1ю3ю166",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "https://example.com",
+      "expected" : "https://example.com",
+      "id" : "url",
+      "input" : "https://example.com",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "user@example.com",
+      "expected" : "user@example.com",
+      "id" : "email",
+      "input" : "user@example.com",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "foo(bar)",
+      "expected" : "foo(bar)",
+      "id" : "code",
+      "input" : "foo(bar)",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "API",
+      "expected" : "API",
+      "id" : "acronym",
+      "input" : "API",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "he",
+      "expected" : "he",
+      "id" : "ambiguous-en",
+      "input" : "he",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "ру",
+      "expected" : "ру",
+      "id" : "ambiguous-ru",
+      "input" : "ру",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "receive",
+      "expected" : "receive",
+      "id" : "typo-en",
+      "input" : "recieve",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "Receive",
+      "expected" : "Receive",
+      "id" : "typo-title",
+      "input" : "Recieve",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "привет",
+      "expected" : "привет",
+      "id" : "typo-ru",
+      "input" : "превет",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "ёжик",
+      "expected" : "ёжик",
+      "id" : "yo-curated",
+      "input" : "ежик",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "ёжик",
+      "expected" : "ёжик",
+      "id" : "yo-known",
+      "input" : "ёжик",
+      "layout" : "RU",
+      "passed" : true
+    },
+    {
+      "actual" : "Hello",
+      "expected" : "Hello",
+      "id" : "double-caps",
+      "input" : "HEllo",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "heLLo",
+      "expected" : "heLLo",
+      "id" : "mixed-case",
+      "input" : "heLLo",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "Женский",
+      "expected" : "Женский",
+      "id" : "title-colon",
+      "input" : ":tycrbq",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "Бывало",
+      "expected" : "Бывало",
+      "id" : "title-comma",
+      "input" : "<sdfkj",
+      "layout" : "US",
+      "passed" : true
+    },
+    {
+      "actual" : "foo:bar",
+      "expected" : "foo:bar",
+      "id" : "embedded-colon",
+      "input" : "foo:bar",
+      "layout" : "US",
+      "passed" : true
+    }
+  ],
+  "regressionsPassed" : 29,
+  "releaseReady" : false,
+  "ruleConsistencyAudit" : {
+    "failures" : [
+
+    ],
+    "passed" : 300,
+    "scope" : "own declared rules, not held-out quality evidence",
+    "total" : 300
+  },
+  "rulesSHA256" : "c5b8ffaae684f053cb57203bc364115fec413224f659d0bbac8b9b2d1b04a133",
+  "schemaVersion" : 2,
+  "split" : "calibration",
+  "timingScope" : "single local process, debug/release build dependent; evaluation includes synthetic event construction and metrics"
+}

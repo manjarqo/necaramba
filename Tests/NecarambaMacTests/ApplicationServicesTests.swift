@@ -3,6 +3,22 @@ import NecarambaCore
 @testable import NecarambaMac
 
 @MainActor final class ApplicationServicesTests: XCTestCase {
+    func testAdditionalCorrectionsUnavailableByDefault() throws {
+        let domain = "test.necaramba." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let app = try ApplicationServices(rules: MemoryApplicationRules(),
+            preferences: PreferencesController(defaults: defaults, publish: { _ in }),
+            sound: MemorySound(), header: MemoryHeader(), statistics: MemoryStatistics(),
+            login: LoginController(backend: LoginFake()), permissions: PermissionFake(),
+            files: MemoryFiles(soundURL: URL(fileURLWithPath: "/virtual/chime.wav")),
+            appSelection: MemoryAppSelection(), thumbnailer: MemoryThumbnailer())
+        XCTAssertEqual((app.snapshot()["model"] as? [String: Any])?["additionalCorrectionsAvailable"] as? Bool, false)
+        app.additionalCorrectionsAvailable = true
+        app.modelState = "failed"
+        XCTAssertEqual((app.snapshot()["model"] as? [String: Any])?["additionalCorrectionsAvailable"] as? Bool, true)
+    }
+
     func testMissingAccessibilityRequiresPermissionEvenWhenListenAndPostAreGranted() throws {
         let permissions = PermissionFake()
         permissions.state = .init(listen: true, post: true, ax: false, secureInput: false)

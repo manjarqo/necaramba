@@ -2,6 +2,33 @@ import XCTest
 @testable import NecarambaMac
 
 final class ChromiumAccessibilityActivationTests: XCTestCase {
+  func testZenStableActivatesPageAccessibilityAndRefreshesAfterActivation() {
+    var tick: (() -> Void)?
+    var activated = 0
+    var refreshed = 0
+    let activation = ChromiumAccessibilityActivation { _, action in
+      tick = action; return {}
+    }
+    XCTAssertEqual(ChromiumAccessibilityActivation.attribute(for: "app.zen-browser.zen"), "AXEnhancedUserInterface")
+    activation.start(bundleID: "app.zen-browser.zen", activate: {
+      activated += 1; return true
+    }) { refreshed += 1 }
+    XCTAssertEqual(activated, 1)
+    XCTAssertEqual(refreshed, 0)
+    tick?()
+    XCTAssertEqual(refreshed, 1)
+  }
+  func testZenActivationIsRestrictedToExactStableBundle() {
+    var activated = 0
+    var scheduled = 0
+    let activation = ChromiumAccessibilityActivation { _, _ in scheduled += 1; return {} }
+    for bundle in ["app.zen-browser.zen.beta", "app.zen-browser.zen-helper", "other.app.zen-browser.zen"] {
+      activation.start(bundleID: bundle, activate: { activated += 1; return true }, refresh: {})
+      XCTAssertNil(ChromiumAccessibilityActivation.attribute(for: bundle))
+    }
+    XCTAssertEqual(activated, 0)
+    XCTAssertEqual(scheduled, 0)
+  }
   func testChromeActivatesThenRefreshesAfterDebounce() {
     var delay: TimeInterval?
     var tick: (() -> Void)?

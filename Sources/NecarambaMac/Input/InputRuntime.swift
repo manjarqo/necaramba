@@ -22,6 +22,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   private let earlyEnabled: Bool
   private let conservativeAutomaticEnabled: Bool
   private var automaticEvents: [InputEvent] = []
+  private var localAutomaticReady = false
   private var automaticTokenUnsafe = false
   // A missing prefix differs from a known interrupted token/paste. Only the
   // former may use physical capture in editors that never expose their value.
@@ -32,6 +33,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   private var recentWord: BufferedWord?
   private var repeatedManual: ManualRepeatCandidate?
   private var gestures: GestureRecognizer
+  /// Set only on main immediately before command delivery. Contains no input payload.
+  var commandRecognizedAtNanos: UInt64?
   private let command: (RuntimeCommand) -> Void
   private var tap: EventTapAdapter?
   private var generation: UInt64 = 0
@@ -109,6 +112,17 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     automaticEvents.removeAll()
     gestures = GestureRecognizer(configuration: Self.configuration(snapshot))
     buffer.invalidate(.unknownInput)
+  }
+  /// Local compiled models do not depend on the fallback snapshot lexicon.
+  public func updateLocalAutomaticReadiness(_ enabled: Bool) {
+    lock.lock()
+    defer { lock.unlock() }
+    guard localAutomaticReady != enabled else { return }
+    localAutomaticReady = enabled
+    generation &+= 1
+    automaticPrefixBlocked = automaticPrefixBlocked || !automaticEvents.isEmpty
+    automaticTokenUnsafe = automaticTokenUnsafe || !automaticEvents.isEmpty
+    automaticEvents.removeAll()
   }
   public func install(_ snapshot: RuleSnapshot) {
     install(snapshot, engine: LinguisticEngine(snapshot: snapshot))
@@ -244,15 +258,17 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     lock.unlock()
     adapter?.finishShortcut(lease, result)
   }
-  public func replaceByKeys(
+  private func currentTap() -> EventTapAdapter? {
+    lock.lock(); defer { lock.unlock() }
+    return tap
+  }
+  @MainActor public func replaceByKeysAsync(
     _ evidence: SelectionEvidence, with text: String, selected: Bool, lease: ShortcutLease? = nil,
     preflight: () -> Bool
-  ) -> ApplyResult {
-    lock.lock()
-    let adapter = tap
-    lock.unlock()
+  ) async -> ApplyResult {
+    let adapter = currentTap()
     guard let adapter else { return .aborted }
-    return adapter.replace(
+    return await adapter.replaceAsync(
       evidence, with: text, selected: selected, lease: lease, preflight: preflight)
   }
   public func cachedInputContext() -> (ContextToken, LayoutID)? {
@@ -331,7 +347,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     }
     if event.kind == .down {
       if let text = event.text, text.count == 1,
-        (text.unicodeScalars.allSatisfy({ CharacterSet.letters.contains($0) })
+        (text.unicodeScalars.allSatisfy({ CharacterSet.letters.contains($0) || (0x30...0x39).contains($0.value) })
           || [",", ".", ";", "'", "[", "]", "<", ">", ":", "\"", "{", "}"].contains(text)),
         event.modifiers.isSubset(of: [.shift, .capsLock])
       {
@@ -397,7 +413,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     if ordinary, event.keyCode == 49, event.text == " " {
       defer { automaticEvents.removeAll(); automaticTokenUnsafe = false; automaticPrefixBlocked = false }
       guard !automaticEvents.isEmpty,
-        preferences.autoEnabled, !snapshot.lexicon.isEmpty,
+        preferences.autoEnabled, (localAutomaticReady || !snapshot.lexicon.isEmpty),
         automaticEvents.allSatisfy({ $0.context == event.context && $0.layout == event.layout })
       else { return }
       let word = BufferedWord(text: automaticEvents.compactMap(\.text).joined(), events: automaticEvents,
@@ -423,6 +439,11 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     }
     automaticEvents.append(event)
   }
+  public var nextDeadlineNanos: UInt64? {
+    lock.lock()
+    defer { lock.unlock() }
+    return gestures.nextDeadlineNanos
+  }
   public func advance(to time: UInt64) {
     lock.lock()
     defer { lock.unlock() }
@@ -447,6 +468,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   private func deliver(_ value: RuntimeCommand) {
     guard !deliveryPending else { return }
     deliveryPending = true
+    let recognizedAt = InputPerformanceMetrics.nowNanos()
     let expected = generation
     // Electron's rich-text AX range can lag the physical Space event. Defer
     // Spark's initial read only; new input still cancels this generation and
@@ -475,7 +497,9 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
         }
       }
       guard valid else { return }
+      self.commandRecognizedAtNanos = recognizedAt
       self.command(value)
+      self.commandRecognizedAtNanos = nil
     }
   }
 }

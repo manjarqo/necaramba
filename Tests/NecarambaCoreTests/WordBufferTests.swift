@@ -4,6 +4,13 @@ final class WordBufferTests: XCTestCase {
     func event(_ text: String?, epoch: UInt64 = 1, origin: EventOrigin = .physical, code: UInt16 = 0, modifiers: Set<Modifier> = []) -> InputEvent {
         .init(kind: .down, keyCode: code, modifiers: modifiers, timestampNanos: 1, layout: .init(rawValue: "US"), context: .init(pid: 42, bundleID: "test.editor", focusEpoch: epoch, layoutEpoch: 1), origin: origin, text: text, isRepeat: false)
     }
+    func testNumericVersionsNeverBecomeAutomaticWordCandidates() {
+        for text in ["1ю3ю166", "1.3.166"] {
+            var buffer = WordBuffer()
+            for character in text { XCTAssertNil(buffer.consume(event(String(character)))) }
+            XCTAssertNil(buffer.consume(event(" ")))
+        }
+    }
     func testBoundsAndOverflowWaitsForBoundary() {
         var b = WordBuffer(maxGraphemes: 128, maxUTF16: 512)
         for _ in 0..<128 { XCTAssertNil(b.consume(event("a"))) }

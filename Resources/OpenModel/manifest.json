@@ -1,0 +1,18 @@
+{
+  "files": {
+    "corrections.json": {
+      "bytes": 15629,
+      "sha256": "23689f5eb857fc1c6016f32873efbdba238404841ae865b2fa669f42c914c8b2"
+    },
+    "en.words": {
+      "bytes": 738289,
+      "sha256": "106085bf955265c5c79d1ab71dea485259676e2c0d34ce7e45c175848b0b95db"
+    },
+    "ru.words": {
+      "bytes": 32717952,
+      "sha256": "afa53e9554e59f18ffc9919f2efc6ffd5a077ab66b418f4f2af42f52679d94d5"
+    }
+  },
+  "schemaVersion": 1,
+  "version": "open-2"
+}

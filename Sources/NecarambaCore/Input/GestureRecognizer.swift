@@ -21,6 +21,12 @@ public struct GestureRecognizer: Sendable {
     private var layout: LayoutID?
     private var lastTimestamp: UInt64 = 0
     public init(configuration: GestureConfiguration) { self.configuration = configuration }
+    /// Only a released pending gesture needs a wakeup; held modifiers wait for input.
+    public var nextDeadlineNanos: UInt64? {
+        guard held.isEmpty, let release = pendingRelease else { return nil }
+        let (deadline, overflow) = release.addingReportingOverflow(configuration.doubleWindowNanos)
+        return overflow ? UInt64.max : deadline
+    }
     public mutating func invalidate() {
         held.removeAll(); cancelled = false; second = false; layoutChord = false; pendingRelease = nil; context = nil; layout = nil
     }

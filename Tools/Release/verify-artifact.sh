@@ -2,6 +2,9 @@
 set -euo pipefail
 app="${1:?Usage: verify-artifact.sh Final.app}"
 [[ -d "$app/Contents" ]] || { echo 'Not an app bundle' >&2; exit 1; }
+if [[ -e "$app/Contents/Resources/LocalPatternModel.json" || -L "$app/Contents/Resources/LocalPatternModel.json" ]]; then
+  echo 'Local pattern model cannot be released' >&2; exit 1
+fi
 rules="$app/Contents/Resources/Rules"
 if [[ -e "$rules/Development" || -e "$rules/DevelopmentOnly.json" ]]; then
   echo 'Development rule package cannot be released' >&2; exit 1

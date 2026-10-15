@@ -1,0 +1,9 @@
+{
+  "artifact": "open-v1.json",
+  "sha256": "a1713eae3c5f44f3f1e97bb9ad80340d21c0a5acaa04e9c41de493bdd07a67eb",
+  "bytes": 36451708,
+  "wordCounts": {
+    "en": 77892,
+    "ru": 1419808
+  }
+}

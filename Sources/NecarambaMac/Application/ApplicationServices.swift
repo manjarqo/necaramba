@@ -17,6 +17,7 @@ import NecarambaCore
     public var runtimeRunning = false
     public var runtimeIsRunning: (() -> Bool)?
     public var automaticReady = false
+    public var additionalCorrectionsAvailable = false
     public var modelVersion: String = "0"
     public var modelState = "idle"
     public var modelLastChecked: String?
@@ -70,7 +71,7 @@ import NecarambaCore
         return ["preferences":Self.flags(preferences.snapshot),
                 "capabilities":["listen":p.listen,"post":p.post,"axTrusted":p.ax,"secureInput":p.secureInput],
                 "status":status,"words":words.map{word($0,false)}+legacy.map{word($0,true)},"apps":apps,
-                "model":["version":modelVersion,"state":modelState,"lastChecked":modelLastChecked as Any? ?? NSNull()],
+                "model":["additionalCorrectionsAvailable":additionalCorrectionsAvailable,"version":modelVersion,"state":modelState,"lastChecked":modelLastChecked as Any? ?? NSNull()],
                 "license":["state":licenseState,"expiresAt":licenseExpiresAt as Any? ?? NSNull()],
                 "statistics":stats,
                 "appearance":["colorIndex":preferences.settings.selectedColor,"hasCustomSound":sound.customSoundURL != nil,"hasHeaderImage":hasHeaderImage],

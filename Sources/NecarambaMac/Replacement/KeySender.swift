@@ -8,4 +8,9 @@ public final class KeySender:KeySending {
   guard !old.isEmpty,let evidence=selection.suffix(old,in:plan.expected),evidence.text==old else { return .aborted }
   return selection.replace(evidence,with:plan.replacement+plan.delimiter)
  }
+ @MainActor public func replaceVerifiedSuffixAsync(_ plan: EditPlan) async -> ApplyResult {
+  let old = plan.original + plan.delimiter
+  guard !Task.isCancelled, !old.isEmpty, let evidence = selection.suffix(old, in: plan.expected), evidence.text == old else { return .aborted }
+  return await selection.replaceAsync(evidence, with: plan.replacement + plan.delimiter)
+ }
 }

@@ -69,3 +69,22 @@ extension GestureRecognizerTests {
         }
     }
 }
+
+extension GestureRecognizerTests {
+    func testNextDeadlineExistsOnlyForPendingReleasedGesture() {
+        var r = recognizer()
+        XCTAssertNil(r.nextDeadlineNanos)
+        _ = r.consume(event(56, true, 0))
+        XCTAssertNil(r.nextDeadlineNanos)
+        _ = r.consume(event(56, false, 20))
+        XCTAssertEqual(r.nextDeadlineNanos, 320_000_000)
+        _ = r.consume(event(56, true, 100))
+        XCTAssertNil(r.nextDeadlineNanos)
+        XCTAssertEqual(r.consume(event(56, false, 120)), [.manualCorrection])
+        XCTAssertNil(r.nextDeadlineNanos)
+        _ = r.consume(event(56, true, 500))
+        _ = r.consume(event(56, false, 520))
+        XCTAssertEqual(r.advance(to: 820_000_000), [.switchLayout])
+        XCTAssertNil(r.nextDeadlineNanos)
+    }
+}

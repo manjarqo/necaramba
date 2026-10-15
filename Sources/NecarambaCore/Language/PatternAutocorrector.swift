@@ -14,6 +14,13 @@ public struct PatternAutocorrection: Equatable, Sendable {
   public let status: Status
   public let replacement: String?
   public let appliedRuleCount: Int
+  public let appliedTypo: Bool
+  public let appliedYo: Bool
+  public init(status: Status, replacement: String?, appliedRuleCount: Int,
+    appliedTypo: Bool = false, appliedYo: Bool = false) {
+    self.status = status; self.replacement = replacement; self.appliedRuleCount = appliedRuleCount
+    self.appliedTypo = appliedTypo; self.appliedYo = appliedYo
+  }
 }
 /// Dataset-independent UTF-8 matcher and Unicode-scalar rewrite interpreter.
 /// Uses Swift Unicode casing tables; no normalization or locale-aware folding.
@@ -92,6 +99,8 @@ public struct PatternAutocorrector: Sendable {
     }
     var current = input
     var applied = 0
+    var appliedTypo = false
+    var appliedYo = false
     for id in matches {
       let rule = rules[id]
       work += current.utf8.count + rule.replacement.utf8.count
@@ -102,12 +111,15 @@ public struct PatternAutocorrector: Sendable {
       let effectiveYo = rule.yo || (novel.count == 1 && novel.first?.value == 0x451)
       guard effectiveYo ? yoEnabled : typoEnabled else { continue }
       guard let changed = replace(current, rule: rule, work: &work) else { return Self.unsupported }
-      if Array(changed.utf8) != Array(current.utf8) { applied += 1; current = changed }
+      if Array(changed.utf8) != Array(current.utf8) {
+        applied += 1; current = changed
+        if effectiveYo { appliedYo = true } else { appliedTypo = true }
+      }
     }
     guard Array(current.utf8) != Array(input.utf8) else {
-      return .init(status: .unchanged, replacement: nil, appliedRuleCount: applied)
+      return .init(status: .unchanged, replacement: nil, appliedRuleCount: applied, appliedTypo: appliedTypo, appliedYo: appliedYo)
     }
-    return .init(status: .corrected, replacement: current, appliedRuleCount: applied)
+    return .init(status: .corrected, replacement: current, appliedRuleCount: applied, appliedTypo: appliedTypo, appliedYo: appliedYo)
   }
 
   private func lookup(_ text: String, complete: Bool, work: inout Int) -> [Int]? {

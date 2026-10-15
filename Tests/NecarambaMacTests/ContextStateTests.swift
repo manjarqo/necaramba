@@ -78,3 +78,20 @@ final class ContextStateTests: XCTestCase {
     state.update(pid: 42, bundleID: "test", focusID: focus, layout: .init(rawValue: "US"), qualified: qualified)
   }
 }
+
+extension ContextStateTests {
+  func testCaptureInvalidationCountsOncePerReconciliationWithoutPublishingStaleToken() {
+    let state = ContextState()
+    state.update(pid: 1, bundleID: "test", focusID: "a", layout: .init(rawValue: "RU"), qualified: true)
+    let old = state.current()!
+    state.reconcileFocus {
+      XCTAssertNil(state.current())
+      XCTAssertNil(state.gestureContext())
+      XCTAssertFalse(state.isSafe(old))
+      return nil
+    }
+    XCTAssertEqual(state.reconciliationCaptureInvalidations, 1)
+    state.reconcileFocus { XCTAssertNil(state.gestureContext()); return nil }
+    XCTAssertEqual(state.reconciliationCaptureInvalidations, 2)
+  }
+}

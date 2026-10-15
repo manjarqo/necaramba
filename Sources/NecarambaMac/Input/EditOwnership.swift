@@ -17,6 +17,11 @@ public final class EditOwnership<Event> {
     self.deadlineNanos = deadlineNanos
   }
   public var isActive: Bool { began != nil }
+  public var nextDeadlineNanos: UInt64? {
+    guard let began else { return nil }
+    let (deadline, overflow) = began.addingReportingOverflow(deadlineNanos)
+    return overflow ? UInt64.max : deadline
+  }
   public func expired(at now: UInt64) -> Bool {
     guard let began else { return false }
     return now < began || now - began >= deadlineNanos

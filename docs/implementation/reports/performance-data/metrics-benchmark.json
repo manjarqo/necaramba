@@ -1,0 +1,11 @@
+{
+  "nanosecondsPerRecord" : [
+    34.086624999999998,
+    34.228458000000003,
+    34.086542000000001,
+    34.281958000000003,
+    33.891916000000002
+  ],
+  "samplesPerRun" : 1000000,
+  "scope" : "Single-thread optimized aggregate record cost; excludes clock calls and contention"
+}

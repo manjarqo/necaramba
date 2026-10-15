@@ -103,3 +103,17 @@ final class EditOwnershipTests: XCTestCase {
     XCTAssertEqual(writes, 0)
   }
 }
+
+extension EditOwnershipTests {
+  func testDeadlineClearsOnCancelAndCommit() {
+    let owner = EditOwnership<Int>()
+    XCTAssertNil(owner.nextDeadlineNanos)
+    XCTAssertTrue(owner.begin(now: 10))
+    XCTAssertEqual(owner.nextDeadlineNanos, 100_000_010)
+    _ = owner.cancel()
+    XCTAssertNil(owner.nextDeadlineNanos)
+    XCTAssertTrue(owner.begin(now: 20))
+    _ = owner.commit(expectedGeneration: 1, currentGeneration: { 1 }, now: 30) { .committed }
+    XCTAssertNil(owner.nextDeadlineNanos)
+  }
+}

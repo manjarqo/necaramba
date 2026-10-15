@@ -52,6 +52,32 @@ struct NecarambaMain {
         applicationServices?.automaticReady = ready
         bridge?.publishChange()
       }
+      if let modelURL = Bundle.main.url(forResource: "LocalPatternModel", withExtension: "json") {
+        input.installLocalModel(url: modelURL) { [weak applicationServices, weak bridge] result in
+          switch result {
+          case .success(let version):
+            applicationServices?.additionalCorrectionsAvailable = true
+            NSLog("Necaramba local pattern model installed: %@", version)
+          case .failure:
+            applicationServices?.additionalCorrectionsAvailable = false
+            NSLog("Necaramba local pattern model could not be loaded")
+          }
+          bridge?.publishChange()
+        }
+      } else if let resources = Bundle.main.resourceURL,
+                FileManager.default.fileExists(atPath: resources.appendingPathComponent("OpenModel/manifest.json").path) {
+        input.installOpenModel(directory: resources.appendingPathComponent("OpenModel")) { [weak applicationServices, weak bridge] result in
+          switch result {
+          case .success(let version):
+            applicationServices?.additionalCorrectionsAvailable = true
+            NSLog("Necaramba open model installed: %@", version)
+          case .failure:
+            applicationServices?.additionalCorrectionsAvailable = false
+            NSLog("Necaramba open model could not be loaded")
+          }
+          bridge?.publishChange()
+        }
+      }
       input.onToggleAuto = { [weak self] in self?.toggleAuto() }
       input.onCommitted = { [weak applicationServices,weak bridge] id,kind in
         guard let applicationServices else { return }
@@ -120,7 +146,7 @@ struct NecarambaMain {
       input.updateAppPolicies(Dictionary(uniqueKeysWithValues:try services.rules.apps().map { ($0.bundleID, $0.mode == .allow ? AppOverride.allow : .deny) }))
     } catch { services.modelState = "failed" }
   }
-  func applicationWillTerminate(_ notification: Notification) { deliveryTask?.cancel(); delivery?.stop(); lifecycle?.stop(); input?.stop() }
+  func applicationWillTerminate(_ notification: Notification) { deliveryTask?.cancel(); delivery?.stop(); lifecycle?.stop(); input?.stop(); InputPerformanceReport.flush() }
   func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
   func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { openSettings(); return true }
