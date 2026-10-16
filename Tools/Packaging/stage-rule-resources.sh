@@ -20,6 +20,10 @@ case "$mode" in
     mkdir -p "$rules/Development" "$rules/Licenses"
     cp "$source/"*.json "$source/signature.ed25519" "$rules/Development/"
     cp "$root/Resources/Rules/independent-v1.json" "$rules/Development/payload.json"
+    if [[ -f "$source/profiles.signature.ed25519" ]]; then
+      cp "$source/profiles.signature.ed25519" "$rules/Development/"
+      cp "$root/Resources/Rules/application-profiles-v1.json" "$rules/Development/profiles.json"
+    fi
     cp "$root/Resources/Rules/Licenses/"*.txt "$rules/Licenses/"
     ;;
   NO)
@@ -35,6 +39,10 @@ case "$mode" in
     rm -rf "$rules/Development" "$rules/Production" "$rules/Licenses"
     mkdir -p "$rules/Production"
     cp "$source/manifest.json" "$source/signature.ed25519" "$source/payload.json" "$source/TrustedRuleKeys.json" "$rules/Production/"
+    # Optional signed application profiles; absence keeps the built-in fallback.
+    if [[ -f "$source/profiles.json" && -f "$source/profiles.signature.ed25519" ]]; then
+      cp "$source/profiles.json" "$source/profiles.signature.ed25519" "$rules/Production/"
+    fi
     cp -R "$source/Licenses" "$rules/Production/Licenses"
     ;;
   *) echo 'Unknown rule package mode' >&2; exit 1 ;;

@@ -60,14 +60,23 @@ private final class MainActorRuleConsumer:RuleSnapshotConsumer {
             let keyName=development ? "DevelopmentTrustedRuleKeys.json" : "TrustedRuleKeys.json"
             let version=bundle.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "1.0.0"
             // Disk reads, signature verification and lexicon decoding never run on the main/input executor.
-            let loaded=try await Task.detached { () throws -> (RulePackage,RulePackageVerifier) in
+            let loaded=try await Task.detached { () throws -> (RulePackage,RulePackageVerifier,ApplicationProfiles?) in
                 let encoded=try JSONDecoder().decode([String:String].self,from:Data(contentsOf:directory.appendingPathComponent(keyName)))
                 var keys:[String:Data]=[:]
                 for (id,value) in encoded { guard let bytes=Data(base64Encoded:value),bytes.count==32 else { throw NativeCommandFailure("unavailable") };keys[id]=bytes }
                 guard !keys.isEmpty,development || !keys.keys.contains(where:{$0.contains("development") || $0.contains("test")}) else { throw NativeCommandFailure("unavailable") }
                 let package=RulePackage(manifest:try Data(contentsOf:directory.appendingPathComponent("manifest.json")),signature:try Data(contentsOf:directory.appendingPathComponent("signature.ed25519")),payload:try Data(contentsOf:directory.appendingPathComponent("payload.json")))
-                return (package,RulePackageVerifier(trustedKeys:keys,appVersion:version))
+                let verifier=RulePackageVerifier(trustedKeys:keys,appVersion:version)
+                // Optional signed profiles; a missing or invalid file keeps the built-in fallback.
+                let profilesURL=directory.appendingPathComponent("profiles.json")
+                let profileSignatureURL=directory.appendingPathComponent("profiles.signature.ed25519")
+                var profiles:ApplicationProfiles?
+                if FileManager.default.fileExists(atPath:profilesURL.path),FileManager.default.fileExists(atPath:profileSignatureURL.path) {
+                    profiles=try? verifier.verifyProfiles(manifest:package.manifest,profiles:Data(contentsOf:profilesURL),signature:Data(contentsOf:profileSignatureURL))
+                }
+                return (package,verifier,profiles)
             }.value
+            if let profiles=loaded.2 { ApplicationProfileRegistry.shared.install(profiles) }
             try Task.checkCancellation()
             let consumer=MainActorRuleConsumer { [weak self] snapshot in
                 install(snapshot) { [weak self] installedVersion in

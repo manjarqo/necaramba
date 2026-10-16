@@ -1,11 +1,12 @@
 // DEVELOPMENT ONLY. Private key exists in memory and is never written.
-// Compile with RuleManifest.swift, like SignRulePackage.swift. Arguments: payload.json output-directory
+// Compile with RuleManifest.swift, like SignRulePackage.swift.
+// Arguments: payload.json output-directory [application-profiles.json]
 import Foundation
 import CryptoKit
 @main struct PrepareDevelopmentRulePackage {
     static func main() {
         do {
-            guard CommandLine.arguments.count == 3 else { throw PreparationError.invalidInput }
+            guard [3, 4].contains(CommandLine.arguments.count) else { throw PreparationError.invalidInput }
             let source = URL(fileURLWithPath: CommandLine.arguments[1])
             guard (try source.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? Int.max) <= 20 * 1024 * 1024 else { throw PreparationError.invalidInput }
             let payload = try Data(contentsOf: source)
@@ -19,6 +20,13 @@ import CryptoKit
             try signature.write(to: output.appendingPathComponent("signature.ed25519"), options: .atomic)
             try JSONSerialization.data(withJSONObject: ["development-only": key.publicKey.rawRepresentation.base64EncodedString()], options: [.sortedKeys]).write(to: output.appendingPathComponent("DevelopmentTrustedRuleKeys.json"), options: .atomic)
             try Data("{\"developmentOnly\":true,\"releaseAllowed\":false}\n".utf8).write(to: output.appendingPathComponent("DevelopmentOnly.json"), options: .atomic)
+            if CommandLine.arguments.count == 4 {
+                // Application profiles are signed by the same key under their own domain.
+                let profiles = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[3]))
+                guard profiles.count <= 256 * 1024 else { throw PreparationError.invalidInput }
+                let profileSignature = try key.signature(for: Data("NecarambaAppProfiles-v1\0".utf8) + Data(SHA256.hash(data: profiles)))
+                try profileSignature.write(to: output.appendingPathComponent("profiles.signature.ed25519"), options: .atomic)
+            }
             // Caller copies the independently licensed payload only after integration. No release credentials are produced.
         } catch {
             FileHandle.standardError.write(Data("Development package preparation failed\n".utf8)); exit(1)

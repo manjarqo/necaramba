@@ -1,0 +1,152 @@
+{
+ "profiles": [
+  {
+   "accessibilityActivation": "enhanced",
+   "bundleID": "app.zen-browser.zen",
+   "nativeTerminal": false,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "co.zeit.hyper",
+   "nativeTerminal": true,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "com.apple.Safari",
+   "nativeTerminal": false,
+   "temporarySpace": true,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "com.apple.Terminal",
+   "nativeTerminal": true,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "com.brave.Browser",
+   "nativeTerminal": false,
+   "temporarySpace": true,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "com.brave.Browser.beta",
+   "nativeTerminal": false,
+   "temporarySpace": true,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "com.brave.Browser.nightly",
+   "nativeTerminal": false,
+   "temporarySpace": true,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "com.github.wez.wezterm",
+   "nativeTerminal": true,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": "enhanced",
+   "bundleID": "com.google.Chrome",
+   "nativeTerminal": false,
+   "temporarySpace": true,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": "enhanced",
+   "bundleID": "com.google.Chrome.beta",
+   "nativeTerminal": false,
+   "temporarySpace": true,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": "enhanced",
+   "bundleID": "com.google.Chrome.canary",
+   "nativeTerminal": false,
+   "temporarySpace": true,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": "enhanced",
+   "bundleID": "com.google.Chrome.dev",
+   "nativeTerminal": false,
+   "temporarySpace": true,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "com.googlecode.iterm2",
+   "nativeTerminal": true,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "com.mitchellh.ghostty",
+   "nativeTerminal": true,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": "manual",
+   "bundleID": "com.readdle.SparkDesktop",
+   "nativeTerminal": false,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": "manual",
+   "bundleID": "com.stablyai.orca",
+   "nativeTerminal": false,
+   "temporarySpace": false,
+   "terminalProxyHost": true
+  },
+  {
+   "accessibilityActivation": "manual",
+   "bundleID": "com.vscodium",
+   "nativeTerminal": false,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "dev.warp.Warp-Stable",
+   "nativeTerminal": true,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "net.kovidgoyal.kitty",
+   "nativeTerminal": true,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": null,
+   "bundleID": "org.alacritty",
+   "nativeTerminal": true,
+   "temporarySpace": false,
+   "terminalProxyHost": false
+  },
+  {
+   "accessibilityActivation": "manual",
+   "bundleID": "org.tabby",
+   "nativeTerminal": false,
+   "temporarySpace": false,
+   "terminalProxyHost": true
+  }
+ ],
+ "schemaVersion": 1
+}

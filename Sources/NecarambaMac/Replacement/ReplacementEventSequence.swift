@@ -11,9 +11,7 @@ public enum ReplacementEventSequence {
 
   public static func usesTemporarySpace(bundleID: String, selected: Bool) -> Bool {
     guard !selected else { return false }
-    return ["com.apple.Safari", "com.google.Chrome", "com.google.Chrome.beta",
-      "com.google.Chrome.dev", "com.google.Chrome.canary", "com.brave.Browser",
-      "com.brave.Browser.beta", "com.brave.Browser.nightly"].contains(bundleID)
+    return ApplicationProfileRegistry.shared.profile(for: bundleID)?.temporarySpace == true
   }
 
   public static func deletionCount(originalCount: Int, bundleID: String, selected: Bool) -> Int {

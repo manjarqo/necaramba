@@ -43,6 +43,18 @@ public struct RulePackageVerifier: Sendable {
         guard snapshot.modelVersion == m.modelVersion, Self.valid(snapshot) else { throw RuleVerificationError.invalidPayload }
         return VerifiedRuleSnapshot(snapshot: snapshot, digest: hex)
     }
+    /// Application profiles are a separate file signed by the key of the verified
+    /// rule manifest, under their own domain so neither signature validates the other.
+    public func verifyProfiles(manifest: Data, profiles: Data, signature: Data) throws -> ApplicationProfiles {
+        guard manifest.count <= 65536, let m = try? JSONDecoder().decode(RuleManifest.self, from: manifest),
+              (try? canonicalManifest(m)) == manifest else { throw RuleVerificationError.invalidManifest }
+        guard let key = trustedKeys[m.keyID] else { throw RuleVerificationError.unknownKey }
+        guard profiles.count <= ApplicationProfiles.maximumSize else { throw RuleVerificationError.sizeMismatch }
+        let signed = Data("NecarambaAppProfiles-v1\0".utf8) + Data(SHA256.hash(data: profiles))
+        guard signature.count == 64, let publicKey = try? Curve25519.Signing.PublicKey(rawRepresentation: key),
+              publicKey.isValidSignature(signature, for: signed) else { throw RuleVerificationError.invalidSignature }
+        return try ApplicationProfiles(json: profiles)
+    }
     private static func version(_ text: String) -> [UInt32]? {
         guard text.range(of: "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$", options: .regularExpression) != nil else { return nil }
         let values = text.split(separator: ".").compactMap { UInt32($0) }; return values.count == 3 ? values : nil
@@ -71,7 +83,7 @@ public struct RulePackageVerifier: Sendable {
 }
 
 // Bounded parser used solely for duplicate JSON member detection; Foundation performs actual decoding.
-private struct StrictRuleJSON {
+struct StrictRuleJSON {
     var bytes: [UInt8]; var index = 0
     static func validate(_ data: Data) throws { var parser = Self(bytes: Array(data)); try parser.value(depth: 0); parser.space(); guard parser.index == parser.bytes.count else { throw RuleVerificationError.invalidPayload } }
     mutating func space() { while index < bytes.count && [9,10,13,32].contains(bytes[index]) { index += 1 } }

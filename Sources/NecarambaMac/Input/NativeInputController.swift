@@ -26,10 +26,9 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   @MainActor private lazy var clipboardSelection: ClipboardSelectionConverting = injectedClipboardSelection
     ?? ClipboardSelectionConverter(clipboard: SystemClipboard(), shortcuts: RuntimeCommandShortcuts(runtime: runtime))
   /// Native terminals copy terminal output; pasting there would not replace a selection.
-  static let terminalApplications: Set<String> = [
-    "com.apple.Terminal", "com.googlecode.iterm2", "dev.warp.Warp-Stable", "com.mitchellh.ghostty",
-    "net.kovidgoyal.kitty", "org.alacritty", "com.github.wez.wezterm", "co.zeit.hyper",
-  ]
+  static func isNativeTerminal(_ bundleID: String) -> Bool {
+    ApplicationProfileRegistry.shared.profile(for: bundleID)?.nativeTerminal == true
+  }
   private var quarantined: ContextToken?
   private var pendingLayoutTransition: (target: LayoutID, generation: UInt64)?
   private var replacementLayout: LayoutID?
@@ -946,7 +945,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   @MainActor private func clipboardSelectionConversion(token: ContextToken, layout: LayoutID,
     preferred: LayoutMapping, generation: UInt64) async -> ApplyResult? {
     guard let opaque = (selectionAccess as? OpaqueFocusReading)?.opaqueFocus(in: token),
-      !opaque.terminalProxy, !Self.terminalApplications.contains(token.bundleID) else { return nil }
+      !opaque.terminalProxy, !Self.isNativeTerminal(token.bundleID) else { return nil }
     InputDiagnostics.event("manual.clipboardSelection.begin")
     // Our own layout selection changes only the layout epoch of the same field.
     let valid = { [weak self] () -> Bool in

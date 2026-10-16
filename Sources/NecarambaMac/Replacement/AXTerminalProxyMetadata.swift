@@ -3,7 +3,9 @@ import ApplicationServices
 /// xterm's helper textarea transports input and composition residue; its value is
 /// not the terminal buffer. Identity is established by exact host and DOM metadata.
 enum AXTerminalProxyMetadata {
-  static func isHost(_ bundleID: String) -> Bool { ["org.tabby", "com.stablyai.orca"].contains(bundleID) }
+  static func isHost(_ bundleID: String) -> Bool {
+    ApplicationProfileRegistry.shared.profile(for: bundleID)?.terminalProxyHost == true
+  }
   static func matches(bundleID: String, role: String, status: AXError, classes: CFTypeRef?) -> Bool {
     guard isHost(bundleID), ["AXTextField", "AXTextArea"].contains(role),
       status == .success, let classes, CFGetTypeID(classes) == CFArrayGetTypeID(),

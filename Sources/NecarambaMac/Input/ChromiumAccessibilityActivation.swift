@@ -16,18 +16,14 @@ final class ChromiumAccessibilityActivation {
   deinit { cancel?() }
 
   static func attribute(for bundleID: String) -> String? {
-    // Electron documents this attribute for third-party assistive tools.
+    // Electron documents AXManualAccessibility for third-party assistive tools; Chrome
+    // and Gecko need AXEnhancedUserInterface. Applications come from verified profiles.
     // https://www.electronjs.org/docs/latest/tutorial/accessibility
-    if ["com.readdle.SparkDesktop", "com.vscodium", "org.tabby", "com.stablyai.orca"].contains(bundleID) {
-      return "AXManualAccessibility"
+    switch ApplicationProfileRegistry.shared.profile(for: bundleID)?.accessibilityActivation {
+    case .manual: return "AXManualAccessibility"
+    case .enhanced: return "AXEnhancedUserInterface"
+    case nil: return nil
     }
-    // Zen's Gecko engine may expose browser chrome without page accessibility.
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1664992
-    if bundleID == "app.zen-browser.zen" { return "AXEnhancedUserInterface" }
-    if ["com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.dev", "com.google.Chrome.canary"].contains(bundleID) {
-      return "AXEnhancedUserInterface"
-    }
-    return nil
   }
   static func supports(_ bundleID: String) -> Bool { attribute(for: bundleID) != nil }
   func start(bundleID: String, activate: @escaping () -> Bool, refresh: @escaping () -> Void) {
