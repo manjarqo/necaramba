@@ -473,8 +473,9 @@ import XCTest
     XCTAssertEqual(asyncResult31, .uncertain)
   }
 
-  func testUntrustedAutomaticPrefixRejectsOpaqueAndEmbeddedWordWithoutPosting() async {
-    for value in ["", "url/word ", "prefixword ", "x@word "] {
+  func testUntrustedAutomaticPrefixRejectsEmbeddedReadableWordWithoutPosting() async {
+    // Readable text contradicts a whole word; an empty proxy trusts capture instead.
+    for value in ["url/word ", "prefixword ", "x@word "] {
       let (adapter, reader, token) = fixture(automatic: true)
       reader.value = value
       reader.range = NSRange(location: value.utf16.count, length: 0)
@@ -551,26 +552,46 @@ import XCTest
     }
   }
 
-  func testRecoveredPrefixNeedsReadableWholeWordAndNeverUsesEmptyProxy() async {
-    for (value, expected) in [("", ApplyResult.aborted), ("say word ", .committed), ("sayword ", .aborted)] {
+  func testUnprovenPrefixNeedsReadableWholeWordButTrustsCaptureInEmptyProxy() async {
+    // Capture trust: a field without readable text cannot contradict
+    // the captured word, so physical replacement uses the captured buffer as-is.
+    for (value, expected) in [("", ApplyResult.dispatched), ("say word ", .committed), ("sayword ", .aborted)] {
       let (adapter, reader, token) = fixture(automatic: true)
       reader.value = value
       reader.range = NSRange(location: value.utf16.count, length: 0)
       let original = autoCandidate(token)
       let candidate = AutomaticBoundaryCandidate(word: original.word, boundary: original.boundary,
         inputGeneration: 1, requiresWordStartProof: true, allowsOpaqueWordStart: false)
+      var posts = 0
       adapter.executeAsync = { _, replacement, _, preflight in
         guard preflight() else { return .aborted }
+        posts += 1
         reader.value = String(value.dropLast("word ".count)) + replacement
         reader.range = NSRange(location: reader.value.utf16.count, length: 0)
         return .committed
       }
-      adapter.executePhysicalAsync = { _, _, _ in
-        XCTFail("A recovered prefix must not use opaque physical replacement")
-        return .aborted
-      }
       let result = await adapter.replaceAutomaticBoundaryAsync(candidate, with: "WORD ")
       XCTAssertEqual(result, expected, value)
+      XCTAssertEqual(posts, expected == .aborted ? 0 : 1, value)
+    }
+  }
+
+  func testEmptyProxyTrustsPostedReplacementWhateverTheFieldShowsAfterwards() async {
+    // VSCodium's editor textarea shows unrelated residue after input. The same field
+    // identity is enough to keep a dispatched result, so double Shift can undo it.
+    for residue in ["", "WORD ", " ", "some other text"] {
+      let (adapter, reader, token) = fixture(automatic: true)
+      reader.value = ""
+      reader.range = NSRange(location: 0, length: 0)
+      adapter.executeAsync = { _, _, _, preflight in
+        guard preflight() else { return .aborted }
+        reader.value = residue
+        reader.range = NSRange(location: residue.utf16.count, length: 0)
+        return .committed
+      }
+      let result = await adapter.replaceAutomaticBoundaryAsync(autoCandidate(token), with: "WORD ")
+      XCTAssertEqual(result, .dispatched, residue)
+      XCTAssertNotNil(adapter.dispatchedSuffix(in: token, inputGeneration: 1), residue)
     }
   }
 

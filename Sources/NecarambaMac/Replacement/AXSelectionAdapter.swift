@@ -565,11 +565,15 @@ extension AXSelectionAdapter: ManualTrackedSuffixReplacing {
     let result = await executeAsync(evidence, text, false, valid)
     traceMutation(result)
     guard result == .committed else { return result }
-    guard !Task.isCancelled, allowed(), let after = snapshot(context, generation: generation),
-      after.identity == before.identity
-    else { return .uncertain }
-    guard (after.value == text && after.range == NSRange(location: text.utf16.count, length: 0)) ||
-      (after.value.isEmpty && after.range == NSRange(location: 0, length: 0)) else { return .uncertain }
+    guard !Task.isCancelled, allowed(), let settled = await settledField(like: context, generation: generation),
+      let after = snapshot(settled, generation: generation)
+    else { trace("ax.tracked.afterSnapshotMissing"); return .uncertain }
+    guard after.identity == before.identity else { trace("ax.tracked.afterIdentityChanged"); return .uncertain }
+    // The proxy's value is input residue, not the document (VSCodium shows unrelated
+    // text after input). Trust the posted keys while the same field stays focused.
+    let exact = (after.value == text && after.range == NSRange(location: text.utf16.count, length: 0)) ||
+      (after.value.isEmpty && after.range == NSRange(location: 0, length: 0))
+    trace("ax.tracked.afterValueExact", detail: exact ? 1 : 0)
     // Even exact output cannot retrospectively prove the original invisible suffix.
     lastSuffixDispatch = .init(focus: .init(context: context, identity: before.identity, selection: .collapsed),
       inputGeneration: generation, deleteCount: original.count)
@@ -631,16 +635,18 @@ extension AXSelectionAdapter: AutomaticBoundarySuffixReplacing, AutomaticBoundar
       text.last == " ", !text.contains(where: { "\n\r\t".contains($0) })
     else { trace("ax.auto.boundaryOrSnapshotRejected"); return nil }
     let original = word.text + word.delimiter
+    // Fields without readable text trust the captured buffer: the
+    // field cannot contradict it, so an unproven word start no longer blocks it.
+    // Readable fields below still require the exact whole word.
+    let unprovenStart = candidate.requiresWordStartProof && !candidate.allowsOpaqueWordStart
     guard let before = snapshot(word.context, generation: candidate.inputGeneration) else {
-      guard !candidate.requiresWordStartProof || candidate.allowsOpaqueWordStart else { return nil }
       guard opaqueFocus(in: word.context) != nil else { return nil }
+      if unprovenStart { trace("ax.auto.unprovenPrefixTrusted") }
       return .opaque(original)
     }
     if before.value.isEmpty && before.range == NSRange(location: 0, length: 0) {
-      guard !candidate.requiresWordStartProof || candidate.allowsOpaqueWordStart else {
-        trace("ax.auto.opaquePrefixBlocked"); return nil
-      }
-      if candidate.requiresWordStartProof { trace("ax.auto.freshOpaqueCapture") }
+      if unprovenStart { trace("ax.auto.unprovenPrefixTrusted") }
+      else if candidate.requiresWordStartProof { trace("ax.auto.freshOpaqueCapture") }
       trace("ax.auto.emptyProxy")
       return .emptyProxy(original, before.identity)
     }
@@ -745,9 +751,28 @@ extension AXSelectionAdapter: OpaqueFocusReading {
     let result = await executePhysicalAsync(mutation, text, valid)
     guard result == .committed else { return result }
     // Complete delivery is not proof of editor acceptance. Never retry this batch.
-    guard valid() else { return .uncertain }
+    guard authorized(), let settled = await settledField(like: token, generation: generation),
+      opaqueFocus(in: settled)?.identity == proof.identity
+    else { trace("ax.tracked.afterOpaqueFocusChanged"); return .uncertain }
     lastSuffixDispatch = mutation
     return .dispatched
+  }
+  /// Our own layout selection republishes the same field with a new layout epoch and
+  /// may hide it briefly. Wait (bounded) for the same pid, bundle and focus epoch.
+  @MainActor private func settledField(like token: ContextToken, generation: UInt64) async -> ContextToken? {
+    let deadline = now() + 0.15
+    while true {
+      let generationValid = inputGeneration?() == generation
+      let current = context.current()
+      if !Task.isCancelled, generationValid, let current, current.pid == token.pid,
+        current.bundleID == token.bundleID, current.focusEpoch == token.focusEpoch { return current }
+      guard !Task.isCancelled, generationValid, now() < deadline else {
+        trace("ax.tracked.afterState", detail: (generationValid ? 1 : 0) | (current == nil ? 2 : 0)
+          | (current?.focusEpoch == token.focusEpoch ? 4 : 0))
+        return nil
+      }
+      await observeLater(0.01)
+    }
   }
 }
 

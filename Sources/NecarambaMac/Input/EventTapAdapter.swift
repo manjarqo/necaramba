@@ -465,8 +465,12 @@ public final class EventTapAdapter {
     suppressNextVUp = filtered.awaitingRelease
     replay(filtered.events)
   }
+  /// A held key release cannot insert text; anything else is new physical input.
+  static func replayInvalidatesInput(_ events: [CGEvent]) -> Bool {
+    events.contains { $0.type != .keyUp }
+  }
   private func replay(_ events: [CGEvent]) {
-    if !events.isEmpty { runtime?.replayedPhysicalInput() }
+    if Self.replayInvalidatesInput(events) { runtime?.replayedPhysicalInput() }
     for event in events {
       event.setIntegerValueField(.eventSourceUserData, value: Self.ownMarker)
       event.post(tap: .cgSessionEventTap)

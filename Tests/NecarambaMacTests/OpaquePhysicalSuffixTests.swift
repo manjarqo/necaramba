@@ -78,7 +78,7 @@ import NecarambaCore
     XCTAssertEqual(result, .aborted)
     XCTAssertEqual(posts, 0)
   }
-  func testOpaqueAutomaticSpaceBoundaryDispatchesAndBlocksLostPrefix() async {
+  func testOpaqueAutomaticSpaceBoundaryTrustsCaptureButNotSecureInput() async {
     let context = ContextState()
     let layout = LayoutID(rawValue: "US")
     context.update(pid: 42, bundleID: "test", focusID: "field", layout: layout, qualified: true)
@@ -101,15 +101,16 @@ import NecarambaCore
     let result = await adapter.replaceAutomaticBoundaryAsync(.init(word: word, boundary: boundary,
       inputGeneration: 1), with: "WORD ")
     XCTAssertEqual(result, .dispatched)
-    let lost = await adapter.replaceAutomaticBoundaryAsync(.init(word: word, boundary: boundary,
+    // An unproven word start is trusted from capture in a field without text.
+    let unproven = await adapter.replaceAutomaticBoundaryAsync(.init(word: word, boundary: boundary,
       inputGeneration: 1, requiresWordStartProof: true), with: "WORD ")
-    XCTAssertEqual(lost, .aborted)
-    XCTAssertEqual(posts, 1)
+    XCTAssertEqual(unproven, .dispatched)
+    XCTAssertEqual(posts, 2)
     context.invalidate(.secureInput)
     let secure = await adapter.replaceAutomaticBoundaryAsync(.init(word: word, boundary: boundary,
       inputGeneration: 1), with: "WORD ")
     XCTAssertEqual(secure, .aborted)
-    XCTAssertEqual(posts, 1)
+    XCTAssertEqual(posts, 2)
   }
   func testRepeatedOpaqueSuffixUsesRetainedIdentityAndCurrentLength() async {
     let (adapter, reader, word) = fixture()

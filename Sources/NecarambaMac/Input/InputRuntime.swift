@@ -228,12 +228,19 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   public func manualRepeatCandidate() -> ManualRepeatCandidate? {
     lock.lock()
     defer { lock.unlock() }
-    guard let candidate = repeatedManual,
-      context.isSafe(candidate.context) else {
+    guard let candidate = repeatedManual else { return nil }
+    if context.isSafe(candidate.context) { return candidate }
+    // Our own layout selection republishes the same field with a new layout epoch.
+    // Physical input still clears the candidate; another field never inherits it.
+    guard let current = context.current(), context.isSafe(current), current.pid == candidate.context.pid,
+      current.bundleID == candidate.context.bundleID, current.focusEpoch == candidate.context.focusEpoch
+    else {
       repeatedManual = nil
       return nil
     }
-    return candidate
+    let rebased = candidate.rebased(in: current)
+    repeatedManual = rebased
+    return rebased
   }
   /// Update the intentional layout transition and retain lineage atomically against new input.
   @discardableResult public func retainManualResult(_ candidate: ManualRepeatCandidate,
