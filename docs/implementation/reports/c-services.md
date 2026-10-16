@@ -15,7 +15,7 @@ Owned worktree: `.worktrees/services`; Tasks C2/C5/C6. No Runner, Dart, Package.
 
 ## Original asset
 
-`Resources/Sounds/correction.wav`: generated independent 120 ms880 Hz PCM sine tone; origin/formula in sibling README. No Caramba resources. Root owns copying/bundling and defaultSoundURL wiring.
+`Resources/Sounds/correction.wav`: generated independent 120 ms880 Hz PCM sine tone; origin/formula in sibling README. No third-party resources. Root owns copying/bundling and defaultSoundURL wiring.
 
 ## Verification
 

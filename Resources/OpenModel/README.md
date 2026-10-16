@@ -45,7 +45,7 @@ Current saved reports (`evaluation-v2-calibration.json`, `evaluation-v2-holdout.
 | calibration | 6002 | 2385/2400 (99.375000%) | 0/3600 | 81.166667% |
 | holdout | 6006 | 2378/2399 (99.124635%) | 0/3602 | 80.908712% |
 
-Open precision is 100% on these fixtures; 15 calibration and 21 holdout corrections were missed. All 29 separately authored development regressions and the 300-rule consistency audit pass. These finite synthetic counts do not guarantee zero mistakes in real input. The reference column evaluates a local **interpreter**, not the original Caramba application, and does not establish application-level superiority. Source corpus words overlap the external dictionary prior, so this is not an unseen-vocabulary generalization benchmark. Both reports retain `releaseReady: false`: application/physical-input and several category coverage requirements are unmet. No live browser/editor or hardware-input verification is implied. The archive supports offline model regeneration; rerunning the Swift evaluations requires the full project and corpus, which are not duplicated into the model-only archive.
+Open precision is 100% on these fixtures; 15 calibration and 21 holdout corrections were missed. All 29 separately authored development regressions and the 300-rule consistency audit pass. These finite synthetic counts do not guarantee zero mistakes in real input. The reference column evaluates a local **interpreter**, not a third-party application, and does not establish application-level superiority. Source corpus words overlap the external dictionary prior, so this is not an unseen-vocabulary generalization benchmark. Both reports retain `releaseReady: false`: application/physical-input and several category coverage requirements are unmet. No live browser/editor or hardware-input verification is implied. The archive supports offline model regeneration; rerunning the Swift evaluations requires the full project and corpus, which are not duplicated into the model-only archive.
 
 ## Application build
 
@@ -62,7 +62,7 @@ Include **all files in `Licenses/`** with the model, including applications and 
 
 ## Русский
 
-Открытая модель Necaramba 2: 77 892 английских и 1 419 808 русских словоформ, 233 правила опечаток и 67 предпочтительных написаний с «ё». Данные Caramba не использованы для её создания. Для распространения сохраняйте все лицензии из `Licenses/`, происхождение и описание изменений.
+Открытая модель Necaramba 2: 77 892 английских и 1 419 808 русских словоформ, 233 правила опечаток и 67 предпочтительных написаний с «ё». Проприетарные данные и данные сторонних переключателей не использованы для её создания. Для распространения сохраняйте все лицензии из `Licenses/`, происхождение и описание изменений.
 
 Словари хранятся компактно; модель загружается вне потока обработки клавиш. Известные слова сохраняются, неоднозначные варианты не угадываются. Опечатки исправляются по собственному явному списку, восстановление «ё» включается настройкой. Это не частотная модель и не обещание полного покрытия языка.
 

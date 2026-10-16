@@ -1,6 +1,6 @@
 # Physical input and browser delivery — 2026-10-15
 
-The user requested an additional replacement path without changing VSCodium's `editor.accessibilitySupport: off`, and independently implementing the delivery approach observed in Caramba. No proprietary implementation or dictionary was added to product targets.
+The user requested an additional replacement path without changing VSCodium's `editor.accessibilitySupport: off`, and independently implementing a delivery approach identified in prior compatibility research. No proprietary implementation or dictionary was added to product targets.
 
 ## Behavior
 
@@ -14,7 +14,7 @@ The user requested an additional replacement path without changing VSCodium's `e
 
 `editor.accessibilitySupport` remains off. Accessibility/Input Monitoring permissions and a real identifiable editable field are still required. Missing field identity or a noneditable role remains a refusal, not permission to type blindly into the frontmost process. Opaque selected-text conversion is not introduced. Editor-side transformations without readback remain unverified.
 
-The saved Caramba analysis establishes the temporary-Space sequence and process-targeted event delivery statically; it does not establish universal support for every custom editor. See `docs/research/caramba/application-compatibility-2026-10-15.md` for evidence and inference boundaries.
+The prior compatibility research establishes the temporary-Space sequence and process-targeted event delivery statically; it does not establish universal support for every custom editor.
 
 ## Validation
 

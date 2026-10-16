@@ -12,7 +12,7 @@ Default framing treats supplied text as a complete word without trimming; `--inc
 
 `--validate-autocorrect` validates each declared byte splice on its pattern material. `--autocorrect` executes the separate rule interpreter on the explicit query texts. Neither option writes to an application or changes the model. Scores and static corrections are not claims about execution of the original application: layout selection, app profiles, event timing, exceptions, IME and Secure Input policies are separate.
 
-The implementation uses Swift Unicode casing and fail-closed bounds/overflow handling; it does not reproduce an original executable's integer wraparound or guarantee identical Unicode tables. All committed test fixtures are independently authored. Model-derived data stay outside the public repository. See [research findings](../../docs/research/caramba/model-followup-2026-10-15.md) and [behavior contracts](../../docs/research/caramba/behavior-followup-2026-10-15.md).
+The implementation uses Swift Unicode casing and fail-closed bounds/overflow handling; it does not reproduce an original executable's integer wraparound or guarantee identical Unicode tables. All committed test fixtures are independently authored. Model-derived data stay outside the public repository.
 
 Validation:
 

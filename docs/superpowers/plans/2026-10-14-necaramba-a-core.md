@@ -18,7 +18,7 @@
 - Не сохранять и не отправлять набранный текст по умолчанию.
 - При неопределённом фокусе, Secure Input, IME/composition или недоступных разрешениях пропускать ввод без изменения.
 - Синтетические события маркируются и не обрабатываются повторно.
-- Исходный Caramba app, его идентификаторы сервисов, модель CLM1, звук, графика и аккаунт не входят в распространяемый продукт.
+- Код, идентификаторы сервисов, модели, звуки, графика и аккаунты сторонних переключателей не входят в распространяемый продукт.
 - Не выпускать функцию как совместимую без соответствующего теста и результата в матрице приёмки.
 
 ---
@@ -284,7 +284,7 @@ func testPendingSingleCancelledByInvalidation() {
 
 - [ ] Добавить executable target CorpusRunner зависимый Core. RED test synthetic metrics: TP=199, FP=1, FN=1 → precision .995, recall .995; отсутствие expected change cases → metric `undefined`, не искусственный PASS. В report поля optional для неопределённого знаменателя; type Double? вместо Double и strict gate отвергает nil. Зафиксировать это в type сразу.
 - [ ] `swift test --filter CorpusRunnerTests` → RED. Реализовать JSONL input decoder, uniqueness check id, split leakage check normalized word families, per-category confusion counts и exact mismatch list. Output не содержит настоящих пользовательских данных.
-- [ ] Собрать >=10k размеченных synthetic/лицензированных примеров, manifest с источником, лицензией, SHA256, количеством; holdout>=2k/no-change>=1k. Происхождение словаря — release gate. Не использовать извлечённый CLM1 и не объявлять четыре test pairs production-моделью.
+- [ ] Собрать >=10k размеченных synthetic/лицензированных примеров, manifest с источником, лицензией, SHA256, количеством; holdout>=2k/no-change>=1k. Происхождение словаря — release gate. Не использовать извлечённые сторонние модели и не объявлять четыре test pairs production-моделью.
 - [ ] `swift run CorpusRunner --manifest Corpora/manifest.json --split holdout --output Reports/quality.json` → все пороги spec §5 либо nonzero exit с числами. Порог calibrated only on calibration, holdout не менять ради прохода.
 - [ ] Выполнить собственный differential run по physical-input-test-protocol в отдельном профиле; записать unrun editor/OS combinations. Commit `test: add frozen language corpus and quality gates`.
 
@@ -292,5 +292,5 @@ func testPendingSingleCancelledByInvalidation() {
 
 - [ ] `swift test` → все Core tests PASS; `swift build -c release --arch arm64` и x86_64 compile PASS.
 - [ ] Проверить F01–08/F10–11 на уровне core и AC001–044, включая новые guard cases. Системные результаты B ещё не выполнены.
-- [ ] Зафиксировать manifest всех constants как design parameters; ни один не называется recovered Caramba constant без исследования.
+- [ ] Зафиксировать manifest всех constants как design parameters; ни один не выдаётся за значение, полученное из другого продукта.
 - [ ] Передать B/C/D реальные public interfaces и изменения signatures. Реализация A сама по себе ещё не переключает раскладку в чужом приложении.

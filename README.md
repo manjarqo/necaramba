@@ -1,6 +1,6 @@
 # Necaramba
 
-**A free alternative to Caramba Switcher and Punto Switcher for macOS.**
+**A free keyboard-layout switcher for macOS.**
 
 Fix text typed in the wrong keyboard layout, switch layouts with Shift, and keep control of automatic corrections.
 
@@ -20,7 +20,7 @@ Press Shift twice:   привет
 Press Shift twice:   ghbdtn
 ```
 
-The application is free to use. It has no purchase or activation screen. Necaramba is not affiliated with the developers of Caramba Switcher or Punto Switcher; their names describe the type of utility this project offers.
+The application is free to use. It has no purchase or activation screen.
 
 **Status:** an actively developed application, not a claim of complete feature parity or a fully qualified public release. Manual conversion has been confirmed by the project owner in Orca, Chrome, Safari and Spotlight on the local development Mac. Compatibility still depends on the editor and the accessibility information it exposes.
 
@@ -182,7 +182,7 @@ Some specifications and historical reports describe an earlier commercial design
 
 ### Что такое Necaramba?
 
-**Necaramba — бесплатная альтернатива Caramba Switcher и Punto Switcher для macOS.** Это независимый переключатель раскладки для Mac: системная часть написана на Swift, интерфейс настроек — на Flutter. Основной сценарий — переключение между английской и русской раскладками без повторного набора слова.
+**Necaramba — бесплатный переключатель раскладки для macOS.** Это независимое приложение для Mac: системная часть написана на Swift, интерфейс настроек — на Flutter. Основной сценарий — переключение между английской и русской раскладками без повторного набора слова.
 
 ```text
 Вы набрали:             ghbdtn
@@ -190,7 +190,7 @@ Some specifications and historical reports describe an earlier commercial design
 Ещё раз двойной Shift:   ghbdtn
 ```
 
-Приложение бесплатно: в интерфейсе нет покупки и активации. Проект не связан с разработчиками Caramba Switcher и Punto Switcher; их названия используются для описания назначения программы.
+Приложение бесплатно: в интерфейсе нет покупки и активации.
 
 **Статус:** приложение активно развивается. Полное совпадение возможностей с другими переключателями и готовность публичного релиза пока не заявляются. Владелец проекта подтвердил ручное переключение в Orca, Chrome, Safari и Spotlight на локальном Mac. Совместимость зависит от конкретного редактора и доступности его текстового поля через Accessibility.
 

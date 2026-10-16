@@ -1,6 +1,6 @@
 # A3/A4 language safety follow-up
 
-Date: 2026-10-14. Scope: `WordBuffer`, `TokenGuard`, `RuleIndex`, `LinguisticEngine`, and focused Core tests. The recorded-style physical fixtures in the tests are synthetic; no host editor, installed Caramba, user TCC, or personal data was accessed.
+Date: 2026-10-14. Scope: `WordBuffer`, `TokenGuard`, `RuleIndex`, `LinguisticEngine`, and focused Core tests. The recorded-style physical fixtures in the tests are synthetic; no host editor, other installed keyboard switcher, user TCC, or personal data was accessed.
 
 ## Changes
 

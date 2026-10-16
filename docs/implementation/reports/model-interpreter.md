@@ -1,6 +1,6 @@
 # Independent pattern-model interpreter
 
-2026-10-15. This implements reusable Swift domain components and a local research runner. An explicitly selected local build can use these components for automatic word decisions. This does not qualify a production model or establish complete Caramba runtime parity.
+2026-10-15. This implements reusable Swift domain components and a local research runner. An explicitly selected local build can use these components for automatic word decisions. This does not qualify a production model or establish complete runtime parity with any reference application.
 
 ## Implemented contracts
 
@@ -9,7 +9,7 @@
 - `PatternAutocorrector`: compiled rules, fixed original match list, source/lowercase matching, specific autocorrect fallback, byte rewrite, exact or Unicode scalar case-aware global nonoverlapping substitution, dynamic ё categorization and independent typo/ё switches.
 - `ModelReplayRunner`: explicitly loads a local neutral JSON model, resolves references, evaluates sample strings and optionally validates every declared autocorrect splice. No original resources, keys or model are included in the executable or repository.
 
-The implementations use independently authored Swift code and synthetic tests. Retained REA pseudocode/disassembly established behavior; it was not copied into these components. The data extraction and rule counts are documented in [model findings](../../research/caramba/model-followup-2026-10-15.md); exact conditions and remaining gaps in [behavior findings](../../research/caramba/behavior-followup-2026-10-15.md).
+The implementations use independently authored Swift code and synthetic tests. Retained REA pseudocode/disassembly established behavior; it was not copied into these components. Data extraction details, rule counts, exact conditions and remaining gaps are kept in prior compatibility research outside the repository.
 
 ## Deliberate limits
 
@@ -19,7 +19,7 @@ A classification result is not a layout selection policy. App-specific rules, co
 
 ## Data and integration
 
-The complete locally extracted model and neutral JSON are under ignored `docs/research/caramba/evidence/model-followup/`. The user selected a local experimental build using this data. The existing public application continues to use its independently sourced rule package; no third-party model is embedded in releases.
+The complete locally extracted model and neutral JSON are kept locally outside the repository. The user selected a local experimental build using this data. The existing public application continues to use its independently sourced rule package; no third-party model is embedded in releases.
 
 The local build explicitly opts in through `NECARAMBA_LOCAL_PATTERN_MODEL`, loads and compiles the model off the main thread, and enables typo/ё controls after successful installation. Model files remain ignored and are not committed. Ordinary builds omit this resource; the public artifact verifier rejects it. The native automatic path retains its physical Space boundary, field identity, focus, generation and exact-text checks. Publication of original model data is not authorized by the existing GPL license of this repository.
 
@@ -31,7 +31,7 @@ From the repository root, with the locally extracted file already present:
 
 ```sh
 cd App
-NECARAMBA_LOCAL_PATTERN_MODEL="$PWD/../docs/research/caramba/evidence/model-followup/model-neutral.json" \
+NECARAMBA_LOCAL_PATTERN_MODEL="/path/to/local/model-neutral.json" \
   flutter build macos --release --build-name=1.0.0 --build-number=2
 ```
 
@@ -39,7 +39,7 @@ This is an opt-in development build, despite Flutter's optimized `--release` mod
 
 ## Reproduction
 
-See [runner usage](../../../Tools/ModelReplayRunner/README.md). Commands consume local data and never run Caramba, access its license state, contact its servers, or type into a live editor. A successful static replay is evidence for the independent implementation and supplied artifact only; physical behavior comparisons remain separate.
+See [runner usage](../../../Tools/ModelReplayRunner/README.md). Commands consume local data and never run a third-party application, access its license state, contact its servers, or type into a live editor. A successful static replay is evidence for the independent implementation and supplied artifact only; physical behavior comparisons remain separate.
 
 ## Verification performed
 

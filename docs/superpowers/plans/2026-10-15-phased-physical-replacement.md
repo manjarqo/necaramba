@@ -1,6 +1,6 @@
 # Phased physical replacement
 
-User authorized the four delivery changes from the Caramba research: target layout activation/readback before mutation, physical key replay, session-level posting, 25 ms settling before deletion and retyping. Implement independently; no proprietary model data is added.
+User authorized the four delivery changes from prior compatibility research: target layout activation/readback before mutation, physical key replay, session-level posting, 25 ms settling before deletion and retyping. Implement independently; no proprietary model data is added.
 
 ## Acceptance
 

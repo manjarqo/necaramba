@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift tools 5.9; Swift 6 compiler в language mode 5; AppKit, Foundation URLSession, CryptoKit Curve25519.Signing, StoreKit 2, XCTest, Flutter Runner, Xcode scheme `Runner`.
 
-**Spec:** `docs/superpowers/specs/2026-10-14-necaramba-design.md`, разделы 8, 10–12; oracle `docs/research/caramba/acceptance-matrix.md`.
+**Spec:** `docs/superpowers/specs/2026-10-14-necaramba-design.md`, разделы 8, 10–12.
 
 ## Global Constraints
 
@@ -18,7 +18,7 @@
 - Не сохранять и не отправлять набранный текст по умолчанию.
 - При неопределённом фокусе, Secure Input, IME/composition или недоступных разрешениях пропускать ввод без изменения.
 - Синтетические события маркируются и не обрабатываются повторно.
-- Исходный Caramba app, его идентификаторы сервисов, модель CLM1, звук, графика и аккаунт не входят в распространяемый продукт.
+- Код, идентификаторы сервисов, модели, звуки, графика и аккаунты сторонних переключателей не входят в распространяемый продукт.
 - Не выпускать функцию как совместимую без соответствующего теста и результата в матрице приёмки.
 
 ---
@@ -240,7 +240,7 @@ case .checking, .pending, .expired, .revoked, .unavailable: return false
 }
 ```
 
-Commercial.storekit содержит только свои локальные тестовые IDs под явно test namespace; release config validator отвергает test values. Ни Caramba receipt, service URLs, product IDs, аккаунт, bundle ID не переиспользуются. Полный network/backend licensing protocol вне этого client plan; никакой зависимости local input от его существования.
+Commercial.storekit содержит только свои локальные тестовые IDs под явно test namespace; release config validator отвергает test values. Чужие receipts, service URLs, product IDs, аккаунты и bundle IDs не переиспользуются. Полный network/backend licensing protocol вне этого client plan; никакой зависимости local input от его существования.
 - [ ] **Step 4:** `swift test --filter EntitlementPolicyTests` → PASS; `xcodebuild test -workspace App/macos/Runner.xcworkspace -scheme Runner -destination 'platform=macOS' -only-testing:NecarambaMacTests/StoreKitLicensingAdapterTests` → PASS в local StoreKit configuration для verified/unverified/pending/cancel/restore/expiry/revocation/offline/clock rollback. AC-086–090 только после выбранного commercial режима; free получает N/A с явным решением, не фиктивный PASS. Сделать integration test expired mid-edit: завершение безопасной транзакции, изменение последующей policy, нет удаления данных.
 - [ ] **Step 5:** `git add Sources/NecarambaCore/Licensing Sources/NecarambaMac/Licensing Tests/NecarambaCoreTests/Licensing Tests/NecarambaMacTests/Licensing App/macos/Runner/Release/Commercial.storekit docs/release/commercial-policy.md` и `git commit -m "feat: isolate own entitlement and optional StoreKit flow"` после GREEN.
 
@@ -267,7 +267,7 @@ func testMissingCompatibilityResultBlocksRelease() {
 ```
 
 - [ ] **Step 2:** `swift test --filter ReleaseGateTests` → RED missing gate.
-- [ ] **Step 3:** Реализовать validator и configs: `MACOSX_DEPLOYMENT_TARGET=12.0`, `ARCHS=arm64 x86_64`, `ONLY_ACTIVE_ARCH=NO`, `ENABLE_HARDENED_RUNTIME=YES`, `SWIFT_VERSION=5.0`; не отключать library validation/защиты без конкретной необходимости. Runtime release inputs: own Apple Team ID, own bundle IDs/helper IDs, Developer ID certificate/profile, notarytool Keychain profile, own public signing keys/rule endpoint, support/privacy URLs; commercial ещё own ProductIDs и approved policy. Release script завершает с ошибкой при пустых/test inputs. Secrets не в Git. `verify-artifact.sh` проверяет **каждый** Mach-O main/helper/framework, обе slices, minOS≤12, подписи nested inside-out, entitlements; не использовать `codesign --deep` как способ подписать неизвестное дерево. MAS конфигурация включает sandbox/network only needed capabilities, свой канал без Developer ID updater; capability feasibility доказать signed sandbox build, не переносить broad entitlements из Caramba.
+- [ ] **Step 3:** Реализовать validator и configs: `MACOSX_DEPLOYMENT_TARGET=12.0`, `ARCHS=arm64 x86_64`, `ONLY_ACTIVE_ARCH=NO`, `ENABLE_HARDENED_RUNTIME=YES`, `SWIFT_VERSION=5.0`; не отключать library validation/защиты без конкретной необходимости. Runtime release inputs: own Apple Team ID, own bundle IDs/helper IDs, Developer ID certificate/profile, notarytool Keychain profile, own public signing keys/rule endpoint, support/privacy URLs; commercial ещё own ProductIDs и approved policy. Release script завершает с ошибкой при пустых/test inputs. Secrets не в Git. `verify-artifact.sh` проверяет **каждый** Mach-O main/helper/framework, обе slices, minOS≤12, подписи nested inside-out, entitlements; не использовать `codesign --deep` как способ подписать неизвестное дерево. MAS конфигурация включает sandbox/network only needed capabilities, свой канал без Developer ID updater; capability feasibility доказать signed sandbox build, не переносить broad entitlements из сторонних приложений.
 
 ```swift
 return required.allSatisfy { id in

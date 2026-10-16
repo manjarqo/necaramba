@@ -1,6 +1,6 @@
 # Independent corpus v2 (oracle encoding correction)
 
-This is a dictionary-derived, synthetically labelled token corpus, not natural typing gold data. It does not establish compatibility with Caramba or release readiness. No Caramba executable, model, extracted resources, accounts, user typing, personal documents, or installed-app files are inputs.
+This is a dictionary-derived, synthetically labelled token corpus, not natural typing gold data. It does not establish compatibility with other switchers or release readiness. No third-party switcher executable, model, extracted resources, accounts, user typing, personal documents, or installed-app files are inputs.
 
 Sources are pinned LibreOffice/dictionaries revision `67032ee957631908098a72edf48dc81cac27e369`. Full original `.dic` base-word sources and notices are preserved under `Sources/`; provenance records immutable URLs and SHA256 hashes. English source is SCOWL-derived under the permissive notices in `Sources/en/README_en_US.txt`. Russian source is Alexander I. Lebedev's BSD-style license in `Sources/ru_RU/README_ru_RU.txt`, requiring modified versions be marked. The bundled snapshot is explicitly a modified selection. These source-specific notices, not LibreOffice's repository-wide license, govern these inputs. Own guards, keyboard transformations, and narrow exact rules are CC0 as stated in `LICENSE.synthetic`.
 

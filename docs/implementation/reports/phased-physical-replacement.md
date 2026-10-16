@@ -1,6 +1,6 @@
 # Phased physical replacement implementation
 
-User-approved behavior: activate and verify target layout before mutation, then 25 ms settling, deletion, 25 ms settling, and physical-key session replay. Research basis: `docs/research/caramba/replacement-delivery-2026-10-15.md`.
+User-approved behavior: activate and verify target layout before mutation, then 25 ms settling, deletion, 25 ms settling, and physical-key session replay. Research basis: prior compatibility research.
 
 Implementation complete; native automated checks and local release packaging passed. This report does not claim host acceptance.
 

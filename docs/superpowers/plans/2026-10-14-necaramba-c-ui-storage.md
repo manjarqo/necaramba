@@ -8,7 +8,7 @@
 
 **Tech Stack:** Flutter/Dart, flutter_bloc Cubit, Swift, AppKit, SQLite/libsqlite3, UserDefaults, AVFoundation, ServiceManagement, XCTest, macOS 12+, Universal 2.
 
-**Spec:** [2026-10-14-necaramba-design.md](../specs/2026-10-14-necaramba-design.md); [acceptance-matrix.md](../../research/caramba/acceptance-matrix.md).
+**Spec:** [2026-10-14-necaramba-design.md](../specs/2026-10-14-necaramba-design.md).
 
 ## Global Constraints
 
@@ -18,7 +18,7 @@
 - Не сохранять и не отправлять набранный текст по умолчанию.
 - При неопределённом фокусе, Secure Input, IME/composition или недоступных разрешениях пропускать ввод без изменения.
 - Синтетические события маркируются и не обрабатываются повторно.
-- Исходный Caramba app, его идентификаторы сервисов, модель CLM1, звук, графика и аккаунт не входят в распространяемый продукт.
+- Код, идентификаторы сервисов, модели, звуки, графика и аккаунты сторонних переключателей не входят в распространяемый продукт.
 - Не выпускать функцию как совместимую без соответствующего теста и результата в матрице приёмки.
 
 ---
@@ -29,7 +29,7 @@
 
 A предоставляет package products NecarambaCore/NecarambaMac, test targets NecarambaCoreTests/NecarambaMacTests; интегратор E — App/macos/Runner.xcworkspace, scheme Runner и native test targets. B предоставляет InputRuntimeControl. Начать после принятия этих контрактов; если scaffold отсутствует, его владелец сначала создаёт targets, затем выполняются приведённые test commands. Swift snippets ниже помещаются в названные test files; каждый импортирует XCTest и `@testable import NecarambaCore` / `@testable import NecarambaMac` по необходимости.
 
-Native presentation models — MainActor, Flutter widgets/Cubit — Dart main isolate. SQLiteStore queue-confined, имеет собственный serial writer; UI выполняет дисковые вызовы вне main thread. Настоящие TCC/login настройки не меняются unit tests. Host tests — отдельный synthetic профиль. Не открывать Caramba store и не мигрировать личные данные пользователя.
+Native presentation models — MainActor, Flutter widgets/Cubit — Dart main isolate. SQLiteStore queue-confined, имеет собственный serial writer; UI выполняет дисковые вызовы вне main thread. Настоящие TCC/login настройки не меняются unit tests. Host tests — отдельный synthetic профиль. Не открывать хранилища других переключателей и не мигрировать личные данные пользователя.
 
 ## Общий контракт
 
@@ -160,7 +160,7 @@ git commit -m "feat(storage): add transactional local rules and archive migratio
 
 **Files:** Create PreferencesController.swift, PreferencesControllerTests.swift. Modify RuleArchive.swift для собственного full-export envelope.
 
-**Interfaces:** `@MainActor PreferencesController.init(defaults: UserDefaults, publish: @escaping (PreferencesSnapshot) -> Void)`, `private(set) var snapshot: PreferencesSnapshot`, `setAuto(_ value: Bool) throws`, `replace(_ value: PreferencesSnapshot) throws`. Snapshot A остаётся immutable; Codable DTO `StoredPreferencesV1` определён внутри C с восемью bool и служебными полями selectedColor:Int, loginPreferred:Bool, diagnosticsOptIn:Bool; ручное преобразование в snapshot. Runtime ephemeral state не сериализуется. UI defaults auto=false до quality gate, остальные значения берутся из согласованных A defaults; это дизайн, не defaults Caramba.
+**Interfaces:** `@MainActor PreferencesController.init(defaults: UserDefaults, publish: @escaping (PreferencesSnapshot) -> Void)`, `private(set) var snapshot: PreferencesSnapshot`, `setAuto(_ value: Bool) throws`, `replace(_ value: PreferencesSnapshot) throws`. Snapshot A остаётся immutable; Codable DTO `StoredPreferencesV1` определён внутри C с восемью bool и служебными полями selectedColor:Int, loginPreferred:Bool, diagnosticsOptIn:Bool; ручное преобразование в snapshot. Runtime ephemeral state не сериализуется. UI defaults auto=false до quality gate, остальные значения берутся из согласованных A defaults; это собственный дизайн, не defaults другого продукта.
 
 - [ ] **Step 1: RED тест publication после сохранения.**
 
@@ -253,7 +253,7 @@ func testPermissionWinsOverUpdate() {
 
 **Files:** Create SoundStore.swift, HeaderPalette.swift, HeaderImageStore.swift, StatisticsStore.swift, AppearanceStatisticsTests.swift, Resources/Sounds/correction.aiff и README происхождения собственного sound. Modify App/lib/features/settings/settings_page.dart и ARB.
 
-**Interfaces:** `SoundStore.init(directory:URL)`, `importSound(from:URL) throws -> URL`, `reset() throws`, `playCorrection()`; playback вне input executor. `HeaderPalette.colors:[UInt32]`, 25 RGB, default index0. `CounterKind:String` cases layout/typo/doubleCaps/yo/manual/undo; `StatisticsStore.init(database:SQLiteStore)`, `recordCommitted(id:UUID,kind:CounterKind,day:String) throws`, `count(kind:day:) throws -> Int`, `reset() throws`. Own time weightsVersion1: layout/manual=1s, typo/doubleCaps/yo=2s, undo=0s; это открытая проектная оценка, не timing Caramba. UI показывает «оценка» и формулу.
+**Interfaces:** `SoundStore.init(directory:URL)`, `importSound(from:URL) throws -> URL`, `reset() throws`, `playCorrection()`; playback вне input executor. `HeaderPalette.colors:[UInt32]`, 25 RGB, default index0. `CounterKind:String` cases layout/typo/doubleCaps/yo/manual/undo; `StatisticsStore.init(database:SQLiteStore)`, `recordCommitted(id:UUID,kind:CounterKind,day:String) throws`, `count(kind:day:) throws -> Int`, `reset() throws`. Own time weightsVersion1: layout/manual=1s, typo/doubleCaps/yo=2s, undo=0s; это открытая проектная оценка, не timing другого продукта. UI показывает «оценка» и формулу.
 
 - [ ] **Step 1: RED duplicate event.**
 
@@ -313,7 +313,7 @@ func testHeaderImagePersistsRejectsInvalidAndRemoves() throws {
 }
 ```
 
-Host/UI gate: TIFF pasteboard drag и local FileURL drag устанавливают видимую картинку; invalid image/over-limit pixels оставляют прежнюю; контекстное Remove и reset возвращают palette header; после restart картинка/удаление сохранены. Drop/hover не заменяет картинку до успешного decode и atomic commit. No source image/asset Caramba копируется в приложение.
+Host/UI gate: TIFF pasteboard drag и local FileURL drag устанавливают видимую картинку; invalid image/over-limit pixels оставляют прежнюю; контекстное Remove и reset возвращают palette header; после restart картинка/удаление сохранены. Drop/hover не заменяет картинку до успешного decode и atomic commit. Никакие сторонние изображения/assets не копируются в приложение.
 
 - [ ] **Step 5: Commit.**
 

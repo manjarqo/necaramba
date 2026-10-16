@@ -1,6 +1,6 @@
 # Independent rule package v1
 
-This is Necaramba's format, not CLM1. Manifest is exact UTF-8 compact JSON, sorted keys, unescaped slashes, integer numbers. The six keys are `keyID`, `minimumAppVersion`, `modelVersion`, `payloadSHA256`, `payloadSize`, `schemaVersion`. Duplicate/unknown keys and noncanonical bytes are rejected. UInt64 values never pass through floating point. Schema is 1, app versions contain three UInt32 components, key IDs contain 1–64 ASCII letters/digits/underscore/hyphen, digest is lowercase hex SHA256.
+This is Necaramba's own format, not a third-party model format. Manifest is exact UTF-8 compact JSON, sorted keys, unescaped slashes, integer numbers. The six keys are `keyID`, `minimumAppVersion`, `modelVersion`, `payloadSHA256`, `payloadSize`, `schemaVersion`. Duplicate/unknown keys and noncanonical bytes are rejected. UInt64 values never pass through floating point. Schema is 1, app versions contain three UInt32 components, key IDs contain 1–64 ASCII letters/digits/underscore/hyphen, digest is lowercase hex SHA256.
 
 Ed25519 signs `UTF8("NecarambaRules-v1\0") || canonical manifest || 0x00 || SHA256(payload)` with CryptoKit Curve25519.Signing. Manifest limit 64 KiB, signature exactly 64 bytes, payload limit 20 MiB. Payload is strict duplicate-free JSON with only RuleSnapshot fields and known nested record fields; bounded strings/collections, both language lexicons and reverse layout maps are required. No scripts/paths execute. Signature/hash are checked before payload parsing.
 

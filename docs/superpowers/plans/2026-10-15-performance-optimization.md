@@ -15,7 +15,7 @@
 - Clean Architecture; Flutter UI; Swift native runtime; macOS 12+; arm64/x86_64.
 - Domain entities and repository ports must not import Flutter, AppKit, SQLite or channel APIs.
 - No keyboard data crosses into Dart.
-- Never modify installed Caramba, user TCC, login items or personal documents in tests.
+- Never modify other installed keyboard switchers or their data, user TCC, login items or personal documents in tests.
 - Не менять окно двойного Shift 300 мс, не расширять ownership lease 100 мс и существующие deadlines readback.
 - Не повторять разрушительную операцию после частичной отправки. Успешный API return не заменяет подтверждение результата.
 - Не кешировать AX-текст и доказательства фокуса для последующей правки. При неопределённости отменять правку.

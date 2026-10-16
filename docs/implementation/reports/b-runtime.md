@@ -20,7 +20,7 @@ Public composition API remains NativeInputController(profiles:layouts:permission
 
 ## Verification
 
-Initial missing-type RED builds were captured for the first slice and EditOwnership. GREEN: 39 Core tests and 65 Mac tests pass after this round; dedicated ownership, early correction and async-install suites pass. Replay tool was built directly from SwiftPM object products without editing root-owned Package.swift, then executed with HostScenarios.json and 100000 events: all 11 declared simulated scenarios passed and both exact-order replays passed. No permission request, clipboard read, physical typing, installed Caramba, login item, personal file or TCC modification was performed.
+Initial missing-type RED builds were captured for the first slice and EditOwnership. GREEN: 39 Core tests and 65 Mac tests pass after this round; dedicated ownership, early correction and async-install suites pass. Replay tool was built directly from SwiftPM object products without editing root-owned Package.swift, then executed with HostScenarios.json and 100000 events: all 11 declared simulated scenarios passed and both exact-order replays passed. No permission request, clipboard read, physical typing, other installed keyboard switcher, login item, personal file or TCC modification was performed.
 
 ## Review round 2 and startup crash
 

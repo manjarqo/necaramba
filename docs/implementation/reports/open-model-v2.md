@@ -18,7 +18,7 @@ Explicit local model > opt-in open model > existing public fallback is the insta
 
 ## Frozen evaluation
 
-The actual engines were run against an unchanged frozen corpus using simulated physical provenance. The comparison is with our local interpreter of the supplied reference, **not the original Caramba application**. Reference per-token answers and rules are not exported. No tuning was performed against the final holdout.
+The actual engines were run against an unchanged frozen corpus using simulated physical provenance. The comparison is with our local interpreter of the supplied reference, **not a third-party application**. Reference per-token answers and rules are not exported. No tuning was performed against the final holdout.
 
 | Measure | Open model | Local reference interpreter |
 |---|---:|---:|

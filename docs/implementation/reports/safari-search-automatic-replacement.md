@@ -22,4 +22,4 @@ A CUA selectText/typeText probe on the live GitHub field did not establish corre
 
 ## Superseded delivery strategy
 
-Later on 2026-10-15, the user requested the browser method identified in Caramba. Automatic Safari range preparation was replaced by a temporary-Space/extra-Backspace sequence with ordered intermediate readback checks. See `physical-input-browser-delivery.md` for the current implementation and validation. Manual Spotlight range preparation remains.
+Later on 2026-10-15, the user requested the browser method identified in prior compatibility research. Automatic Safari range preparation was replaced by a temporary-Space/extra-Backspace sequence with ordered intermediate readback checks. See `physical-input-browser-delivery.md` for the current implementation and validation. Manual Spotlight range preparation remains.

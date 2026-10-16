@@ -4,13 +4,13 @@
 
 Дата: 2026-10-14. Статус: **проект для согласования; реализация продукта не начата**. Исследовательские скрипты и псевдокод уже созданы, но не являются реализацией Necaramba.
 
-**Goal:** Полный функциональный аналог подтверждённого набора Caramba Switcher Pro2026.09.22 с Flutter UI и Swift native core, macOS12+, Apple Silicon и Intel, с независимым языковым ядром и ресурсами.
+**Goal:** Переключатель раскладки EN↔RU с подтверждённым набором функций, Flutter UI и Swift native core, macOS12+, Apple Silicon и Intel, с независимым языковым ядром и ресурсами.
 
 **Architecture:** Pure Swift decision core; serial event runtime; AppKit status + Flutter settings; SQLite rules/counters; immutable verified rule snapshots; отдельные licensing/network adapters. Не переносить декомпилированный проект механически в новый продукт.
 
 **Tech Stack:** Flutter/Dart + Cubit, platform channels, Swift tools5.9, language mode5, AppKit, Carbon/TIS, CoreGraphics, Accessibility, SQLite, CryptoKit, URLSession, XCTest; Xcode universal build. Совместимость каждого используемого API с macOS12 проверяется availability guards.
 
-Основание: [спецификация](../specs/2026-10-14-necaramba-design.md), [исследование](../../research/caramba/README.md), [103AC](../../research/caramba/acceptance-matrix.md).
+Основание: [спецификация](../specs/2026-10-14-necaramba-design.md).
 
 ## Global Constraints
 
@@ -20,7 +20,7 @@
 - Не сохранять и не отправлять набранный текст по умолчанию.
 - При неопределённом фокусе, Secure Input, IME/composition или недоступных разрешениях пропускать ввод без изменения.
 - Синтетические события маркируются и не обрабатываются повторно.
-- Исходный Caramba app, его идентификаторы сервисов, модель CLM1, звук, графика и аккаунт не входят в распространяемый продукт.
+- Код, идентификаторы сервисов, модели, звуки, графика и аккаунты сторонних переключателей не входят в распространяемый продукт.
 - Не выпускать функцию как совместимую без соответствующего теста и результата в матрице приёмки.
 
 ## Порядок и файлы планов
@@ -70,7 +70,7 @@ flowchart LR
 
 1. **G0 — согласование проекта.** Проверить спецификацию, deliberate differences, offline/licensing policy и внешний набор release inputs. До нового поручения реализацию не начинать.
 2. **G1 — feasibility.** A1–A3, E1–E2 и B1–B2: на собственном TestHost подтвердить focus epochs, source switch/readback, capture/post permission и безопасный pass-through. При недоказанном поле backspace-auto не включается. macOS12 Intel — отдельный обязательный реальный host.
-3. **G2 — детерминированное ядро.** A тесты и независимый corpus; не обучать/калибровать на holdout. Precision/false-change/recall из spec — release цели, не известные показатели Caramba.
+3. **G2 — детерминированное ядро.** A тесты и независимый corpus; не обучать/калибровать на holdout. Precision/false-change/recall из spec — release цели, не известные показатели других продуктов.
 4. **G3 — ручные команды и транзакции.** B replacement/clipboard/own undo; ноль lost/duplicate/reordered user events в100000-event replay. Clipboard races, смена фокуса, Secure Input, sleep/lock покрываются отказными сценариями.
 5. **G4 — полный функциональный UI.** C, все22F, persistent settings/import rollback, appearance image/sound, accessibility/RU/EN, login12/13+.
 6. **G5 — automatic parity.** B6 differential corpus на original и candidate в контролируемом test profile; сравнить раннюю коррекцию, gestures/timing, selection/undo, app rules. Каждое расхождение классифицировать как defect, deliberate safety difference или unsupported; label не заменяет исправление mandatory feature.
@@ -81,20 +81,20 @@ flowchart LR
 - Flutter UI выбран пользователем; Swift input/runtime/storage/delivery остаются native. Полный контракт bridge и lifecycle в плане E; все отображаемые настройки/rules имеют один native source of truth.
 - RSS: исходная цель100MiB сохраняется для background без engine; для открытого Flutter UI предлагается200MiB, проверяется E4. Intel поддержка обязательна, pinned SDK и реальные host gates защищают от несовместимого upgrade.
 
-- Независимые словари/правила вместо извлечённого CLM1; собственные звук, графика, bundle IDs и endpoints.
+- Независимые словари/правила вместо извлечённых сторонних моделей; собственные звук, графика, bundle IDs и endpoints.
 - Консервативный abstain при неоднозначности; no-change на неподтверждённом фокусе/IME/Secure Input. Эти решения могут отличаться от агрессивности эталона и должны быть видны в сравнении.
-- Тайминги300мс gesture и3×20мс layout retry — стартовые параметры дизайна; исследование не доказало, что они равны Caramba.
+- Тайминги300мс gesture и3×20мс layout retry — стартовые параметры дизайна; они не заимствованы из других продуктов.
 - Clipboard restoration по changeCount; автоматическое восстановление не перезаписывает новое пользовательское копирование.
 - UI word rules1–20 graphemes; отдельное сохранение legacy21–100. Unicode counting отличается от regex length и требует сравнительных кейсов.
 - C использует recovery journal для целостного импорта SQLite+preferences; это конкретизация spec all-or-nothing на двух хранилищах. Legacy rows имеют отдельную таблицу.
 - D v1 принимает identity package без compression; предел80MiB для декодирования остаётся защитной границей будущего формата. Подписанный пакет обязан пройти размер/hash/schema/version/signature checks.
-- Коммерческий adapter D задаёт72h offline grace как предлагаемую политику нового продукта, не исследованную политику Caramba. Developer ID лицензирование и StoreKit имеют разные адаптеры. Без собственных идентификаторов/endpoint commercial release gate остаётся BLOCKED; локальную реализацию/тесты можно выполнять с fixtures.
+- Коммерческий adapter D задаёт72h offline grace как предлагаемую политику нового продукта, не политику другого продукта. Developer ID лицензирование и StoreKit имеют разные адаптеры. Без собственных идентификаторов/endpoint commercial release gate остаётся BLOCKED; локальную реализацию/тесты можно выполнять с fixtures.
 
 ## Доступ и решения, нужные к выпуску
 
-Для старта реализации дополнительных сведений не требуется: рабочее имя Necaramba и локальные adapters уже определены. До production release нужны собственный bundle ID/Developer team/signing, название/бренд, поддержка/privacy URL, ключи подписи rules и контролируемый endpoint, решение о цене/trial/StoreKit product IDs, Intel/macOS12 и Apple Silicon hosts. Эти данные не подставлять от Caramba и не выдумывать.
+Для старта реализации дополнительных сведений не требуется: рабочее имя Necaramba и локальные adapters уже определены. До production release нужны собственный bundle ID/Developer team/signing, название/бренд, поддержка/privacy URL, ключи подписи rules и контролируемый endpoint, решение о цене/trial/StoreKit product IDs, Intel/macOS12 и Apple Silicon hosts. Эти данные не заимствовать из других продуктов и не выдумывать.
 
-Текущее исследование не исполнило физические тесты оригинала. Для полного соответствия выполнить [сохранённый протокол](../../research/caramba/physical-input-test-protocol.md) в контролируемом профиле; это обязательный открытый исследовательский gate. Ни текущий план, ни успешная пакетная декомпиляция его не закрывают.
+Физические тесты ввода ещё не выполнены. Для полного соответствия выполнить протокол физического ввода в контролируемом профиле; это обязательный открытый исследовательский gate. Ни текущий план, ни успешная пакетная декомпиляция его не закрывают.
 
 ## Проверка исполнения и handoff
 

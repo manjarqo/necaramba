@@ -18,4 +18,4 @@ Use a dedicated physical suffix mutation transport (delete count, replacement, r
 4. Independent source review, focused and full Swift tests, public-model universal build/signature.
 5. Restart local app; preserve off; distinguish synthetic testing from physical host qualification.
 
-The user additionally requested the Caramba method. Implement temporary Space followed by one additional Backspace for exact Safari/Chrome/Brave suffix routes, with transient insertion/deletion represented in readback proof. This supersedes the earlier automatic Safari suffix-selection mitigation. Never treat post success as observed success or combine selected-range replacement with suffix Backspaces.
+The user additionally requested the method identified in prior compatibility research. Implement temporary Space followed by one additional Backspace for exact Safari/Chrome/Brave suffix routes, with transient insertion/deletion represented in readback proof. This supersedes the earlier automatic Safari suffix-selection mitigation. Never treat post success as observed success or combine selected-range replacement with suffix Backspaces.

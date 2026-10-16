@@ -9,8 +9,6 @@ build/
 Pods/
 **/ephemeral/
 **/xcuserdata/
-docs/research/caramba/evidence/
-docs/research/caramba/decompiled/
 
 # Machine-specific local Release signing identity; never distribute.
 /App/macos/Runner/Configs/LocalSigning.xcconfig

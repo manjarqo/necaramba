@@ -2,7 +2,7 @@
 
 Clean boundaries: Core contains value types/policies and ports; Mac adapters implement SQLite, permissions, TIS, clipboard, image/audio, login and input. ApplicationServices composes use cases; NativeCommandCoordinator serializes a versioned wire contract. Flutter domain ports have data channel adapters and feature presentation modules, one authoritative snapshot Cubit.
 
-Native bridge tests cover queued request idempotency, stale-session/revision rejection, unknown commands and redacted errors. Full Swift suite passed before runtime/corpus additions; targeted archive tests21 PASS, release tests2 PASS, window adapter test1 PASS. UI fix report records35 PASS and analyzer clean. Latest integrated `flutter build macos --release` PASS45.8MB; helper embeds universal macOS12 binary, own WAV copied, no Caramba assets.
+Native bridge tests cover queued request idempotency, stale-session/revision rejection, unknown commands and redacted errors. Full Swift suite passed before runtime/corpus additions; targeted archive tests21 PASS, release tests2 PASS, window adapter test1 PASS. UI fix report records35 PASS and analyzer clean. Latest integrated `flutter build macos --release` PASS45.8MB; helper embeds universal macOS12 binary, own WAV copied, no third-party assets.
 
 Preferences are now authoritative in own SQLite application_preferences table; UserDefaults is a migration input/mirror. Rule/preference archive validates first and commits in one SQLite transaction; duplicate conflicts preserve both old rules and preferences. Postcommit preference adoption does not perform another database write. Login preference import does not register OS login without explicit user action.
 

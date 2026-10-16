@@ -1,6 +1,6 @@
-# Necaramba — спецификация функционального аналога Caramba Switcher Pro для macOS
+# Necaramba — спецификация переключателя раскладки для macOS
 
-Дата: 2026-10-14. Редакция Flutter по уточнению пользователя. Статус: проект для согласования; реализация не начата. Основание: запрос пользователя и исследование установленной Caramba Switcher Pro 2026.09.22 (20260922.2). Целевые функции — функции данной macOS-сборки, а не объединение всех исторических обещаний Windows и macOS.
+Дата: 2026-10-14. Редакция Flutter по уточнению пользователя. Статус: проект для согласования; реализация не начата. Основание: запрос пользователя и предварительное исследование совместимости. Целевые функции определены для macOS, а не как объединение всех исторических обещаний для Windows и macOS.
 
 ## 1. Цель и граница соответствия
 
@@ -23,18 +23,18 @@
 - Не сохранять и не отправлять набранный текст по умолчанию.
 - При неопределённом фокусе, Secure Input, IME/composition или недоступных разрешениях пропускать ввод без изменения.
 - Синтетические события маркируются и не обрабатываются повторно.
-- Исходный Caramba app, его идентификаторы сервисов, модель CLM1, звук, графика и аккаунт не входят в распространяемый продукт.
+- Код, идентификаторы сервисов, модели, звуки, графика и аккаунты сторонних переключателей не входят в распространяемый продукт.
 - Не выпускать функцию как совместимую без соответствующего теста и результата в матрице приёмки.
 
 ## 2. Основания требований
 
-Исследование: [индекс](../../research/caramba/README.md), [ресурсы](../../research/caramba/resources-report.md), [живой UI](../../research/caramba/runtime-report.md), [платформенные источники](../../research/caramba/platform-and-product.md), [матрица приёмки](../../research/caramba/acceptance-matrix.md). Все следующие точные лимиты/пороги — **проектные решения**, если явно не названы наблюдениями.
+Все следующие точные лимиты/пороги — **проектные решения**, если явно не названы наблюдениями.
 
 | ID | Требование | Источник и критерий |
 |---|---|---|
 | F01 | Автопереключение ошибочного слова RU↔EN | UI, ресурсы; `ghbdtn`→`привет` при подходящем контексте; не транслитерация |
 | F02 | Автоисправление распространённых опечаток | UI; отдельное включение; точные пары в собственном versioned ruleset |
-| F03 | Две начальные заглавные | vendor-claim + событие `caramba_double_caps`; `ПРивет`→`Привет`, `HTTP` сохраняется |
+| F03 | Две начальные заглавные | vendor-claim + событие исправления двойных заглавных; `ПРивет`→`Привет`, `HTTP` сохраняется |
 | F04 | Ёфикатор | UI; `елка`→`ёлка`; неоднозначное `все` сохраняется без достаточного контекста |
 | F05 | Single Shift меняет раскладку | UI; только одиночное нажатие без сочетания; обычный Shift+A не поглощается |
 | F06 | Double Shift меняет слово/выделение и отменяет свою последнюю замену | UI + vendor-claim об отмене; приоритеты определены ниже и требуют сравнения с эталоном |
@@ -112,7 +112,7 @@ Flutter UI — Dart main isolate, Cubit для локального состоя
 
 ### Gesture FSM — проектный контракт
 
-- Один Shift: release без другой клавиши и без второго Shift; отложенное решение на 300 мс, чтобы отличить Double Shift. Это выбранный UX-компромисс, не измеренный тайминг Caramba.
+- Один Shift: release без другой клавиши и без второго Shift; отложенное решение на 300 мс, чтобы отличить Double Shift. Это выбранный UX-компромисс, не тайминг другого продукта.
 - Double Shift: две отдельные пары down/up одного либо разных Shift за 300 мс, если не было chord; отменяет pending Single Shift и выдаёт одну manual action.
 - Split Shift: одновременное удержание обеих физических Shift при включённой опции; одна команда на переход; не выдаёт single/double после отпускания.
 - Option: release без другой клавиши, опция включена; не перехватывать Option+символ, Ctrl/Command chord, key repeat.
@@ -140,13 +140,13 @@ MVP распознаёт на границе слова Space/Return/Tab/пун�
 7. На выбранном языке применить один детерминированный высокоуверенный typo-rule, затем double-capital correction, затем unambiguous ё-rule; итоговая замена — одна транзакция, не серия редактирований.
 8. Вернуть Decision(pass, replace, manualOnly) с reasonCode, modelVersion и confidence band. Diagnostics не содержит текста без явного локального debug opt-in.
 
-Rules v1 содержат lexicon (word/language/frequency/casePolicy), keyboard maps, typo replacements (source/target/caseSensitive), yo replacements (source/target/ambiguity), never-switch tokens, app capability profiles и versioned score parameters. Порог выбирается по holdout-корпусу; в спецификации намеренно не назначается выдуманный «порог Caramba». До принятия измеренного порога shipped auto остаётся выключенным.
+Rules v1 содержат lexicon (word/language/frequency/casePolicy), keyboard maps, typo replacements (source/target/caseSensitive), yo replacements (source/target/ambiguity), never-switch tokens, app capability profiles и versioned score parameters. Порог выбирается по holdout-корпусу; в спецификации намеренно не назначается выдуманный или заимствованный порог. До принятия измеренного порога shipped auto остаётся выключенным.
 
 ### Качество
 
 Создать не менее 10 000 синтетических/лицензированно полученных размеченных примеров, стратифицированных по языку, раскладке, регистру, mixed tokens, пунктуации и категориям приложений. Разделение train/calibration/holdout без утечки одинаковых семейств слов. В release holdout не менее 2 000 примеров, из них не менее 1 000 корректных no-change. Требования первого полноценного релиза: precision автоматических правок >= 99,5%, false-change <= 0,1% на no-change, recall ошибочной раскладки >= 95% на поддержанном подмножестве; публиковать размеры/число ошибок и интервалы неопределённости. Это цели, не достигнутые измерения.
 
-Отдельный differential corpus сравнивает разрешённые эталонные сценарии Caramba и Necaramba. Любое расхождение triage: intentional safer behavior / missing feature / linguistic difference / environment. Стопроцентное тождество на конечном корпусе не означает тождество на любом тексте.
+Отдельный differential corpus сравнивает разрешённые эталонные сценарии и поведение Necaramba. Любое расхождение triage: intentional safer behavior / missing feature / linguistic difference / environment. Стопроцентное тождество на конечном корпусе не означает тождество на любом тексте.
 
 ## 6. Замена, выделение, plain paste и отмена
 
@@ -176,7 +176,7 @@ Plain paste не переиспользует clipboard-history. При отсу
 
 Приоритет: Secure Input/permissions/unsupported context → явное пользовательское правило приложения → shipped app profile → global auto flag → user word exclusion → classifier. Явный app allow не обходит Secure Input и capability gates. Ручные команды не зависят от global auto flag, но зависят от разрешений и безопасного контекста. Rule для слова подавляет auto/typo/ё; manual convert по явной команде разрешён. Семантику уточнять сравнением с эталоном, текущее значение — дизайн.
 
-SQLite через системный libsqlite3, serial writer, WAL, foreign_keys=ON, schema_version в migration table. Файлы в Application Support собственного bundle ID; никакого чтения чужого Caramba store при обычной работе. Tables:
+SQLite через системный libsqlite3, serial writer, WAL, foreign_keys=ON, schema_version в migration table. Файлы в Application Support собственного bundle ID; никакого чтения хранилищ других приложений при обычной работе. Tables:
 
 - `word_rules(id TEXT PK, normalized TEXT UNIQUE NOT NULL, original TEXT NOT NULL, created_at INTEGER NOT NULL, share_opt_in INTEGER NOT NULL DEFAULT 0)`.
 - `legacy_word_rules(id TEXT PK, normalized TEXT UNIQUE NOT NULL, original TEXT NOT NULL, created_at INTEGER NOT NULL)` для валидных импортированных21–100 graphemes.
@@ -187,11 +187,11 @@ SQLite через системный libsqlite3, serial writer, WAL, foreign_key
 
 Настройки без текста — UserDefaults собственного домена: auto/typo/yo/singleShift/option/splitShift/plainPaste/sound, selected color, login preference, diagnostics opt-in. Sounds копировать в managed Application Support после чтения разрешённого пользователем файла и успешного декодирования; maximum 5 MiB/10 sec. Файлы/картинки не помещать в defaults.
 
-Word-rule validation: NFC, trim; 1–20 grapheme clusters, запрет NUL/control characters, `=` и `%`, запрет токенов без букв, содержащих цифры; нормализованная уникальность. В оригинале найден regex с лимитом 20, тогда как Core Data допускает до 100; UI-лимит нового продукта — 20, legacy import до 100 хранится отдельно и не обрезается молча. Различие regex length и grapheme count проверяется differential Unicode cases. Импорт/export собственный JSON v1, transaction all-or-nothing для rules; combined rules+preferences использует recovery journal по плану C, без SQL из файла; копию БД перед migration, integrity_check и восстановление при ошибке. Старые скрытые Caramba entities не переносить без отдельного явно предоставленного экспорта.
+Word-rule validation: NFC, trim; 1–20 grapheme clusters, запрет NUL/control characters, `=` и `%`, запрет токенов без букв, содержащих цифры; нормализованная уникальность. В предварительном исследовании совместимости найден regex с лимитом 20, тогда как Core Data допускает до 100; UI-лимит нового продукта — 20, legacy import до 100 хранится отдельно и не обрезается молча. Различие regex length и grapheme count проверяется differential Unicode cases. Импорт/export собственный JSON v1, transaction all-or-nothing для rules; combined rules+preferences использует recovery journal по плану C, без SQL из файла; копию БД перед migration, integrity_check и восстановление при ошибке. Данные других приложений не переносить без отдельного явно предоставленного экспорта.
 
 ## 8. Обновление правил и офлайн-режим
 
-В app входит собственный базовый ruleset. Startup сначала загружает verified installed rules, иначе bundled rules. Никаких запросов к CDN Caramba. Собственный rule package: manifest JSON `schemaVersion, modelVersion, minimumAppVersion, payloadSize, payloadSHA256, keyID`; payload canonical binary/JSON; Ed25519 signature над canonical manifest + digest. Public keys bundled; key rotation через cross-sign или app update. Signature/hash/version проверяются до parsing/loading.
+В app входит собственный базовый ruleset. Startup сначала загружает verified installed rules, иначе bundled rules. Никаких запросов к сторонним CDN. Собственный rule package: manifest JSON `schemaVersion, modelVersion, minimumAppVersion, payloadSize, payloadSHA256, keyID`; payload canonical binary/JSON; Ed25519 signature над canonical manifest + digest. Public keys bundled; key rotation через cross-sign или app update. Signature/hash/version проверяются до parsing/loading.
 
 Download по HTTPS, timeout 15 sec, max payload 20 MiB, decompressed max 80 MiB, cancellation; при launch и затем раз в 24 часа с jitter ±2 часа; ручной check с throttle 30 sec. Сеть вне input executor. Установка write temp → fsync → verify → atomic rename → new immutable snapshot; оставить last-known-good. Anti-rollback modelVersion, исключение только для внутреннего отзыва подписанным recovery manifest. Повреждение, неизвестный key/schema, несовместимая app version — сохранить старую модель, отразить статус.
 
@@ -209,15 +209,15 @@ LaunchAtLogin: macOS12 login helper; macOS13+ ServiceManagement API. Источ�
 
 ## 10. Лицензирование и распространение
 
-Первый внутренний Developer ID prototype работает с `LocalEntitlementProvider(.active)`; это отдельный режим разработки, не обход лицензии Caramba. Коммерческая совместимость F20 означает собственные UI/status contracts: checking, trial(until), active(until, renews), grace(until), pending, expired, revoked, unavailable. Даты в UTC для логики, локализованный вывод. StoreKit transaction проверяется, restore по кнопке, cancellation не ошибка, pending не выдаёт paid entitlement. Offline cache только для последнего verified entitlement в ограниченном grace window, policy документируется до commercial release.
+Первый внутренний Developer ID prototype работает с `LocalEntitlementProvider(.active)`; это отдельный режим разработки, не обход чьей-либо лицензии. Коммерческая совместимость F20 означает собственные UI/status contracts: checking, trial(until), active(until, renews), grace(until), pending, expired, revoked, unavailable. Даты в UTC для логики, локализованный вывод. StoreKit transaction проверяется, restore по кнопке, cancellation не ошибка, pending не выдаёт paid entitlement. Offline cache только для последнего verified entitlement в ограниченном grace window, policy документируется до commercial release.
 
 Не требовать создания платной подписки для проверки basic input. Решение о бизнес-модели пользователя ещё не получено; платёжные сценарии входят в план отдельного коммерческого этапа. Product IDs, own backend domain, Apple Team ID — релизные входные данные владельца, их нельзя выдумать или скопировать из эталона.
 
-Базовый канал — universal Developer ID app, hardened runtime, notarization и stapling. MAS — отдельная feasibility gate на реальном sandboxed prototype; наблюдаемый sandbox=true у Caramba доказывает его сборку, а не разрешённость любого выбранного AX подхода аналога. Условия Apple и доступность API сверяются на момент релиза.
+Базовый канал — universal Developer ID app, hardened runtime, notarization и stapling. MAS — отдельная feasibility gate на реальном sandboxed prototype; наблюдаемый sandbox=true у других приложений не доказывает разрешённость выбранного AX подхода. Условия Apple и доступность API сверяются на момент релиза.
 
 ## 11. Приёмка и измерения
 
-[AC matrix](../../research/caramba/acceptance-matrix.md) задаёт конкретные входы/ожидания; она является проектными тестами, не отчётом об их прохождении.
+Матрица приёмки (AC) задаёт конкретные входы/ожидания; она является проектными тестами, не отчётом об их прохождении.
 
 - Чистые unit tests: mapping, normalization, token bounds, gesture FSM, policy precedence, correction/undo plan, migrations и signed update rejection.
 - Deterministic replay: timestamped physical event fixtures, fake clock/layout/focus/permissions, последовательность emitted events; 100 000 событий без потерянных/повторных пользовательских событий.

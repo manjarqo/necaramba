@@ -1,6 +1,6 @@
 # C3/C4, C5 presentation and E3 Flutter flows
 
-2026-10-14. Isolated `.worktrees/ui`; Flutter presentation/domain-use-case/localization ownership only. No Swift Runner changes, platform wire protocol changes, installed Caramba access, real TCC changes, login item changes or personal-store access.
+2026-10-14. Isolated `.worktrees/ui`; Flutter presentation/domain-use-case/localization ownership only. No Swift Runner changes, platform wire protocol changes, access to other installed keyboard switchers, real TCC changes, login item changes or personal-store access.
 
 ## Implemented
 

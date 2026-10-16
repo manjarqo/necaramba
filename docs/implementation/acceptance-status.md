@@ -1,6 +1,6 @@
 # Implementation acceptance status — 2026-10-14
 
-This is an internal prototype under review, not a completed full Caramba analogue. Flutter is the UI; Swift owns global input and native services. Neither successful compilation nor simulated tests authorize enabling editor mutation in unqualified applications.
+This is an internal prototype under review, not a completed, fully qualified product. Flutter is the UI; Swift owns global input and native services. Neither successful compilation nor simulated tests authorize enabling editor mutation in unqualified applications.
 
 | Area | Implemented evidence | Remaining acceptance |
 |---|---|---|
@@ -17,4 +17,4 @@ Local checks completed during integration: 169 Swift tests (106 Mac +63 Core), 3
 
 The observed TIS startup trap was fixed and the final 60.3MB local Release app displayed active model version1. Its main executable, login helper and Flutter frameworks contain arm64/x86_64 slices with minimum macOS12. A closed/reopened window rendered again. The second engine's accessibility tree was incomplete, so that observation does not pass accessibility or the 100-cycle resource gate.
 
-No permission was granted, OS login item enabled, purchase performed, user typing captured, or production distribution published during these tests. The installed Caramba specimen was not modified and its code/resources are not product inputs.
+No permission was granted, OS login item enabled, purchase performed, user typing captured, or production distribution published during these tests. No other installed keyboard switcher or its data was modified, and no third-party switcher code or resources are product inputs.

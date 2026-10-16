@@ -6,6 +6,6 @@ Necaramba's Electron activation allowlist omitted VSCodium. Added the exact iden
 
 The regression test failed with 3 assertions before the production change. All activation tests then passed. Full Swift suite: 459 executed, one optional private-model skip, zero failures. Public-model universal release build succeeded and strict deep signature verification passed. The local app was restarted; no publication performed. Existing uncommitted Safari mitigation retained.
 
-The explicit user setting is a separate obstacle. The user explicitly declined changing it to auto; off is preserved. Research continues on independent physical-input delivery; see the Caramba compatibility investigation. Physical manual/automatic conversion in VSCodium is not yet verified. New app activation alone must not be called a complete fix while editor accessibility remains disabled.
+The explicit user setting is a separate obstacle. The user explicitly declined changing it to auto; off is preserved. Research continues on independent physical-input delivery; see the prior compatibility research. Physical manual/automatic conversion in VSCodium is not yet verified. New app activation alone must not be called a complete fix while editor accessibility remains disabled.
 
 After restart and VSCodium activation, a newly created empty Untitled document still reported editor inaccessible while off was preserved. The empty test tab was closed, without modifying a user document. Activation therefore does not by itself fix the reported issue.
