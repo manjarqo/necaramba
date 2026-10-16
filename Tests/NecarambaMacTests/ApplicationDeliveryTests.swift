@@ -109,6 +109,9 @@ private actor DeliveryLicensingFake:LicensingAdapter {
  let snapshot:EntitlementState
  let holdSnapshot:Bool
  private var snapshotRequested=false
+ private var snapshotReleased=false
+ private var snapshotRequestObservers:[XCTestExpectation]=[]
+ private var unsubscribeObservers:[XCTestExpectation]=[]
  private var snapshotWaiter:CheckedContinuation<Void,Never>?
  private var streams:[UUID:AsyncStream<EntitlementRevision>.Continuation]=[:]
  private var sequence:UInt64=0
@@ -116,7 +119,10 @@ private actor DeliveryLicensingFake:LicensingAdapter {
  func current() async->EntitlementState {
   if holdSnapshot {
    snapshotRequested=true
-   await withCheckedContinuation { snapshotWaiter=$0 }
+   let observers=snapshotRequestObservers
+   snapshotRequestObservers.removeAll()
+   observers.forEach { $0.fulfill() }
+   if !snapshotReleased { await withCheckedContinuation { snapshotWaiter=$0 } }
   }
   return snapshot
  }
@@ -126,10 +132,18 @@ private actor DeliveryLicensingFake:LicensingAdapter {
   return .init(state:state,sequence:sequence)
  }
  func waitForSnapshotRequest() async->Bool {
-  for _ in 0..<100 { if snapshotRequested { return true };await Task.yield() }
-  return snapshotRequested
+  if snapshotRequested { return true }
+  let requested=XCTestExpectation(description:"licensing snapshot requested")
+  snapshotRequestObservers.append(requested)
+  let result=await XCTWaiter.fulfillment(of:[requested],timeout:2)
+  snapshotRequestObservers.removeAll { $0 === requested }
+  return result == .completed
  }
- func releaseSnapshot() { snapshotWaiter?.resume();snapshotWaiter=nil }
+ func releaseSnapshot() {
+  // Latch release even if startup has not installed its continuation yet.
+  snapshotReleased=true
+  snapshotWaiter?.resume();snapshotWaiter=nil
+ }
  func purchase(productID:String) async throws->PurchaseOutcome { .pending }
  func restore() async throws->EntitlementState { snapshot }
  func updates() async->AsyncStream<EntitlementRevision> {
@@ -145,10 +159,21 @@ private actor DeliveryLicensingFake:LicensingAdapter {
   for stream in streams.values { stream.yield(update) }
  }
  func subscriberCount()->Int { streams.count }
- private func remove(_ id:UUID) { streams[id]=nil }
+ private func remove(_ id:UUID) {
+  streams[id]=nil
+  if streams.isEmpty {
+   let observers=unsubscribeObservers
+   unsubscribeObservers.removeAll()
+   observers.forEach { $0.fulfill() }
+  }
+ }
  func waitForNoSubscribers() async->Bool {
-  for _ in 0..<100 { if streams.isEmpty { return true }; await Task.yield() }
-  return streams.isEmpty
+  if streams.isEmpty { return true }
+  let unsubscribed=XCTestExpectation(description:"licensing updates unsubscribed")
+  unsubscribeObservers.append(unsubscribed)
+  let result=await XCTWaiter.fulfillment(of:[unsubscribed],timeout:2)
+  unsubscribeObservers.removeAll { $0 === unsubscribed }
+  return result == .completed
  }
 }
 private actor DeliveryShareSpy:RuleShareTransport {

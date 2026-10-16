@@ -141,6 +141,35 @@ import NecarambaCore
     feed("ghbdtn ", fixture)
     await drain()
     XCTAssertEqual(fixture.editor.text, "url/ghbdtn ")
+    XCTAssertEqual(fixture.layouts.value.rawValue, "US")
+    feed("ghbdtn ", fixture)
+    await drain()
+    XCTAssertEqual(fixture.editor.text, "url/ghbdtn привет ")
+  }
+  func testAbortedAutomaticReplacementRestoresSourceLayout() async {
+    for proxy in [false, true] {
+      let fixture = await fixture(proxy: proxy)
+      fixture.editor.abortsReplacement = true
+      feed("ghbdtn ", fixture)
+      await drain()
+      XCTAssertEqual(fixture.editor.results, [.aborted])
+      XCTAssertEqual(fixture.editor.text, "ghbdtn ")
+      XCTAssertEqual(fixture.layouts.value.rawValue, "US", "Unchanged text must keep the typing layout")
+      fixture.editor.abortsReplacement = false
+      feed("ghbdtn ", fixture)
+      await drain()
+      XCTAssertEqual(fixture.editor.text, "ghbdtn привет ")
+      XCTAssertEqual(fixture.layouts.value.rawValue, "RU")
+    }
+  }
+  func testReadableUntrustedURLSuffixDoesNotChangeLayoutBeforeRejectingWordStart() async {
+    let fixture = await fixture(proxy: false)
+    feed("url/", fixture)
+    fixture.controller.runtime.invalidateContext(reason: .mouseNavigation)
+    feed("ghbdtn ", fixture)
+    await drain()
+    XCTAssertEqual(fixture.editor.text, "url/ghbdtn ")
+    XCTAssertEqual(fixture.layouts.value.rawValue, "US")
     feed("ghbdtn ", fixture)
     await drain()
     XCTAssertEqual(fixture.editor.text, "url/ghbdtn привет ")
@@ -162,6 +191,7 @@ import NecarambaCore
     feed("руддщ ", fixture)
     await drain()
     XCTAssertEqual(fixture.editor.text, "приветруддщ ")
+    XCTAssertEqual(fixture.layouts.value.rawValue, "RU")
     XCTAssertTrue(fixture.editor.results.isEmpty)
     feed("руддщ ", fixture)
     await drain()
@@ -407,13 +437,14 @@ private final class AutoPermissions: PermissionReading {
   func current() -> PermissionState { .init(listen: true, post: true, ax: true, secureInput: false) }
   func request(_ kind: PermissionKind) { XCTFail("No TCC requests") }
 }
-private final class AutoEditor: SelectionAccess, AutomaticBoundarySuffixReplacing, ManualRepeatedSuffixReplacing, ManualTrackedSuffixReplacing {
+private final class AutoEditor: AutomaticBoundaryEligibilityReading, SelectionAccess, AutomaticBoundarySuffixReplacing, ManualRepeatedSuffixReplacing, ManualTrackedSuffixReplacing {
   let context: AutoContext
   let proxy: Bool
   let identity = UUID()
   var text = ""
   var results: [ApplyResult] = []
   var normalizesSpace = false
+  var abortsReplacement = false
   var hidesSuffix = false
   var onSuffix: (() -> Void)?
   var generation: () -> UInt64 = { 0 }
@@ -449,15 +480,24 @@ private final class AutoEditor: SelectionAccess, AutomaticBoundarySuffixReplacin
     text += replacement
     return .dispatched
   }
-  func replaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with replacement: String) -> ApplyResult {
+  func canReplaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with replacement: String) -> Bool {
+    automaticEligible(candidate)
+  }
+  private func automaticEligible(_ candidate: AutomaticBoundaryCandidate) -> Bool {
     guard candidate.inputGeneration == generation(), candidate.word.context == context.token,
       candidate.boundary.keyCode == 49, candidate.boundary.text == " ",
-      text.hasSuffix(candidate.word.text + " ") else { return .aborted }
+      text.hasSuffix(candidate.word.text + " ") else { return false }
     if candidate.requiresWordStartProof && (!proxy || !candidate.allowsOpaqueWordStart) {
-      guard !proxy else { return .aborted }
+      guard !proxy else { return false }
       let prefix = text.dropLast(candidate.word.text.count + 1)
-      guard prefix.isEmpty || prefix.last?.isWhitespace == true else { return .aborted }
+      guard prefix.isEmpty || prefix.last?.isWhitespace == true else { return false }
     }
+    return true
+  }
+  func replaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with replacement: String) -> ApplyResult {
+    guard automaticEligible(candidate) else { return .aborted }
+    // Models a rejection after layout preparation that posts no key.
+    guard !abortsReplacement else { results.append(.aborted); return .aborted }
     text.removeLast(candidate.word.text.count + 1)
     text += normalizesSpace ? String(replacement.dropLast()) + "\u{00a0}" : replacement
     let result: ApplyResult = proxy ? .dispatched : .committed

@@ -1,13 +1,15 @@
 {
-  "schemaVersion": 1,
-  "version": "open-2",
-  "artifactSHA256": "23689f5eb857fc1c6016f32873efbdba238404841ae865b2fa669f42c914c8b2",
-  "bytes": 15629,
+  "schemaVersion": 2,
+  "version": "open-3",
+  "artifactSHA256": "38d8f817cfdb7112c21c86d1d5f46baac6e97a62ba682f1e4a3277f811719278",
+  "bytes": 16164,
   "typoCount": 233,
   "yoCount": 67,
+  "contractionCount": 57,
   "lexiconSHA256": "a1713eae3c5f44f3f1e97bb9ad80340d21c0a5acaa04e9c41de493bdd07a67eb",
   "typoSource": "Independently authored explicit list in Tools/OpenModel/corrections.py; no imported typo dataset or proprietary input.",
   "typoLicense": "GPL-3.0-only (repository license)",
   "yoSource": "Independently authored explicit preferred spellings in AUTHORED_YO; open lexicon used only to validate destinations. GPL-3.0-only.",
-  "selection": "Explicit reviewed ё preferences permit standard optional-е spellings; no inferred morphology rules. Ambiguous lexical alternatives protected. No empirical frequencies."
+  "contractionSource": "Independently authored explicit list in AUTHORED_CONTRACTIONS; each validated as a form of the independent en_US dictionary. GPL-3.0-only.",
+  "selection": "Explicit reviewed ё preferences permit standard optional-е spellings; no inferred morphology rules. Ambiguous е/ё alternatives never gain or lose ё but may result from physical layout conversion; ру/he is fully protected. No empirical frequencies."
 }

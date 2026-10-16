@@ -1,3 +1,4 @@
+import AppKit
 import Carbon
 import CoreGraphics
 import Foundation
@@ -145,30 +146,64 @@ public final class EventTapAdapter {
     installed = false
     lock.unlock()
   }
-  /// Preparation runs on main. The only destructive work is a prebuilt event batch on the tap run loop.
+  /// Preparation runs on main; prebuilt key pairs are posted on the tap run loop.
+  /// Physical replay holds ownership across two asynchronous, bounded phase delays.
   @MainActor public func replaceAsync(
     _ evidence: SelectionEvidence, with text: String, selected: Bool, lease: ShortcutLease? = nil,
+    physicalKeys: [PhysicalLayoutMapping.Entry]? = nil,
+    phaseAuthorization: (@MainActor () -> Bool)? = nil,
     preflight: () -> Bool
   ) async -> ApplyResult {
+    guard let generation = evidence.inputGeneration,
+      evidence.mode == (selected ? .selected : .suffix) else { return .aborted }
+    return await postReplacement(context: evidence.context, proofGeneration: generation,
+      deleteCount: selected ? 0 : evidence.text.count,
+      temporarySpace: ReplacementEventSequence.usesTemporarySpace(bundleID: evidence.context.bundleID, selected: selected),
+      text: text, lease: lease, physicalKeys: physicalKeys, phaseAuthorization: phaseAuthorization, preflight: preflight)
+  }
+  @MainActor public func replacePhysicalAsync(
+    _ mutation: PhysicalSuffixMutation, with text: String, lease: ShortcutLease? = nil,
+    physicalKeys: [PhysicalLayoutMapping.Entry]? = nil,
+    phaseAuthorization: (@MainActor () -> Bool)? = nil,
+    preflight: () -> Bool
+  ) async -> ApplyResult {
+    guard mutation.deleteCount > 0 else { return .aborted }
+    return await postReplacement(context: mutation.focus.context, proofGeneration: mutation.inputGeneration,
+      deleteCount: mutation.deleteCount,
+      temporarySpace: ReplacementEventSequence.usesTemporarySpace(bundleID: mutation.focus.context.bundleID, selected: false),
+      text: text, lease: lease, physicalKeys: physicalKeys, phaseAuthorization: phaseAuthorization, preflight: preflight)
+  }
+  @MainActor private func postReplacement(context: ContextToken, proofGeneration: UInt64,
+    deleteCount: Int, temporarySpace: Bool, text: String, lease: ShortcutLease?, physicalKeys: [PhysicalLayoutMapping.Entry]?, phaseAuthorization: (@MainActor () -> Bool)?, preflight: () -> Bool
+  ) async -> ApplyResult {
     precondition(Thread.isMainThread)
+    // Fixed reason codes only; no text or key data.
+    func abort(_ reason: Int) -> ApplyResult {
+      InputDiagnostics.event("tap.post.aborted", detail: reason)
+      return .aborted
+    }
     guard canSuppress, CGPreflightPostEventAccess(), let runtime,
-      let proofGeneration = evidence.inputGeneration,
-      evidence.mode == (selected ? .selected : .suffix), text.utf16.count <= 1024,
-      evidence.text.count <= 128
-    else { return .aborted }
+      text.utf16.count <= 1024, deleteCount >= 0, deleteCount <= 128 else { return abort(1) }
     let generation = lease?.generation ?? proofGeneration
     guard proofGeneration == generation, runtime.inputGeneration() == generation,
-      lease == nil || lease?.context == evidence.context
-    else { return .aborted }
+      lease == nil || lease?.context == context
+    else { return abort(2) }
+    // Large selections retain the bounded Unicode transport instead of truncating physical replay.
+    let usePhysicalReplay = physicalKeys != nil && ReplacementEventSequence.canReplayPhysical(
+      keyCount: physicalKeys?.count ?? 0, deleteCount: deleteCount, temporarySpace: temporarySpace)
     let requested = DispatchTime.now().uptimeNanoseconds
-    guard !Task.isCancelled, preflight() else { return .aborted }
+    let expectedForegroundPID = !usePhysicalReplay ? nil : NSWorkspace.shared.frontmostApplication?.processIdentifier
+    guard !Task.isCancelled, !usePhysicalReplay || expectedForegroundPID != nil, preflight(),
+      !usePhysicalReplay || NSWorkspace.shared.frontmostApplication?.processIdentifier == expectedForegroundPID else { return abort(3) }
     var batch: [CGEvent] = []
-    func pair(code: CGKeyCode, text: String? = nil) -> Bool {
-      guard let down = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: true),
-        let up = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: false)
+    guard let source = CGEventSource(stateID: .privateState) else { return abort(4) }
+    func pair(code: CGKeyCode, text: String? = nil, modifiers: Set<Modifier> = []) -> Bool {
+      guard let down = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: true),
+        let up = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: false)
       else { return false }
       for event in [down, up] {
-        event.flags = []
+        event.flags = modifiers.contains(.shift) ? .maskShift : []
+        if modifiers.contains(.capsLock) { event.flags.insert(.maskAlphaShift) }
         event.setIntegerValueField(.eventSourceUserData, value: Self.ownMarker)
         if let text {
           let units = Array(text.utf16)
@@ -181,19 +216,29 @@ public final class EventTapAdapter {
       batch += [down, up]
       return true
     }
-    if !selected { for _ in evidence.text { guard pair(code: 51) else { return .aborted } } }
-    var chunk = ""
-    for scalar in text.unicodeScalars {
-      let next = String(scalar)
-      if chunk.utf16.count + next.utf16.count > 16 {
-        guard pair(code: 0, text: chunk) else { return .aborted }
-        chunk = ""
+    if temporarySpace { guard pair(code: 49) else { return abort(4) } }
+    for _ in 0..<(deleteCount + (temporarySpace ? 1 : 0)) { guard pair(code: 51) else { return abort(4) } }
+    let deletionCount = batch.count
+    if usePhysicalReplay, let physicalKeys {
+      guard physicalKeys.map(\.text).joined() == text, !physicalKeys.isEmpty,
+        physicalKeys.allSatisfy({ $0.modifiers.isSubset(of: [.shift, .capsLock]) }) else { return abort(5) }
+      for key in physicalKeys {
+        guard pair(code: key.keyCode, modifiers: key.modifiers) else { return abort(4) }
       }
-      chunk += next
+    } else {
+      var chunk = ""
+      for scalar in text.unicodeScalars {
+        let next = String(scalar)
+        if chunk.utf16.count + next.utf16.count > 16 {
+          guard pair(code: 0, text: chunk) else { return abort(4) }
+          chunk = ""
+        }
+        chunk += next
+      }
+      if !chunk.isEmpty { guard pair(code: 0, text: chunk) else { return abort(4) } }
     }
-    if !chunk.isEmpty { guard pair(code: 0, text: chunk) else { return .aborted } }
-    guard batch.count <= 512, !batch.isEmpty else { return .aborted }
-    guard let runloop = activeRunLoop() else { return .aborted }
+    guard batch.count <= 512, !batch.isEmpty else { return abort(6) }
+    guard let runloop = activeRunLoop() else { return abort(6) }
     let cancellation = PostingCancellation()
     return await withTaskCancellationHandler(operation: {
     await withCheckedContinuation { continuation in
@@ -209,48 +254,123 @@ public final class EventTapAdapter {
     }
     timeout = DispatchWorkItem {
       guard !finished else { return }
+      let result = cancellation.cancelForTimeout()
       runtime.invalidateContext(reason: .unknownInput)
-      finish(.uncertain)
+      finish(result)
     }
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: timeout!)
-    CFRunLoopPerformBlock(runloop, CFRunLoopMode.commonModes.rawValue) { [weak self] in
-      var result: ApplyResult = .aborted
-      defer { let outcome = result; DispatchQueue.main.async { finish(outcome) } }
-      guard let self else { return }
+    // Our own layout switch posts a TIS notification whose focus reconciliation hides
+    // cached safety. Retry only that transient state, within the same admission deadline;
+    // the token published afterwards must still equal the proven context.
+    var admitAndPost: (() -> Void)?
+    admitAndPost = { [weak self] in
+      guard let self else { admitAndPost = nil; DispatchQueue.main.async { finish(.aborted) }; return }
       self.callbacks.lock()
       defer { self.callbacks.unlock() }
-      guard !cancellation.isCancelled, !self.isStopped, DispatchTime.now().uptimeNanoseconds - requested < 100_000_000,
-        !IsSecureEventInputEnabled(), runtime.cachedInputContext()?.0 == evidence.context,
-        self.admit(
-          lease, generation: generation, context: evidence.context,
-          now: DispatchTime.now().uptimeNanoseconds)
-      else { return }
-      var batchReport: KeyBatchPosting.Report?
-      let outcome = self.ownership.commit(
-        expectedGeneration: generation, currentGeneration: runtime.inputGeneration,
-        now: DispatchTime.now().uptimeNanoseconds
-      ) {
-        let report = KeyBatchPosting.postGuardedPairs(
-          batch, now: { DispatchTime.now().uptimeNanoseconds },
-          ownershipValid: { self.ownership.isActive && !self.ownership.expired(at: $0) },
-          generationValid: { !cancellation.isCancelled && runtime.inputGeneration() == generation },
-          contextValid: { runtime.cachedInputContext()?.0 == evidence.context },
-          secureInput: { IsSecureEventInputEnabled() },
-          post: { $0.postToPid(evidence.context.pid) })
-        batchReport = report
-        return report.result
-        // Delivery/readback is not proven by CGEvent.post. Qualified host evidence is still required.
+      let cached = runtime.cachedInputContext()?.0
+      let decision = Self.admission(cancelled: cancellation.isCancelled || self.isStopped,
+        elapsedNanos: DispatchTime.now().uptimeNanoseconds - requested,
+        secureInput: IsSecureEventInputEnabled(), cached: cached, expected: context,
+        reconciling: cached == nil && runtime.contextReconciling())
+      var rejection: Int?
+      switch decision {
+      case .retry:
+        InputDiagnostics.event("tap.post.reconcileRetry")
+        let timer = CFRunLoopTimerCreateWithHandler(nil, CFAbsoluteTimeGetCurrent() + 0.002, 0, 0, 0) { _ in
+          admitAndPost?()
+        }!
+        CFRunLoopAddTimer(runloop, timer, .commonModes)
+        return
+      case .reject(let code):
+        rejection = code
+        if code == 10 {
+          // Bitmask of the differing fields only: 1 none, 2 pid, 4 bundle, 8 focus, 16 layout.
+          var mismatch = cached == nil ? 1 : 0
+          if let cached {
+            if cached.pid != context.pid { mismatch |= 2 }
+            if cached.bundleID != context.bundleID { mismatch |= 4 }
+            if cached.focusEpoch != context.focusEpoch { mismatch |= 8 }
+            if cached.layoutEpoch != context.layoutEpoch { mismatch |= 16 }
+          }
+          InputDiagnostics.event("tap.post.contextMismatch", detail: mismatch)
+        }
+      case .admit:
+        if !self.admit(lease, generation: generation, context: context,
+          now: DispatchTime.now().uptimeNanoseconds) { rejection = 11 }
       }
-      result = outcome.result
-      // Batch metadata only, after ownership has ended; never log text or keys.
-      if let report = batchReport {
+      admitAndPost = nil
+      if let rejection {
+        InputDiagnostics.event("tap.post.aborted", detail: rejection)
+        DispatchQueue.main.async { finish(.aborted) }; return
+      }
+      cancellation.markAdmitted()
+      let ownershipRevision = self.ownership.revision
+      var phaseApproved = true
+      let authorized = {
+        phaseApproved && !cancellation.isCancelled && !self.isStopped &&
+        self.ownership.revision == ownershipRevision && self.ownership.isActive && !self.ownership.expired(at: DispatchTime.now().uptimeNanoseconds) &&
+        runtime.inputGeneration() == generation && runtime.cachedInputContext()?.0 == context &&
+        !IsSecureEventInputEnabled()
+      }
+      let post: ([CGEvent]) -> ApplyResult = { events in
+        let report = KeyBatchPosting.postGuardedPairs(
+          events, now: { DispatchTime.now().uptimeNanoseconds },
+          ownershipValid: { self.ownership.revision == ownershipRevision && self.ownership.isActive && !self.ownership.expired(at: $0) },
+          generationValid: { !cancellation.isCancelled && !self.isStopped && runtime.inputGeneration() == generation },
+          contextValid: { runtime.cachedInputContext()?.0 == context },
+          secureInput: { IsSecureEventInputEnabled() },
+          post: { event in
+            if usePhysicalReplay { event.post(tap: .cgSessionEventTap) }
+            else { event.postToPid(context.pid) }
+          })
         InputDiagnostics.event("tap.batch.stopReason", detail: report.reason.rawValue)
         InputDiagnostics.event("tap.batch.postedPairs", detail: report.postedPairs)
-        InputDiagnostics.event("tap.batch.elapsedMicroseconds",
-          detail: Int(clamping: report.elapsedNanos / 1_000))
+        return report.result
       }
-      self.release(outcome.replay, result: result)
+      let complete: (ApplyResult) -> Void = { result in
+        if self.ownership.revision == ownershipRevision { self.release(self.ownership.cancel(), result: result) }
+        InputDiagnostics.event("tap.phased.finished", detail: result == .committed ? 1 : (result == .uncertain ? 2 : 0))
+        DispatchQueue.main.async {
+          let finalResult: ApplyResult
+          if result == .committed, usePhysicalReplay,
+            (phaseAuthorization?() == false || NSWorkspace.shared.frontmostApplication?.processIdentifier != expectedForegroundPID) {
+            finalResult = .uncertain
+          } else { finalResult = result }
+          finish(finalResult)
+        }
+      }
+      if usePhysicalReplay {
+        InputDiagnostics.event("tap.phased.begin")
+        var phase = 0
+        PhasedKeyPosting.run(deletion: Array(batch.prefix(deletionCount)), insertion: Array(batch.dropFirst(deletionCount)),
+          schedule: { delay, action in
+            let timer = CFRunLoopTimerCreateWithHandler(nil, CFAbsoluteTimeGetCurrent() + delay, 0, 0, 0) { _ in
+              // TIS and foreground APIs stay on main. Never synchronously wait from the tap.
+              DispatchQueue.main.async {
+                let approved = phaseAuthorization?() != false &&
+                  NSWorkspace.shared.frontmostApplication?.processIdentifier == expectedForegroundPID
+                CFRunLoopPerformBlock(runloop, CFRunLoopMode.commonModes.rawValue) {
+                  self.callbacks.lock()
+                  defer { self.callbacks.unlock() }
+                  phaseApproved = approved
+                  InputDiagnostics.event("tap.phased.stage", detail: phase)
+                  phase += 1
+                  action()
+                }
+                CFRunLoopWakeUp(runloop)
+              }
+            }!
+            CFRunLoopAddTimer(runloop, timer, .commonModes)
+          }, authorized: authorized, post: post, finish: complete)
+        self.rescheduleDeadline()
+      } else {
+        let outcome = self.ownership.commit(expectedGeneration: generation,
+          currentGeneration: runtime.inputGeneration, now: DispatchTime.now().uptimeNanoseconds) { post(batch) }
+        self.release(outcome.replay, result: outcome.result)
+        DispatchQueue.main.async { finish(outcome.result) }
+      }
     }
+    CFRunLoopPerformBlock(runloop, CFRunLoopMode.commonModes.rawValue) { admitAndPost?() }
     CFRunLoopWakeUp(runloop)
     // No remote AX request or main-thread callback occurs inside the destructive block.
     }
@@ -277,6 +397,18 @@ public final class EventTapAdapter {
       runtime?.invalidateContext(reason: .unknownInput)
     }
     runtime?.advance(to: now)
+  }
+  enum PostingAdmission: Equatable { case admit, retry, reject(Int) }
+  /// Fixed codes: 7 cancelled/stopped, 8 deadline, 9 secure input, 10 context mismatch.
+  /// Only a missing token during authoritative reconciliation is transient.
+  static func admission(cancelled: Bool, elapsedNanos: UInt64, secureInput: Bool,
+                        cached: ContextToken?, expected: ContextToken, reconciling: Bool) -> PostingAdmission {
+    if cancelled { return .reject(7) }
+    if elapsedNanos >= 100_000_000 { return .reject(8) }
+    if secureInput { return .reject(9) }
+    if cached == expected { return .admit }
+    if cached == nil && reconciling { return .retry }
+    return .reject(10)
   }
   private func admit(
     _ lease: ShortcutLease?, generation: UInt64, context: ContextToken, now: UInt64
@@ -367,7 +499,11 @@ public final class EventTapAdapter {
       return true
     }
     guard let (context, layout) = runtime.cachedInputContext() else {
-      runtime.invalidateContext(reason: .unknownInput)
+      if type == .keyDown {
+        runtime.missedInput(keyCode: UInt16(event.getIntegerValueField(.keyboardEventKeycode)),
+          command: event.flags.contains(.maskCommand))
+      }
+      else { runtime.invalidateContext(reason: .unknownInput) }
       return true
     }
     let marker = event.getIntegerValueField(.eventSourceUserData)
@@ -405,6 +541,14 @@ public final class EventTapAdapter {
 private final class PostingCancellation: @unchecked Sendable {
   private let lock = NSLock()
   private var cancelled = false
+  private var admitted = false
+  func markAdmitted() { lock.lock(); defer { lock.unlock() }; admitted = true }
+  func cancelForTimeout() -> ApplyResult {
+    lock.lock(); defer { lock.unlock() }
+    cancelled = true
+    // Once admitted, a pair may already be in flight. Never advertise a safe retry.
+    return admitted ? .uncertain : .aborted
+  }
   var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
   func cancel() { lock.lock(); defer { lock.unlock() }; cancelled = true }
 }

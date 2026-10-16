@@ -37,4 +37,44 @@ final class FocusedElementResolverTests: XCTestCase {
       focusedElement: { _ in (.success, element) }, processID: { _ in nil }, bundleID: { _ in "test.app" })
     XCTAssertNil(unidentified.resolve(deadline: ProcessInfo.processInfo.systemUptime + 1).focus)
   }
+  func testVirtualSuggestionResolvesToProvenKeyboardOwner() throws {
+    let suggestion = AXUIElementCreateApplication(123)
+    let owner = AXUIElementCreateApplication(124)
+    let resolver = AXFocusedElementResolver(focusedElement: { _ in (.success, suggestion) },
+      processID: { _ in 4321 }, bundleID: { _ in "com.vscodium" },
+      keyboardOwner: { _, _ in owner })
+    let resolved = try XCTUnwrap(resolver.resolve(expectedPID: 4321, deadline: 1).focus)
+    XCTAssertTrue(CFEqual(resolved.element, owner))
+  }
+  func testVirtualOwnerCannotCrossProcessBoundary() {
+    let suggestion = AXUIElementCreateApplication(123)
+    let owner = AXUIElementCreateApplication(124)
+    let resolver = AXFocusedElementResolver(focusedElement: { _ in (.success, suggestion) },
+      processID: { CFEqual($0, suggestion) ? 4321 : 9999 }, bundleID: { _ in "com.vscodium" },
+      keyboardOwner: { _, _ in owner })
+    XCTAssertNil(resolver.resolve(expectedPID: 4321, deadline: 1).focus)
+  }
+  func testVirtualOwnerCannotOutliveChangedOrUnavailableSystemFocus() {
+    let suggestion = AXUIElementCreateApplication(123)
+    let owner = AXUIElementCreateApplication(124)
+    for status in [AXError.success, .cannotComplete] {
+      var reads = 0
+      let resolver = AXFocusedElementResolver(focusedElement: { _ in
+        reads += 1
+        return reads == 1 ? (.success, suggestion) : (status, owner)
+      }, processID: { _ in 4321 }, bundleID: { _ in "com.vscodium" }, keyboardOwner: { _, _ in owner })
+      XCTAssertNil(resolver.resolve(deadline: 1).focus)
+    }
+  }
+
+  func testOwnerRelationshipMustRemainStableAfterSystemFocusConfirmation() {
+    let raw = AXUIElementCreateApplication(123)
+    let owner = AXUIElementCreateApplication(124)
+    var reads = 0
+    let resolver = AXFocusedElementResolver(focusedElement: { _ in (.success, raw) },
+      processID: { _ in 4321 }, bundleID: { _ in "com.vscodium" },
+      keyboardOwner: { _, _ in reads += 1; return reads == 1 ? owner : raw })
+    XCTAssertNil(resolver.resolve(deadline: 1).focus)
+  }
+
 }

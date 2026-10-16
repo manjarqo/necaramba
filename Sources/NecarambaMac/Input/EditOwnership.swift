@@ -16,6 +16,7 @@ public final class EditOwnership<Event> {
     self.capacity = max(1, capacity)
     self.deadlineNanos = deadlineNanos
   }
+  public private(set) var revision: UInt64 = 0
   public var isActive: Bool { began != nil }
   public var nextDeadlineNanos: UInt64? {
     guard let began else { return nil }
@@ -28,6 +29,7 @@ public final class EditOwnership<Event> {
   }
   public func begin(now: UInt64) -> Bool {
     guard began == nil else { return false }
+    revision &+= 1
     began = now
     return true
   }
@@ -41,6 +43,7 @@ public final class EditOwnership<Event> {
     return .held
   }
   public func cancel() -> [Event] {
+    revision &+= 1
     began = nil
     let release = queued
     queued.removeAll(keepingCapacity: true)

@@ -4,7 +4,7 @@ import XCTest
 final class OpenCorrectionEngineTests: XCTestCase {
     struct Lexicon: OpenWordLookup {
         let en: Set<String> = ["ground", "connector", "hello", "he"]
-        let ru: Set<String> = ["женский", "бывало", "елка", "ёлка", "ежик", "не", "тоже", "переключилось", "периодически", "ёжик", "привет"]
+        let ru: Set<String> = ["женский", "бывало", "елка", "ёлка", "ежик", "не", "тоже", "переключилось", "периодически", "ёжик", "привет", "всё", "ещё", "все"]
         func contains(_ word: String, language: Language) -> Bool {
             (language == .english ? en : ru).contains(word.lowercased())
         }
@@ -38,6 +38,51 @@ final class OpenCorrectionEngineTests: XCTestCase {
         }
         for proof in [(false, true), (true, false)] {
             XCTAssertEqual(output(try decide("nj;t", russian: "тоже", english: "nj;t", verified: proof.0, physical: proof.1), source: "nj;t"), "nj;t")
+        }
+    }
+    func testMacRussianYoKeyBackslashConvertsOnlyToKnownLetterWords() throws {
+        // macOS "Russian" places ё on the US backslash key; "Russian - PC" uses grave.
+        for (wrong, correct) in [("dc\\", "всё"), ("to\\", "ещё"), ("dc`", "всё")] {
+            XCTAssertEqual(output(try decide(wrong, russian: correct, english: wrong), source: wrong), correct)
+        }
+        for (source, russian) in [("\\n", "ёт"), ("foo\\bar", "ащщёифк"), ("\\", "ё"), ("dc\\\\", "всёё"), ("C:\\", "СЖё")] {
+            XCTAssertEqual(output(try decide(source, russian: russian, english: source), source: source), source)
+        }
+        XCTAssertEqual(output(try decide("dc\\", russian: "всё", english: "dc\\", physical: false), source: "dc\\"), "dc\\")
+    }
+    private let v2 = #"{"schemaVersion":2,"version":"open-3","typos":[],"yo":[{"source":"ежик","target":"ёжик"}],"protectedWords":["ру"],"yoProtectedWords":["все","всё"],"contractions":["don't","i'm"]}"#
+    func testYoProtectedWordsStillConvertLayoutButNeverGainYo() throws {
+        let rules = try rules(v2)
+        XCTAssertEqual(output(try decide("dct", russian: "все", english: "dct", customRules: rules), source: "dct"), "все")
+        XCTAssertEqual(output(try decide("dc\\", russian: "всё", english: "dc\\", customRules: rules), source: "dc\\"), "всё")
+        XCTAssertEqual(output(try decide("все", russian: "все", english: "dct", layout: "RU", preferences: .init(yoEnabled: true), customRules: rules), source: "все"), "все")
+        XCTAssertEqual(output(try decide("ру", russian: "ру", english: "he", layout: "RU", customRules: rules), source: "ру"), "ру")
+        // Schema 1 keeps its original meaning: every listed word is fully protected.
+        let legacy = try self.rules(#"{"schemaVersion":1,"version":"open-2","typos":[],"yo":[],"protectedWords":["все"]}"#)
+        XCTAssertEqual(output(try decide("dct", russian: "все", english: "dct", customRules: legacy), source: "dct"), "dct")
+    }
+    func testAuthoredContractionsConvertFromPhysicalRussianApostropheKey() throws {
+        let rules = try rules(v2)
+        for (wrong, correct) in [("вщтэе", "don't"), ("Вщтэе", "Don't"), ("шэь", "i'm")] {
+            XCTAssertEqual(output(try decide(wrong, russian: wrong, english: correct, layout: "RU", customRules: rules), source: wrong), correct)
+        }
+        for (source, english) in [("ВЩТЭЕ", "DON'T"), ("вщте", "dont"), ("пщэы", "go's"), ("вщтээе", "don''t")] {
+            XCTAssertEqual(output(try decide(source, russian: source, english: english, layout: "RU", customRules: rules), source: source), source)
+        }
+        XCTAssertEqual(output(try decide("don't", russian: "вщтэе", english: "don't", customRules: rules), source: "don't"), "don't")
+        XCTAssertEqual(output(try decide("вщтэе", russian: "вщтэе", english: "don't", layout: "RU"), source: "вщтэе"), "вщтэе",
+            "Contractions require the explicit authored list")
+    }
+    func testSchemaTwoRejectsMalformedContractionsAndOverlappingLists() {
+        let bad = [
+            #""yoProtectedWords":[],"contractions":["dont"]"#, #""yoProtectedWords":[],"contractions":["'s"]"#,
+            #""yoProtectedWords":[],"contractions":["don''t"]"#, #""yoProtectedWords":[],"contractions":["Don't"]"#,
+            #""yoProtectedWords":["ежик"],"contractions":[]"#, #""yoProtectedWords":["ру"],"contractions":[]"#,
+            #""yoProtectedWords":["word"],"contractions":[]"#, #""contractions":[]"#
+        ]
+        for fields in bad {
+            let json = #"{"schemaVersion":2,"version":"open-3","typos":[],"yo":[{"source":"ежик","target":"ёжик"}],"protectedWords":["ру"],"# + fields + "}"
+            XCTAssertThrowsError(try OpenCorrectionRules(data: Data(json.utf8)), fields)
         }
     }
     func testAmbiguityPreferencesAndExclusions() throws {

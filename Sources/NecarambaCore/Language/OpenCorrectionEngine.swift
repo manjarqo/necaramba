@@ -4,6 +4,8 @@ import Foundation
 public struct OpenCorrectionEngine: Sendable {
     private let lexicon: any OpenWordLookup
     private let rules: OpenCorrectionRules
+    /// Words whose е/ё ambiguity this model classifies more precisely than a generic protected token.
+    public var yoProtectedWords: Set<String> { rules.yoProtectedWords }
     public init(lexicon: any OpenWordLookup, rules: OpenCorrectionRules) {
         self.lexicon = lexicon; self.rules = rules
     }
@@ -24,8 +26,14 @@ public struct OpenCorrectionEngine: Sendable {
         guard preferences.autoEnabled else { return .unchanged(.disabled) }
         func excludedWord(_ text: String) -> Bool { wordPolicy.containsExcluded(text) }
         func protectedWord(_ text: String) -> Bool { rules.protectedWords.contains(TokenGuard.normalized(text)) }
+        func yoProtectedWord(_ text: String) -> Bool { rules.yoProtectedWords.contains(TokenGuard.normalized(text)) }
+        // Only an authored contraction may carry an apostrophe; its letters keep every case guard.
+        func contraction(_ text: String) -> Bool {
+            rules.contractions.contains(TokenGuard.normalized(text)) &&
+                !TokenGuard.isProtected(text.replacingOccurrences(of: "'", with: ""))
+        }
         guard !excludedWord(word.text) else { return .unchanged(.excludedWord) }
-        guard !protectedWord(word.text), Self.bounded(word.text), Self.bounded(russianCandidate), Self.bounded(englishCandidate) else { return .unchanged(.protectedToken) }
+        guard !protectedWord(word.text), !yoProtectedWord(word.text), Self.bounded(word.text), Self.bounded(russianCandidate), Self.bounded(englishCandidate) else { return .unchanged(.protectedToken) }
         guard russianLayout != englishLayout,
             (word.layout == russianLayout && word.text == russianCandidate) || (word.layout == englishLayout && word.text == englishCandidate),
             word.events.allSatisfy({ $0.context == word.context && $0.layout == word.layout }) else { return .unchanged(.unsupportedLayout) }
@@ -42,7 +50,9 @@ public struct OpenCorrectionEngine: Sendable {
         let targetLanguage: Language = sourceLanguage == .russian ? .english : .russian
         let alternative = sourceLanguage == .russian ? englishCandidate : russianCandidate
         let alternativeLayout = sourceLanguage == .russian ? englishLayout : russianLayout
-        func known(_ text: String, _ language: Language) -> Bool { lexicon.contains(TokenGuard.normalized(text), language: language) }
+        func known(_ text: String, _ language: Language) -> Bool {
+            lexicon.contains(TokenGuard.normalized(text), language: language) || (language == .english && contraction(text))
+        }
         func repairKnown(_ value: String, _ language: Language) -> Bool {
             guard !TokenGuard.isProtected(value) else { return false }
             let normalized = TokenGuard.normalized(value)
@@ -57,7 +67,9 @@ public struct OpenCorrectionEngine: Sendable {
         let alternativeKnown = known(alternative, targetLanguage)
         let alternativeRepair = !alternativeKnown && repairKnown(alternative, targetLanguage)
         if !sourceKnown, sourceRepair && (alternativeKnown || alternativeRepair) { return .unchanged(.ambiguous) }
-        if !sourceKnown, (alternativeKnown || alternativeRepair), !TokenGuard.isProtected(alternative), !protectedWord(alternative) {
+        if !sourceKnown, (alternativeKnown || alternativeRepair),
+           !TokenGuard.isProtected(alternative) || (targetLanguage == .english && contraction(alternative)),
+           !protectedWord(alternative) {
             text = alternative; layout = alternativeLayout; language = targetLanguage; kinds.append(.layout)
         }
         if punctuationSource && kinds.isEmpty { return .unchanged(.protectedToken) }
@@ -70,14 +82,15 @@ public struct OpenCorrectionEngine: Sendable {
         }
         guard !excludedWord(text) else { return .unchanged(.excludedWord) }
         guard !protectedWord(text) else { return .unchanged(.protectedToken) }
-        if preferences.yoEnabled, let target = rules.yo[TokenGuard.normalized(text)], known(target, language) {
+        if preferences.yoEnabled, !yoProtectedWord(text), let target = rules.yo[TokenGuard.normalized(text)], known(target, language) {
             text = RuleIndex.preserveCase(text, target: target); kinds.append(.yo)
         }
         if preferences.typoEnabled, let caps = RuleIndex.doubleCapsCandidate(text), known(caps, language) {
             text = caps; kinds.append(.doubleCaps)
         }
         guard !excludedWord(text) else { return .unchanged(.excludedWord) }
-        guard !protectedWord(text), !TokenGuard.isProtected(text) else { return .unchanged(.protectedToken) }
+        guard !protectedWord(text), !TokenGuard.isProtected(text) || (language == .english && contraction(text))
+        else { return .unchanged(.protectedToken) }
         guard text != word.text, !kinds.isEmpty else { return .unchanged(sourceKnown ? .correct : .ambiguous) }
         return .replace(.init(original: word.text, replacement: text, sourceLayout: word.layout,
             targetLayout: layout, modelVersion: modelVersion, kind: kinds.count == 1 ? kinds[0] : .combined))
@@ -93,7 +106,8 @@ public struct OpenCorrectionEngine: Sendable {
         if let first = text.first, shifted.contains(first) {
             return bounded(text) && text.count > 1 && text.dropFirst().allSatisfy { $0.isASCII && $0.isLowercase }
         }
-        let marks: Set<Character> = ["'", ",", ".", ";", "[", "]", "`"]
+        // Grave and backslash carry ё in the Russian-PC and macOS Russian layouts.
+        let marks: Set<Character> = ["'", ",", ".", ";", "[", "]", "`", "\\"]
         guard bounded(text), text.contains(where: { marks.contains($0) }),
               text.allSatisfy({ marks.contains($0) || $0.isASCII && $0.isLetter }) else { return false }
         let letters = String(text.filter(\.isLetter))

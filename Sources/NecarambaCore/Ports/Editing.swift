@@ -23,9 +23,9 @@ public struct EditPlan: Equatable, Sendable {
 }
 public enum ApplyResult: Equatable, Sendable {
   case committed, aborted, uncertain
-  /// Explicit manual command: complete event batch posted to a proved focused
-  /// empty input proxy; the editor exposes no text readback. Never journal/count
-  /// this as a verified commit or retry it automatically.
+  /// Complete manual or automatic physical batch posted to a proved focused
+  /// empty or opaque input proxy without verified text acceptance. Never journal,
+  /// count as a verified commit, or retry this batch.
   case dispatched
 }
 
@@ -128,6 +128,11 @@ public struct AutomaticBoundaryCandidate: Sendable {
     self.allowsOpaqueWordStart = allowsOpaqueWordStart
   }
 }
+/// Read-only eligibility before activating a different input layout. Mutation
+/// must repeat every proof against its final context; this grants no write lease.
+public protocol AutomaticBoundaryEligibilityReading: AnyObject {
+  @MainActor func canReplaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with text: String) -> Bool
+}
 public protocol AutomaticBoundarySuffixReplacing: AnyObject {
   /// `text` includes the physical trailing space. Empty proxy writes remain dispatched.
   func replaceAutomaticBoundary(_ candidate: AutomaticBoundaryCandidate, with text: String) -> ApplyResult
@@ -167,4 +172,34 @@ public extension AutomaticBoundarySuffixReplacing {
     guard !Task.isCancelled else { return .aborted }
     return replaceAutomaticBoundary(candidate, with: text)
   }
+}
+
+/// Real focused editable identity; neither case asserts that text was accepted.
+public enum OpaqueSelectionState: Equatable, Sendable { case collapsed, unavailable }
+public struct OpaqueFocusProof: Equatable, Sendable {
+  public let context: ContextToken
+  public let identity: UUID
+  public let selection: OpaqueSelectionState
+  public init(context: ContextToken, identity: UUID, selection: OpaqueSelectionState = .unavailable) {
+    self.context = context; self.identity = identity; self.selection = selection
+  }
+}
+public protocol OpaqueFocusReading: AnyObject {
+  func opaqueFocus(in context: ContextToken) -> OpaqueFocusProof?
+}
+/// Physical suffix dispatch contains no invented AX range or text evidence.
+public struct PhysicalSuffixMutation: Sendable {
+  public let focus: OpaqueFocusProof
+  public let inputGeneration: UInt64
+  public let deleteCount: Int
+  public init(focus: OpaqueFocusProof, inputGeneration: UInt64, deleteCount: Int) {
+    self.focus = focus; self.inputGeneration = inputGeneration; self.deleteCount = deleteCount
+  }
+}
+
+
+/// Proof from the actual completed suffix dispatch, never a separate focus sample.
+/// Implementations clear the record before every replacement attempt.
+public protocol SuffixDispatchProofReading: AnyObject {
+  func dispatchedSuffix(in context: ContextToken, inputGeneration: UInt64) -> PhysicalSuffixMutation?
 }

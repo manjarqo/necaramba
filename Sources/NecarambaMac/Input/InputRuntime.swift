@@ -27,6 +27,10 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   // A missing prefix differs from a known interrupted token/paste. Only the
   // former may use physical capture in editors that never expose their value.
   private var automaticPrefixBlocked = false
+  // A key passed while editable focus was unavailable. A recovered AX epoch
+  // cannot prove this is a new word rather than the tail of that missing input.
+  private var captureHasMissingInput = false
+  private var missingInputOwner: ContextToken?
   private var automaticCaptureContext: ContextToken?
   private var buffer = WordBuffer()
   private var tracked: [InputEvent] = []
@@ -168,6 +172,18 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     buffer.invalidate(.layoutChanged)
     gestures.invalidate()
   }
+  func missedInput(keyCode: UInt16, command: Bool) {
+    lock.lock()
+    defer { lock.unlock() }
+    // Command-Tab changes applications; it cannot insert a missing word prefix.
+    if !(keyCode == 48 && command) { recordMissingInput(in: nil) }
+    invalidateContext(reason: .unknownInput)
+  }
+  private func recordMissingInput(in token: ContextToken?) {
+    captureHasMissingInput = true
+    missingInputOwner = token
+    automaticPrefixBlocked = true
+  }
   public func invalidateContext(reason: InvalidationReason) {
     lock.lock()
     defer { lock.unlock() }
@@ -185,6 +201,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   public func manualWord() -> BufferedWord? {
     lock.lock()
     defer { lock.unlock() }
+    guard !captureHasMissingInput else { return nil }
     if let first = tracked.first {
       return .init(
         text: tracked.compactMap(\.text).joined(), events: tracked, context: first.context,
@@ -221,6 +238,8 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     defer { lock.unlock() }
     guard generation == expectedGeneration, context.isSafe(candidate.context) else { return false }
     generation &+= 1
+    captureHasMissingInput = false
+    missingInputOwner = nil
     layout = candidate.layout
     automaticCaptureContext = candidate.context
     tracked.removeAll()
@@ -264,13 +283,26 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   }
   @MainActor public func replaceByKeysAsync(
     _ evidence: SelectionEvidence, with text: String, selected: Bool, lease: ShortcutLease? = nil,
+    physicalKeys: [PhysicalLayoutMapping.Entry]? = nil,
+    phaseAuthorization: (@MainActor () -> Bool)? = nil,
     preflight: () -> Bool
   ) async -> ApplyResult {
     let adapter = currentTap()
     guard let adapter else { return .aborted }
     return await adapter.replaceAsync(
-      evidence, with: text, selected: selected, lease: lease, preflight: preflight)
+      evidence, with: text, selected: selected, lease: lease, physicalKeys: physicalKeys, phaseAuthorization: phaseAuthorization, preflight: preflight)
   }
+  @MainActor public func replacePhysicalSuffixAsync(
+    _ mutation: PhysicalSuffixMutation, with text: String, lease: ShortcutLease? = nil,
+    physicalKeys: [PhysicalLayoutMapping.Entry]? = nil,
+    phaseAuthorization: (@MainActor () -> Bool)? = nil,
+    preflight: () -> Bool
+  ) async -> ApplyResult {
+    guard let adapter = currentTap() else { return .aborted }
+    return await adapter.replacePhysicalAsync(mutation, with: text, lease: lease, physicalKeys: physicalKeys, phaseAuthorization: phaseAuthorization, preflight: preflight)
+  }
+  /// Distinguishes a transient authoritative read from an invalidated context.
+  public func contextReconciling() -> Bool { (context as? ContextState)?.isReconciling ?? false }
   public func cachedInputContext() -> (ContextToken, LayoutID)? {
     lock.lock()
     defer { lock.unlock() }
@@ -305,6 +337,9 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     }
     for action in gestures.consume(event) { deliver(.gesture(action, event.context)) }
     guard context.isSafe(event.context) else {
+      if event.kind == .down, !(event.keyCode == 48 && event.modifiers.contains(.command)) {
+        recordMissingInput(in: event.context)
+      }
       automaticCaptureContext = event.context
       tracked.removeAll()
       recentWord = nil
@@ -315,6 +350,11 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       notifyInvalidation()
       buffer.invalidate(.unknownInput)
       return .pass
+    }
+    if captureHasMissingInput, let owner = missingInputOwner,
+      owner.pid != event.context.pid || owner.bundleID != event.context.bundleID {
+      captureHasMissingInput = false
+      missingInputOwner = nil
     }
     if event.kind == .down, event.keyCode == 9, event.modifiers == [.command, .shift],
       preferences.plainPasteEnabled
@@ -334,6 +374,21 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       return .suppressed(lease)
     }
     if conservativeAutomaticEnabled { consumeAutomaticBoundary(event) }
+    if captureHasMissingInput {
+      // Readable automatic editors can still prove a complete word from AX.
+      // Physical/manual suffix history cannot: resume it only after a boundary
+      // actually observed with valid focus, never merely after an AX recovery.
+      if event.kind == .down, event.modifiers.isSubset(of: [.shift, .capsLock]),
+        (event.keyCode == 49 && event.text == " ") ||
+          ([36, 76].contains(event.keyCode) && (event.text == "\n" || event.text == "\r")) {
+        captureHasMissingInput = false
+        missingInputOwner = nil
+        tracked.removeAll()
+        recentWord = nil
+        buffer.invalidate(.unknownInput)
+      }
+      return .pass
+    }
     // Manual conversion can use a newly observed word even while the automatic
     // buffer waits for its first trustworthy boundary after a rule/context reset.
     let manualBoundary: BufferedWord?
@@ -394,10 +449,11 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       previous.pid != event.context.pid || previous.bundleID != event.context.bundleID ||
         previous.focusEpoch != event.context.focusEpoch {
       // A new field must not inherit a shortcut/prefix from the old one.
-      // Readable fields still prove the prefix; opaque fields use fresh capture.
+      // Readable fields still prove the prefix. Opaque capture is fresh only
+      // when no physical key was lost while editable focus was unavailable.
       automaticEvents.removeAll()
       automaticTokenUnsafe = true
-      automaticPrefixBlocked = false
+      automaticPrefixBlocked = captureHasMissingInput
     }
     automaticCaptureContext = event.context
     let ordinary = event.modifiers.isSubset(of: [.shift, .capsLock])

@@ -123,3 +123,26 @@ public struct CapturedLayoutTables: Sendable {
     let modifiers: Set<Modifier>
   }
 }
+
+extension CapturedLayoutTables {
+  /// Complete physical replay only. Never emit navigation/control keys or infer missing characters.
+  public func replayKeys(for text: String, in layout: LayoutID) -> [PhysicalLayoutMapping.Entry]? {
+    guard !text.isEmpty, let table = layouts.first(where: { $0.id == layout }) else { return nil }
+    let printableCodes = Set<UInt16>(0...50).subtracting([36, 48])
+      .union([65, 67, 69, 75, 78, 81, 82, 83, 84, 85, 86, 87, 88, 89, 91, 92, 93, 94, 95])
+    let candidates = table.entries.filter {
+      $0.modifiers.isSubset(of: [.shift]) && $0.text.count == 1 &&
+      !$0.text.unicodeScalars.contains(where: { $0.properties.generalCategory == .control }) &&
+      printableCodes.contains($0.keyCode)
+    }.sorted {
+      if $0.modifiers.count != $1.modifiers.count { return $0.modifiers.count < $1.modifiers.count }
+      return $0.keyCode < $1.keyCode
+    }
+    var result: [PhysicalLayoutMapping.Entry] = []
+    for character in text {
+      guard let key = candidates.first(where: { $0.text == String(character) }) else { return nil }
+      result.append(key)
+    }
+    return result
+  }
+}

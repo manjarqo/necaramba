@@ -24,6 +24,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   @MainActor private lazy var transactions = EditTransactionCoordinator()
   private var quarantined: ContextToken?
   private var pendingLayoutTransition: (target: LayoutID, generation: UInt64)?
+  private var replacementLayout: LayoutID?
   private var preparationLease: ShortcutLease?
   private let corpusQualified: Bool
   private let manualActionScope: ManualActionScope
@@ -39,6 +40,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   }
   private var preparedWordPolicy = PreparedWordPolicy(excluded: [], protected: [])
   private var preparedAutomaticPolicy = PreparedWordPolicy(excluded: [], protected: [])
+  private var preparedOpenPolicy = PreparedWordPolicy(excluded: [], protected: [])
   private var availableLayoutRevision: UInt64 = 0
   private var rulesInstallRequest: UInt64 = 0
   private var localInstallRequest: UInt64 = 0
@@ -95,10 +97,26 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       conservativeAutomaticEnabled: conservativeAutomaticEnabled, engine: engine,
       command: { [weak self] in self?.execute($0) })
     ax.executeAsync = { [weak self] evidence, text, selected, preflight in
-      await self?.runtime.replaceByKeysAsync(
-        evidence, with: text, selected: selected, lease: self?.preparationLease,
-        preflight: preflight)
-        ?? .aborted
+      guard let self, self.replacementLayout == nil || self.layouts.current() == self.replacementLayout else { return .aborted }
+      let target = self.replacementLayout
+      return await self.runtime.replaceByKeysAsync(
+        evidence, with: text, selected: selected, lease: self.preparationLease, physicalKeys: self.replayKeys(text),
+        phaseAuthorization: { [weak self] in
+          guard let self else { return false }
+          return target == nil || self.layouts.current() == target
+        }, preflight: preflight)
+    }
+    ax.executePhysicalAsync = { [weak self] mutation, text, preflight in
+      guard let self, self.replacementLayout == nil || self.layouts.current() == self.replacementLayout else {
+        InputDiagnostics.event("tap.post.aborted", detail: 12)
+        return .aborted
+      }
+      let target = self.replacementLayout
+      return await self.runtime.replacePhysicalSuffixAsync(mutation, with: text, lease: self.preparationLease,
+        physicalKeys: self.replayKeys(text), phaseAuthorization: { [weak self] in
+          guard let self else { return false }
+          return target == nil || self.layouts.current() == target
+        }, preflight: preflight)
     }
     ax.onStage = { [weak self] stage in self?.transactions.transition(stage) }
     ax.inputGeneration = { [weak self] in self?.runtime.inputGeneration() ?? UInt64.max }
@@ -239,6 +257,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
           switch result {
           case .success(let model):
             self.openCorrectionEngine = model.engine
+            self.prepareWordPolicies()
             self.automaticTables = tables
             self.manualTables = tables
             self.runtime.invalidateContext(reason: .unknownInput)
@@ -255,6 +274,12 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   private func prepareWordPolicies() {
     preparedWordPolicy = .init(excluded: excluded, protected: [])
     preparedAutomaticPolicy = .init(excluded: excluded.union(rules.protectedTokens), protected: [])
+    // The open model never changes ё in its ambiguous е/ё words but permits an explicit
+    // physical layout conversion to them. Generic package tokens must not override that
+    // narrower classification; user exclusions and all other tokens still apply.
+    let yoAmbiguous = openCorrectionEngine?.yoProtectedWords ?? []
+    preparedOpenPolicy = .init(excluded: excluded.union(rules.protectedTokens.filter {
+      !yoAmbiguous.contains(TokenGuard.normalized($0)) }), protected: [])
   }
   private func captureTablesIfNeeded() -> CapturedLayoutTables? {
     if let manualTables { return manualTables }
@@ -352,7 +377,8 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   @MainActor private func selectLayout(_ target: LayoutID, in token: ContextToken,
                                        generation: UInt64, editing: Bool = true) async -> Bool {
     pendingLayoutTransition = (target, generation)
-    defer { pendingLayoutTransition = nil }
+    if editing { replacementLayout = target }
+    defer { if !editing { pendingLayoutTransition = nil } }
     return await VerifiedLayoutSwitcher(access: layouts).selectAsync(target, authorized: {
       if editing { return self.layoutAuthorized(token, generation: generation) }
       let p = self.permissions.current()
@@ -361,6 +387,45 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         let current = self.runtime.cachedInputContext()?.0 else { return false }
       return current.pid == token.pid && current.bundleID == token.bundleID && current.focusEpoch == token.focusEpoch
     })
+  }
+  /// An aborted automatic edit posted no key, so the text is unchanged; it must not
+  /// leave the layout selected for the replacement. New input keeps the user's layout.
+  @MainActor private func restoreUnchangedLayout(_ original: LayoutID, token: ContextToken,
+                                                 generation: UInt64) async {
+    guard layouts.current() != original, runtime.inputGeneration() == generation else { return }
+    _ = await selectLayout(original, in: token, generation: generation, editing: false)
+  }
+  private func finishReplacementLayout() {
+    pendingLayoutTransition = nil
+    replacementLayout = nil
+    if let current = layouts.current() { runtime.updateLayout(current) }
+  }
+  private func replayKeys(_ text: String) -> [PhysicalLayoutMapping.Entry]? {
+    guard let target = replacementLayout, layouts.current() == target else { return nil }
+    return (manualTables ?? automaticTables)?.replayKeys(for: text, in: target)
+  }
+  @MainActor private func prepareMutation(_ target: LayoutID, token: ContextToken,
+                                         generation: UInt64) async -> ContextToken? {
+    guard editContext.isSafe(token), layoutAuthorized(token, generation: generation),
+      await selectLayout(target, in: token, generation: generation),
+      let after = editContext.refresh(), layouts.current() == target,
+      layoutAuthorized(token, generation: generation), editContext.isSafe(after),
+      after.pid == token.pid, after.bundleID == token.bundleID,
+      after.focusEpoch == token.focusEpoch else { return nil }
+    return after
+  }
+  // This only translates an intentional layout epoch. The original physical
+  // key, text, source layout and origin remain unchanged; focus/input checks
+  // above must succeed before this frozen evidence is rebased.
+  private func rebased(_ event: InputEvent, in token: ContextToken) -> InputEvent {
+    .init(kind: event.kind, keyCode: event.keyCode, modifiers: event.modifiers,
+      timestampNanos: event.timestampNanos, layout: event.layout, context: token,
+      origin: event.origin, text: event.text, isRepeat: event.isRepeat)
+  }
+  private func rebased(_ word: BufferedWord, in token: ContextToken) -> BufferedWord? {
+    guard word.events.allSatisfy({ $0.context == word.context }) else { return nil }
+    return .init(text: word.text, events: word.events.map { rebased($0, in: token) },
+      context: token, layout: word.layout, delimiter: word.delimiter)
   }
   private func execute(_ command: RuntimeCommand) {
     precondition(Thread.isMainThread)
@@ -392,6 +457,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     }
   }
   @MainActor private func executeAsync(_ command: RuntimeCommand) async {
+    defer { finishReplacementLayout() }
     precondition(Thread.isMainThread)
     switch command {
     case .gesture(let action, let token):
@@ -492,7 +558,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       usingFullModel = true
       decision = openCorrectionEngine.decide(word: source, russianCandidate: ru, russianLayout: pair.ru,
         englishCandidate: en, englishLayout: pair.en, preferences: self.preferences,
-        wordPolicy: preparedAutomaticPolicy, modelVersion: rules.modelVersion,
+        wordPolicy: preparedOpenPolicy, modelVersion: rules.modelVersion,
         physicalCandidatesVerified: true)
     } else {
       guard source.text.count >= 3, let automaticEngine else { return }
@@ -510,18 +576,44 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       let automatic = selectionAccess as? AutomaticBoundarySuffixReplacing else { return }
     automaticActionScope.active = true
     defer { automaticActionScope.active = false }
-    let identity = selectionAccess.selected(in: source.context)?.identity
-    let proven = AutomaticBoundaryCandidate(word: source, boundary: candidate.boundary,
+    let initialCandidate = AutomaticBoundaryCandidate(word: source, boundary: candidate.boundary,
+      inputGeneration: candidate.inputGeneration, requiresWordStartProof: candidate.requiresWordStartProof,
+      allowsOpaqueWordStart: candidate.allowsOpaqueWordStart)
+    if let eligibility = selectionAccess as? AutomaticBoundaryEligibilityReading {
+      guard eligibility.canReplaceAutomaticBoundary(initialCandidate,
+        with: correction.replacement + source.delimiter) else {
+        InputDiagnostics.event("auto.eligibility.rejected")
+        return
+      }
+    } else if candidate.requiresWordStartProof && !candidate.allowsOpaqueWordStart {
+      // An adapter without word-start eligibility cannot authorize a lost prefix.
+      return
+    }
+    guard candidate.boundary.context == source.context,
+      let mutationContext = await prepareMutation(correction.targetLayout, token: source.context,
+        generation: candidate.inputGeneration),
+      let mutationWord = rebased(source, in: mutationContext) else {
+      await restoreUnchangedLayout(candidate.word.layout, token: source.context, generation: candidate.inputGeneration)
+      return
+    }
+    var identity = selectionAccess.selected(in: mutationContext)?.identity
+    let proven = AutomaticBoundaryCandidate(word: mutationWord, boundary: rebased(candidate.boundary, in: mutationContext),
       inputGeneration: candidate.inputGeneration, requiresWordStartProof: candidate.requiresWordStartProof,
       allowsOpaqueWordStart: candidate.allowsOpaqueWordStart)
     let result = await automatic.replaceAutomaticBoundaryAsync(proven, with: correction.replacement + source.delimiter)
     diagnoseResult(result, event: "auto.result")
+    if result == .dispatched, let dispatched = selectionAccess as? SuffixDispatchProofReading {
+      identity = dispatched.dispatchedSuffix(in: mutationContext, inputGeneration: candidate.inputGeneration)?.focus.identity
+    }
     guard result == .committed || result == .dispatched else {
+      if result == .aborted {
+        await restoreUnchangedLayout(candidate.word.layout, token: mutationContext, generation: candidate.inputGeneration)
+      }
       report(result, token: source.context)
       return
     }
     guard candidate.inputGeneration == runtime.inputGeneration(),
-      await selectLayout(correction.targetLayout, in: source.context, generation: candidate.inputGeneration),
+      layouts.current() == correction.targetLayout,
       let after = editContext.refresh(), after.pid == source.context.pid,
       after.bundleID == source.context.bundleID, after.focusEpoch == source.context.focusEpoch,
       layoutAuthorized(source.context, generation: candidate.inputGeneration) else {
@@ -623,11 +715,12 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
         replacement: text, sourceLayout: layouts.current() ?? candidate.layout, targetLayout: mapping.target,
         delimiter: candidate.delimiter))
     } else if let repeated = selectionAccess as? ManualRepeatedSuffixReplacing {
-      result = await repeated.replaceRepeatedSuffixAsync(candidate, with: text + candidate.delimiter)
+      guard let mutationContext = await prepareMutation(mapping.target, token: candidate.context, generation: generation) else { return .aborted }
+      result = await repeated.replaceRepeatedSuffixAsync(candidate.rebased(in: mutationContext), with: text + candidate.delimiter)
       replacement.invalidate(.unknownInput)
     } else { return .aborted }
     if result == .dispatched {
-      guard await selectLayout(mapping.target, in: candidate.context, generation: generation) else {
+      guard layouts.current() == mapping.target else {
         quarantine(.uncertain, token: candidate.context)
         return .uncertain
       }
@@ -671,6 +764,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     }
   }
   @MainActor private func manualCorrectionOperation() async -> ApplyResult {
+    defer { finishReplacementLayout() }
     precondition(Thread.isMainThread)
     let manualGeneration = runtime.inputGeneration()
     manualActionScope.active = true
@@ -721,13 +815,17 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       runtime.discardManualCandidate()
       let text = LayoutConverter.convert(evidence.text, mapping: mapping)
       guard text != evidence.text else { return .aborted }
-      let result = await selectionAccess.replaceAsync(evidence, with: text)
+      guard let mutationContext = await prepareMutation(mapping.target, token: token, generation: manualGeneration) else { return .aborted }
+      let rebasedEvidence = SelectionEvidence(context: mutationContext, text: evidence.text,
+        location: evidence.location, length: evidence.length, identity: evidence.identity,
+        inputGeneration: evidence.inputGeneration, mode: evidence.mode)
+      let result = await selectionAccess.replaceAsync(rebasedEvidence, with: text)
       diagnoseResult(result, event: "manual.selection.result")
       guard result == .committed else {
         quarantine(result, token: token)
         return result
       }
-      guard await selectLayout(mapping.target, in: token, generation: manualGeneration),
+      guard layouts.current() == mapping.target,
         let after = editContext.refresh(), after.pid == token.pid,
         after.bundleID == token.bundleID, after.focusEpoch == token.focusEpoch,
         layoutAuthorized(token, generation: manualGeneration)
@@ -793,19 +891,23 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     if selectionAccess.suffix(word.text + word.delimiter, in: token) == nil,
       let tracked = selectionAccess as? ManualTrackedSuffixReplacing
     {
-      // Only explicit manual input can use a freshly proved empty AX proxy.
+      // This manual branch dispatches captured physical input to an empty or opaque proxy.
       // This branch runs before any proven-range mutation, never as a retry.
       InputDiagnostics.event("manual.trackedFallback.begin")
-      let result = await tracked.replaceTrackedSuffixAsync(word, with: text + word.delimiter)
+      guard let mutationContext = await prepareMutation(mapping.target, token: token, generation: manualGeneration),
+        let mutationWord = rebased(word, in: mutationContext) else { return .aborted }
+      let result = await tracked.replaceTrackedSuffixAsync(mutationWord, with: text + word.delimiter)
       diagnoseResult(result, event: "manual.trackedFallback.result")
       replacement.invalidate(.unknownInput)
       if result == .dispatched {
-        guard await selectLayout(mapping.target, in: token, generation: manualGeneration) else {
+        let identity = (selectionAccess as? SuffixDispatchProofReading)?
+          .dispatchedSuffix(in: mutationContext, inputGeneration: manualGeneration)?.focus.identity ?? selected?.identity
+        guard layouts.current() == mapping.target else {
           quarantine(.uncertain, token: token)
           return .uncertain
         }
         guard retainManualResult(original: word, text: text, target: mapping.target,
-          identity: selected?.identity, before: token, generation: manualGeneration) else { quarantine(.uncertain, token: token); return .uncertain }
+          identity: identity, before: token, generation: manualGeneration) else { quarantine(.uncertain, token: token); return .uncertain }
       } else if result == .uncertain {
         quarantine(result, token: token)
       }
@@ -834,6 +936,7 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     return result
   }
   @MainActor private func undoLastOperation() async -> ApplyResult {
+    defer { finishReplacementLayout() }
     precondition(Thread.isMainThread)
     if runtime.manualRepeatCandidate() != nil { runtime.discardManualCandidate() }
     guard let token = editContext.current(), ready(token) else { return .aborted }

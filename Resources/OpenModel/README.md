@@ -8,7 +8,7 @@ An independently sourced RU/EN lexical model and independently authored correcti
 - 233 explicit typo rules and 67 optional preferred ё spellings; see `CORRECTIONS.md`.
 - `en.words` and `ru.words`: sorted UTF-8 tables used by the compact runtime index (about 39.45 MB including offsets).
 - `open-v1.json`: intermediate lexical source, retained for reproducible generation; its historical filename is not the runtime package version.
-- `corrections.json` and `manifest.json`: open-2 runtime policy and integrity metadata.
+- `corrections.json` and `manifest.json`: open-3 runtime policy and integrity metadata.
 - Complete source notices, pinned upstream URLs/SHA-256, deterministic generators and evaluation reports.
 
 These are vocabulary memberships and explicit corrections, **not measured frequencies**, a neural model, or a guarantee that every word is covered. Proper names, one-letter entries, words with apostrophes/hyphens and compounds are outside this lexical selection. Unknown words and conflicting interpretations should be left unchanged. Source-unknown typo correction and explicit ё spelling preferences have distinct policies; ambiguous words such as все/всё and осел/осёл are protected.

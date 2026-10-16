@@ -62,6 +62,12 @@ public final class ContextState: ContextAccess, GestureContextReading {
     }
     _ = readAndPublish()
   }
+  /// True only while an authoritative read hides cached safety from other threads.
+  public var isReconciling: Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    return reconciliationDepth > 0
+  }
   public func current() -> ContextToken? {
     lock.lock()
     defer { lock.unlock() }

@@ -52,6 +52,20 @@ final class InputPerformanceMetricsTests: XCTestCase {
     XCTAssertTrue(InputDiagnostics.shouldEmit("ax.readValue", tracing: true))
     XCTAssertFalse(InputDiagnostics.shouldEmit("arbitrary private text", tracing: true))
   }
+  func testLocalDiagnosticRequestExpiresWithoutRestartAndRejectsInvalidDeadlines() {
+    let session = InputDiagnosticSession(environment: [:], startedAtNanos: 10,
+      requestedUntil: 1030, wallTime: 1000)
+    XCTAssertTrue(session.isEnabled(at: 10))
+    XCTAssertTrue(session.isEnabled(at: 30_000_000_009))
+    XCTAssertFalse(session.isEnabled(at: 30_000_000_010))
+    for deadline in [0, 999, Double.infinity, Double.nan] {
+      XCTAssertFalse(InputDiagnosticSession(environment: [:], startedAtNanos: 10,
+        requestedUntil: deadline, wallTime: 1000).isEnabled(at: 10))
+    }
+    let capped = InputDiagnosticSession(environment: [:], startedAtNanos: 10,
+      requestedUntil: 100_000, wallTime: 1000)
+    XCTAssertFalse(capped.isEnabled(at: 600_000_000_010))
+  }
   func testAggregateExportHasOnlyFixedStagesAndCounts() {
     let metrics = InputPerformanceMetrics()
     metrics.record(.posting, durationNanos: 1)

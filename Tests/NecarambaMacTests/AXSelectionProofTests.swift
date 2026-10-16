@@ -483,6 +483,8 @@ import XCTest
         inputGeneration: 1, requiresWordStartProof: true)
       var posts = 0
       adapter.executeAsync = { _, _, _, _ in posts += 1; return .aborted }
+      XCTAssertFalse(adapter.canReplaceAutomaticBoundary(candidate, with: "WORD "))
+      XCTAssertEqual(posts, 0)
       let asyncResult32 = await adapter.replaceAutomaticBoundaryAsync(candidate, with: "WORD ")
       XCTAssertEqual(asyncResult32, .aborted)
       XCTAssertEqual(posts, 0, value)
@@ -502,6 +504,7 @@ import XCTest
         reader.value = prefix + "WORD "
         return .committed
       }
+      XCTAssertTrue(adapter.canReplaceAutomaticBoundary(candidate, with: "WORD "))
       let asyncResult33 = await adapter.replaceAutomaticBoundaryAsync(candidate, with: "WORD ")
       XCTAssertEqual(asyncResult33, .committed)
     }
@@ -782,6 +785,69 @@ import XCTest
     XCTAssertEqual(posts, 1)
     XCTAssertLessThanOrEqual(elapsed, 0.3)
   }
+  func testCollapsedSelectedPlainPasteRetainsLongInsertionSupport() async {
+    let (adapter, reader, token) = fixture(bundleID: "com.apple.Safari")
+    reader.value = "AZ"
+    reader.range = NSRange(location: 1, length: 0)
+    let evidence = adapter.selected(in: token)!
+    let replacement = String(repeating: "x", count: 600)
+    var posted = false
+    adapter.executeAsync = { _, text, selected, preflight in
+      XCTAssertTrue(selected)
+      guard preflight() else { return .aborted }
+      posted = true
+      reader.value = "A" + text + "Z"
+      reader.range = NSRange(location: 601, length: 0)
+      return .committed
+    }
+    let result = await adapter.replaceAsync(evidence, with: replacement)
+    XCTAssertEqual(result, .committed)
+    XCTAssertTrue(posted)
+  }
+
+  func testBrowserTemporarySpaceReadbackCommitsAfterOrderedDeletionAndInsertion() async {
+    for bundleID in ["com.apple.Safari", "com.google.Chrome", "com.brave.Browser"] {
+      let (adapter, reader, token) = fixture(automatic: true, bundleID: bundleID)
+      reader.value = "Pab Z"
+      reader.range = NSRange(location: 4, length: 0)
+      let evidence = adapter.suffix("ab ", in: token)!
+      reader.prepare = { _, _, _ in XCTFail("Automatic browser edit must not select the suffix"); return .rejected }
+      var observations = [("Pab  Z", 5), ("Pab Z", 4), ("PabZ", 3), ("PaZ", 2), ("PZ", 1), ("PяZ", 2)]
+      adapter.executeAsync = { _, _, selected, preflight in
+        XCTAssertFalse(selected)
+        guard preflight() else { return .aborted }
+        reader.onObservation = {
+          let next = observations.removeFirst()
+          return .snapshot(.init(identity: reader.id, value: next.0,
+            range: NSRange(location: next.1, length: 0)))
+        }
+        return .committed
+      }
+      let result = await adapter.replaceAsync(evidence, with: "я")
+      XCTAssertEqual(result, .committed)
+      XCTAssertTrue(observations.isEmpty)
+    }
+  }
+
+  func testBrowserTemporarySpaceCannotReappearAfterItsDeletion() async {
+    let (adapter, reader, token) = fixture(automatic: true, bundleID: "com.apple.Safari")
+    reader.value = "Pab Z"
+    reader.range = NSRange(location: 4, length: 0)
+    let evidence = adapter.suffix("ab ", in: token)!
+    var observations = [("Pab  Z", 5), ("Pab Z", 4), ("Pab  Z", 5)]
+    adapter.executeAsync = { _, _, _, _ in
+      reader.onObservation = {
+        let next = observations.removeFirst()
+        return .snapshot(.init(identity: reader.id, value: next.0,
+          range: NSRange(location: next.1, length: 0)))
+      }
+      return .committed
+    }
+    let result = await adapter.replaceAsync(evidence, with: "я")
+    XCTAssertEqual(result, .uncertain)
+    XCTAssertTrue(observations.isEmpty)
+  }
+
   func testReactiveOverlayReplacesProvenSuffixAsSelectionWithoutBackspaces() async {
     let (adapter, reader, token) = fixture(manual: true)
     reader.range = NSRange(location: 6, length: 0)

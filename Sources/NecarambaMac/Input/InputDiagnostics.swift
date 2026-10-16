@@ -4,13 +4,18 @@ import OSLog
 /// Monotonic, process-scoped opt-in. Expiry needs no timer or background wakeup.
 struct InputDiagnosticSession {
   private let startedAtNanos: UInt64
-  private let optedIn: Bool
-  init(environment: [String: String], startedAtNanos: UInt64) {
+  private let durationNanos: UInt64
+  init(environment: [String: String], startedAtNanos: UInt64,
+       requestedUntil: TimeInterval = 0, wallTime: TimeInterval = Date().timeIntervalSince1970) {
     self.startedAtNanos = startedAtNanos
-    optedIn = environment["NECARAMBA_PERF_TRACE"] == "1"
+    let remaining = requestedUntil - wallTime
+    let duration: TimeInterval
+    if environment["NECARAMBA_PERF_TRACE"] == "1" { duration = 600 }
+    else { duration = remaining.isFinite && remaining > 0 ? min(600, remaining) : 0 }
+    durationNanos = UInt64(duration * 1_000_000_000)
   }
   func isEnabled(at now: UInt64) -> Bool {
-    optedIn && now >= startedAtNanos && now - startedAtNanos < 600_000_000_000
+    now >= startedAtNanos && now - startedAtNanos < durationNanos
   }
 }
 
@@ -19,7 +24,8 @@ enum InputDiagnostics {
   private static let logger = Logger(subsystem: "local.necaramba.app", category: "ManualInput")
   private static let session = InputDiagnosticSession(
     environment: ProcessInfo.processInfo.environment,
-    startedAtNanos: InputPerformanceMetrics.nowNanos())
+    startedAtNanos: InputPerformanceMetrics.nowNanos(),
+    requestedUntil: UserDefaults.standard.double(forKey: "InputDiagnosticsUntil"))
   private static let errors: Set<String> = [
     "ax.mutation.aborted",
     "ax.mutation.uncertain",
@@ -28,6 +34,26 @@ enum InputDiagnostics {
     "tap.lifecycle.timeout_recovery_stopped",
   ]
   private static let stages: Set<String> = [
+    "ax.terminalProxy.matched",
+    "ax.terminalProxy.missing",
+    "tap.phased.begin",
+    "tap.phased.stage",
+    "tap.phased.finished",
+    "tap.post.aborted",
+    "tap.post.contextMismatch",
+    "tap.post.reconcileRetry",
+    "auto.eligibility.rejected",
+    "auto.decision.correct",
+    "auto.decision.ambiguous",
+    "auto.decision.protectedToken",
+    "auto.decision.excludedWord",
+    "auto.decision.disabled",
+    "auto.decision.unsupportedLayout",
+    "auto.decision.layout",
+    "auto.decision.typo",
+    "auto.decision.doubleCaps",
+    "auto.decision.yo",
+    "auto.decision.combined",
     "auto.boundary.cancelledGeneration",
     "auto.boundary.contextOrMappingDenied",
     "auto.boundary.delivered",
@@ -55,6 +81,7 @@ enum InputDiagnostics {
     "ax.mutation.committed",
     "ax.mutation.dispatched",
     "ax.mutation.uncertain",
+    "ax.opaque.nonemptyOrSelected",
     "ax.overlay.selectRange",
     "ax.overlay.selectionPrepared",
     "ax.overlay.selectionRejected",
@@ -106,6 +133,8 @@ enum InputDiagnostics {
     "context.chrome.activationRefresh",
     "context.focus.lost",
     "context.focus.recovered",
+    "context.focus.keyboardOwnerResolved",
+    "context.focus.editableAncestorCandidate",
     "context.invalidate.attach",
     "context.refresh.afterFocusEpoch",
     "context.refresh.afterLayoutEpoch",
@@ -122,9 +151,19 @@ enum InputDiagnostics {
     "context.role.group",
     "context.role.missing",
     "context.role.other",
+    "context.role.list",
+    "context.role.row",
+    "context.role.menu",
+    "context.role.menuitem",
     "context.role.scrollarea",
     "context.role.searchfield",
     "context.role.statictext",
+    "context.role.unknown",
+    "context.role.layoutarea",
+    "context.role.layoutitem",
+    "context.role.textinput",
+    "context.application.vscodium",
+    "context.application.tabby",
     "context.role.textarea",
     "context.role.textfield",
     "context.role.webarea",

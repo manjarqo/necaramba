@@ -2,6 +2,45 @@ import XCTest
 @testable import NecarambaMac
 
 final class ChromiumAccessibilityActivationTests: XCTestCase {
+  func testTabbyRequestsElectronAccessibilityWithoutMatchingHelpers() {
+    var attempts = 0
+    let activation = ChromiumAccessibilityActivation { _, _ in {} }
+    activation.start(bundleID: "org.tabby", activate: { attempts += 1; return true }, refresh: {})
+    XCTAssertEqual(attempts, 1)
+    XCTAssertEqual(ChromiumAccessibilityActivation.attribute(for: "org.tabby"), "AXManualAccessibility")
+    XCTAssertNil(ChromiumAccessibilityActivation.attribute(for: "org.tabby.helper"))
+  }
+  func testOrcaRequestsElectronAccessibilityWithoutMatchingHelpers() {
+    var attempts = 0
+    let activation = ChromiumAccessibilityActivation { _, _ in {} }
+    activation.start(bundleID: "com.stablyai.orca", activate: { attempts += 1; return true }, refresh: {})
+    XCTAssertEqual(attempts, 1)
+    XCTAssertEqual(ChromiumAccessibilityActivation.attribute(for: "com.stablyai.orca"), "AXManualAccessibility")
+    for bundle in ["com.stablyai.orca.helper", "com.stablyai.orca.Renderer", "other.com.stablyai.orca"] {
+      XCTAssertNil(ChromiumAccessibilityActivation.attribute(for: bundle))
+    }
+  }
+  func testVSCodiumRequestsElectronAccessibilityAndRefreshes() {
+    var tick: (() -> Void)?
+    var activated = 0
+    var refreshed = 0
+    let activation = ChromiumAccessibilityActivation { _, action in tick = action; return {} }
+    XCTAssertEqual(ChromiumAccessibilityActivation.attribute(for: "com.vscodium"), "AXManualAccessibility")
+    activation.start(bundleID: "com.vscodium", activate: { activated += 1; return true }) { refreshed += 1 }
+    XCTAssertEqual(activated, 1)
+    XCTAssertEqual(refreshed, 0)
+    tick?()
+    XCTAssertEqual(refreshed, 1)
+  }
+
+  func testVSCodiumActivationDoesNotIncludeHelpersOrUnqualifiedBundles() {
+    for bundle in ["com.vscodium.helper", "com.vscodium.insiders", "other.com.vscodium"] {
+      XCTAssertNil(ChromiumAccessibilityActivation.attribute(for: bundle))
+      let activation = ChromiumAccessibilityActivation { _, _ in XCTFail("Unexpected timer"); return {} }
+      activation.start(bundleID: bundle, activate: { XCTFail("Unexpected activation"); return true }, refresh: {})
+    }
+  }
+
   func testZenStableActivatesPageAccessibilityAndRefreshesAfterActivation() {
     var tick: (() -> Void)?
     var activated = 0
@@ -78,7 +117,7 @@ final class ChromiumAccessibilityActivationTests: XCTestCase {
     XCTAssertEqual(cancelled, 1)
     XCTAssertEqual(refreshed, 0)
   }
-  func testOtherApplicationsAndFailedActivationDoNotScheduleRetry() {
+  func testOtherApplicationsDoNotActivateAndFailuresScheduleRecovery() {
     var scheduled = 0
     var activated = 0
     let activation = ChromiumAccessibilityActivation { _, _ in scheduled += 1; return {} }
@@ -86,6 +125,43 @@ final class ChromiumAccessibilityActivationTests: XCTestCase {
     XCTAssertEqual(activated, 0)
     activation.start(bundleID: "com.google.Chrome", activate: { activated += 1; return false }, refresh: {})
     XCTAssertEqual(activated, 1)
-    XCTAssertEqual(scheduled, 0)
+    XCTAssertEqual(scheduled, 1)
   }
+  func testActivationRecoversAfterTimeoutAndRefreshesOnlyAfterSuccess() {
+    var pending: [() -> Void] = []
+    var attempts = 0
+    var refreshes = 0
+    let activation = ChromiumAccessibilityActivation { _, action in pending.append(action); return {} }
+    activation.start(bundleID: "com.vscodium", activate: {
+      attempts += 1; return attempts == 2
+    }, refresh: { refreshes += 1 })
+    XCTAssertEqual(pending.count, 1)
+    guard !pending.isEmpty else { return }
+    pending.removeFirst()()
+    XCTAssertEqual(attempts, 2)
+    XCTAssertEqual(refreshes, 0)
+    XCTAssertEqual(pending.count, 1)
+    guard !pending.isEmpty else { return }
+    pending.removeFirst()()
+    XCTAssertEqual(refreshes, 1)
+  }
+
+  func testFailedActivationRetriesAreBoundedAndStopInvalidatesQueuedAttempt() {
+    var pending: [() -> Void] = []
+    var attempts = 0
+    let activation = ChromiumAccessibilityActivation { _, action in pending.append(action); return {} }
+    activation.start(bundleID: "com.vscodium", activate: { attempts += 1; return false },
+      refresh: { XCTFail("No successful activation") })
+    for _ in 0..<10 {
+      guard !pending.isEmpty else { break }
+      pending.removeFirst()()
+    }
+    XCTAssertEqual(attempts, 3)
+    XCTAssertTrue(pending.isEmpty)
+    activation.start(bundleID: "com.vscodium", activate: { attempts += 1; return false }, refresh: {})
+    activation.stop()
+    pending.forEach { $0() }
+    XCTAssertEqual(attempts, 4)
+  }
+
 }

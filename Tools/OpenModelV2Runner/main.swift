@@ -91,7 +91,11 @@ func run() throws {
         ("typo-ru", "превет", "RU", "привет"), ("yo-curated", "ежик", "RU", "ёжик"),
         ("yo-known", "ёжик", "RU", "ёжик"), ("double-caps", "HEllo", "US", "Hello"),
         ("mixed-case", "heLLo", "US", "heLLo"), ("title-colon", ":tycrbq", "US", "Женский"),
-        ("title-comma", "<sdfkj", "US", "Бывало"), ("embedded-colon", "foo:bar", "US", "foo:bar")
+        ("title-comma", "<sdfkj", "US", "Бывало"), ("embedded-colon", "foo:bar", "US", "foo:bar"),
+        ("all-wrong", "dct", "US", "все"), ("all-yo-wrong", "dc`", "US", "всё"),
+        ("all-correct", "все", "RU", "все"), ("all-yo-correct", "всё", "RU", "всё"),
+        ("contraction-wrong", "вщтэе", "RU", "don't"), ("contraction-title", "Вщтэе", "RU", "Don't"),
+        ("contraction-correct", "don't", "US", "don't"), ("contraction-missing-apostrophe", "вщте", "RU", "вщте")
     ]
     let regressions: [[String: Any]] = cases.map { id, input, source, expected in
         let actual = predict(input, layout: .init(rawValue: source))

@@ -26,6 +26,28 @@ final class OpenModelLoaderTests: XCTestCase {
       XCTAssertEqual(model.version, "open-2")
     }
   }
+  func testShippedOpenModelConvertsPhysicalYoKeyAndContractions() throws {
+    let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    let model = try OpenModelLoader.load(directory: root.appendingPathComponent("Resources/OpenModel", isDirectory: true))
+    let context = ContextToken(pid: 1, bundleID: "fixture", focusEpoch: 1, layoutEpoch: 1)
+    let us = LayoutID(rawValue: "US"), ru = LayoutID(rawValue: "RU")
+    func decide(_ text: String, _ layout: LayoutID, russian: String, english: String,
+                _ preferences: PreferencesSnapshot) -> String {
+      let events = text.map { InputEvent(kind: .down, keyCode: 0, modifiers: $0.isUppercase ? [.shift] : [],
+        timestampNanos: 1, layout: layout, context: context, origin: .physical, text: String($0), isRepeat: false) }
+      let decision = model.engine.decide(word: .init(text: text, events: events, context: context, layout: layout, delimiter: " "),
+        russianCandidate: russian, russianLayout: ru, englishCandidate: english, englishLayout: us,
+        preferences: preferences, excludedWords: [], modelVersion: 3, physicalCandidatesVerified: true)
+      if case .replace(let correction) = decision { return correction.replacement }
+      return "unchanged:\(decision)"
+    }
+    for preferences in [PreferencesSnapshot.defaults, .init(typoEnabled: true, yoEnabled: true)] {
+      XCTAssertEqual(decide("dc\\", us, russian: "всё", english: "dc\\", preferences), "всё")
+      XCTAssertEqual(decide("dct", us, russian: "все", english: "dct", preferences), "все")
+      XCTAssertEqual(decide("to\\", us, russian: "ещё", english: "to\\", preferences), "ещё")
+      XCTAssertEqual(decide("вщтэе", ru, russian: "вщтэе", english: "don't", preferences), "don't")
+    }
+  }
   func testRejectsTamperedMissingOrLinkedData() throws {
     for variant in 0..<3 {
       try fixture { dir in

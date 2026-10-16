@@ -319,6 +319,38 @@ AUTHORED_YO = """
 четкость чёткость
 """
 
+# Ordinary English contractions, authored for this project. Each must also be a
+# form of the independent en_US dictionary (directly or through its affixes).
+AUTHORED_CONTRACTIONS = """
+don't can't won't isn't aren't wasn't weren't doesn't didn't haven't hasn't hadn't
+couldn't shouldn't wouldn't mustn't needn't mightn't shan't ain't
+i'm i've i'll i'd you're you've you'll you'd he's he'll he'd she's she'll she'd
+it's it'll it'd we're we've we'll we'd they're they've they'll they'd
+that's that'll that'd there's here's what's who's who'll who'd who've where's let's
+"""
+# Lexical alternatives whose е/ё spelling is ambiguous. They never gain or lose ё,
+# but an explicit physical layout conversion may still produce either spelling.
+YO_PROTECTED = ['все','всё','осел','осёл','небо','нёбо','передохнем','передохнём']
+
+def dictionary_apostrophe_words():
+    from build import parse_affixes, expand_entry
+    rows = (ROOT/'Corpora/Sources/en/en_US.dic').read_text().lstrip('\ufeff').splitlines()
+    affixes = parse_affixes((MODEL/'Sources/en/en_US.aff').read_text())
+    result = set()
+    for row in rows[1:]:
+        word, _, flags = row.split()[0].partition('/')
+        result.update(w.lower() for w in expand_entry(word, flags, affixes) if "'" in w)
+    return result
+
+def validate_contractions(candidates, dictionary):
+    result = set()
+    for candidate in candidates:
+        word = candidate.lower()
+        if not re.fullmatch(r"[a-z]+'[a-z]+", word) or word not in dictionary or word in result:
+            raise ValueError(f'Unsupported contraction: {candidate}')
+        result.add(word)
+    return sorted(result)
+
 def authored_yo_rules(words):
     result = {}
     for line in AUTHORED_YO.splitlines():
@@ -357,17 +389,20 @@ def main():
     pairs = [tuple(line.split()) for line in AUTHORED_TYPOS.splitlines() if line.strip()]
     # The draft is explicitly reviewed below; invalid entries must not be silently accepted.
     typos = validate_typos(pairs,words)
-    artifact = {'schemaVersion':1,'version':'open-2','typos':typos,
-                'yo':authored_yo_rules(set(data['languages']['ru'])),'protectedWords':['ру','все','всё','осел','осёл','небо','нёбо','передохнем','передохнём']}
+    contractions = validate_contractions(AUTHORED_CONTRACTIONS.split(), dictionary_apostrophe_words())
+    artifact = {'schemaVersion':2,'version':'open-3','typos':typos,
+                'yo':authored_yo_rules(set(data['languages']['ru'])),'protectedWords':['ру'],
+                'yoProtectedWords':YO_PROTECTED,'contractions':contractions}
     result = (json.dumps(artifact,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
     (MODEL/'corrections.json').write_bytes(result)
-    provenance = {'schemaVersion':1,'version':'open-2','artifactSHA256':hashlib.sha256(result).hexdigest(),
-       'bytes':len(result),'typoCount':len(typos),'yoCount':len(artifact['yo']),
+    provenance = {'schemaVersion':2,'version':'open-3','artifactSHA256':hashlib.sha256(result).hexdigest(),
+       'bytes':len(result),'typoCount':len(typos),'yoCount':len(artifact['yo']),'contractionCount':len(contractions),
        'lexiconSHA256':hashlib.sha256(raw).hexdigest(),
        'typoSource':'Independently authored explicit list in Tools/OpenModel/corrections.py; no imported typo dataset or proprietary input.',
        'typoLicense':'GPL-3.0-only (repository license)',
        'yoSource':'Independently authored explicit preferred spellings in AUTHORED_YO; open lexicon used only to validate destinations. GPL-3.0-only.',
-       'selection':'Explicit reviewed ё preferences permit standard optional-е spellings; no inferred morphology rules. Ambiguous lexical alternatives protected. No empirical frequencies.'}
+       'contractionSource':'Independently authored explicit list in AUTHORED_CONTRACTIONS; each validated as a form of the independent en_US dictionary. GPL-3.0-only.',
+       'selection':'Explicit reviewed ё preferences permit standard optional-е spellings; no inferred morphology rules. Ambiguous е/ё alternatives never gain or lose ё but may result from physical layout conversion; ру/he is fully protected. No empirical frequencies.'}
     (MODEL/'corrections-provenance.json').write_text(json.dumps(provenance,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps(provenance,ensure_ascii=False,indent=2))
 

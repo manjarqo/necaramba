@@ -64,24 +64,26 @@ public final class ReplacementCoordinator {
     applying = true
     defer { applying = false }
     journal.clear()
-    // Text mutation precedes the layout change: switching TIS invalidates the expected epoch.
-    let result = await sender.replaceVerifiedSuffixAsync(plan)
+    // Activate and verify the target before deriving fresh range evidence.
+    let selected: Bool
+    if let selectLayout { selected = await selectLayout(plan.targetLayout, plan.expected, generation) }
+    else { selected = await VerifiedLayoutSwitcher(access: layouts).selectAsync(plan.targetLayout, authorized: authorized) }
+    guard selected, authorized(), layouts.current() == plan.targetLayout,
+      let mutationContext = (context as? ContextRefreshing)?.refresh() ?? context.current(),
+      authorized(), context.isSafe(mutationContext),
+      mutationContext.pid == plan.expected.pid, mutationContext.bundleID == plan.expected.bundleID,
+      mutationContext.focusEpoch == plan.expected.focusEpoch else { return .aborted }
+    let mutation = EditPlan(id: plan.id, expected: mutationContext, original: plan.original,
+      replacement: plan.replacement, sourceLayout: plan.sourceLayout,
+      targetLayout: plan.targetLayout, delimiter: plan.delimiter)
+    let result = await sender.replaceVerifiedSuffixAsync(mutation)
     guard result == .committed else {
-      if result == .uncertain { quarantined = plan.expected }
+      if result == .uncertain { quarantined = mutationContext }
       return result
     }
-    guard authorized(), context.isSafe(plan.expected) else {
-      quarantined = plan.expected
+    guard authorized(), context.isSafe(mutationContext), layouts.current() == plan.targetLayout else {
+      quarantined = mutationContext
       return .uncertain
-    }
-    if plan.sourceLayout != plan.targetLayout {
-      let selected: Bool
-      if let selectLayout { selected = await selectLayout(plan.targetLayout, plan.expected, generation) }
-      else { selected = await VerifiedLayoutSwitcher(access: layouts).selectAsync(plan.targetLayout, authorized: authorized) }
-      guard selected else {
-        quarantined = plan.expected
-        return .uncertain
-      }
     }
     guard let after = (context as? ContextRefreshing)?.refresh() ?? context.current() else {
       quarantined = plan.expected

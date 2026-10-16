@@ -75,7 +75,7 @@ public final class ContextMonitor: ContextRefreshing {
   }
   public static func supportsManualRole(_ role: String) -> Bool {
     // WebKit exposes text inputs with suggestions as combo boxes. The selection
-    // reader still requires a string value and a valid AXSelectedTextRange before editing.
+    // reader separately proves readable selection or a bounded physical-input fallback.
     role == kAXTextFieldRole || role == kAXTextAreaRole || role == kAXComboBoxRole
   }
   public func start() {
@@ -149,6 +149,10 @@ public final class ContextMonitor: ContextRefreshing {
       InputDiagnostics.event("context.application.chrome")
     case "com.readdle.SparkDesktop":
       InputDiagnostics.event("context.application.spark")
+    case "com.vscodium":
+      InputDiagnostics.event("context.application.vscodium")
+    case "org.tabby":
+      InputDiagnostics.event("context.application.tabby")
     case "com.apple.Safari", "com.apple.SafariTechnologyPreview":
       InputDiagnostics.event("context.application.safari")
     default:
@@ -170,7 +174,10 @@ public final class ContextMonitor: ContextRefreshing {
     AXUIElementSetMessagingTimeout(element, 0.1)
     observedApp = element
     if activateAccessibility {
-      chromiumActivation.start(bundleID: bundleID, activate: {
+      chromiumActivation.start(bundleID: bundleID, activate: { [weak self] in
+        guard let self, self.active, self.permissions.current().ax,
+          !self.permissions.current().secureInput,
+          NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier else { return false }
         guard let attribute = ChromiumAccessibilityActivation.attribute(for: bundleID) else { return false }
         let status = AXUIElementSetAttributeValue(element, attribute as CFString, kCFBooleanTrue)
         InputDiagnostics.event(bundleID == "com.readdle.SparkDesktop" ? "context.spark.activation" : "context.chrome.activation", detail: Int(status.rawValue))
@@ -180,7 +187,7 @@ public final class ContextMonitor: ContextRefreshing {
           NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier else { return }
         InputDiagnostics.event("context.chrome.activationRefresh")
         if self.observer != nil {
-          self.invalidateAndRequestRecovery(.focusChanged)
+          self.handleObservedFocusChange()
         } else {
           self.attachObserver(to: element, pid: app.processIdentifier)
         }
@@ -199,7 +206,7 @@ public final class ContextMonitor: ContextRefreshing {
       guard let refcon else { return }
       let monitor = Unmanaged<ContextMonitor>.fromOpaque(refcon).takeUnretainedValue()
       InputDiagnostics.event("context.refresh.focusNotification")
-      monitor.invalidateAndRequestRecovery(.focusChanged)
+      monitor.handleObservedFocusChange()
     }
     let createStatus = AXObserverCreate(pid, callback, &created)
     guard createStatus == .success, let created else {
@@ -229,6 +236,15 @@ public final class ContextMonitor: ContextRefreshing {
       guard let self, self.active else { return }
       self.refreshObservedFocus()
     }
+  }
+
+  func handleObservedFocusChange() {
+    precondition(Thread.isMainThread)
+    // A notification can reflect an accessibility descendant or repeat the
+    // current owner. Hide safety during the read, and invalidate only when the
+    // authoritative owner changes or cannot be established. Keep this
+    // synchronous so no cached token remains usable before reconciliation.
+    refreshObservedFocus()
   }
 
   private func refreshObservedFocus() {
@@ -320,6 +336,14 @@ public final class ContextMonitor: ContextRefreshing {
     case "AXApplication": roleReason = "context.role.application"
     case "AXScrollArea": roleReason = "context.role.scrollarea"
     case "AXStaticText": roleReason = "context.role.statictext"
+    case "AXUnknown": roleReason = "context.role.unknown"
+    case "AXLayoutArea": roleReason = "context.role.layoutarea"
+    case "AXLayoutItem": roleReason = "context.role.layoutitem"
+    case "AXTextInput": roleReason = "context.role.textinput"
+    case "AXList": roleReason = "context.role.list"
+    case "AXRow": roleReason = "context.role.row"
+    case "AXMenu": roleReason = "context.role.menu"
+    case "AXMenuItem": roleReason = "context.role.menuitem"
     case kAXTextAreaRole: roleReason = "context.role.textarea"
     default: roleReason = "context.role.other"
     }

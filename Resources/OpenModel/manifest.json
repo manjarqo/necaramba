@@ -1,8 +1,8 @@
 {
   "files": {
     "corrections.json": {
-      "bytes": 15629,
-      "sha256": "23689f5eb857fc1c6016f32873efbdba238404841ae865b2fa669f42c914c8b2"
+      "bytes": 16164,
+      "sha256": "38d8f817cfdb7112c21c86d1d5f46baac6e97a62ba682f1e4a3277f811719278"
     },
     "en.words": {
       "bytes": 738289,
@@ -14,5 +14,5 @@
     }
   },
   "schemaVersion": 1,
-  "version": "open-2"
+  "version": "open-3"
 }

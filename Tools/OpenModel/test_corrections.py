@@ -47,6 +47,25 @@ class ArtifactTests(unittest.TestCase):
         self.assertEqual(mapping['зеленый'],'зелёный')
         self.assertEqual(len(mapping),67)
 
+    def test_contractions_are_authored_and_validated_against_dictionary(self):
+        from corrections import validate_contractions
+        self.assertEqual(validate_contractions(["I'm", "don't"], {"i'm", "don't", "can't"}), ["don't", "i'm"])
+        for bad in [["dont"], ["go's"], ["'s"], ["don''t"]]:
+            with self.assertRaises(ValueError): validate_contractions(bad, {"don't"})
+
+    def test_schema_two_splits_layout_and_yo_protection(self):
+        import json
+        from corrections import MODEL
+        rules = json.loads((MODEL/'corrections.json').read_text())
+        self.assertEqual(rules['schemaVersion'], 2)
+        self.assertEqual(rules['version'], 'open-3')
+        self.assertEqual(rules['protectedWords'], ['ру'])
+        self.assertTrue({'все','всё','осел','осёл','небо','нёбо','передохнем','передохнём'} <= set(rules['yoProtectedWords']))
+        self.assertTrue({"don't", "can't", "i'm", "it's", "won't", "you're"} <= set(rules['contractions']))
+        self.assertTrue(all(c == c.lower() and c.count("'") == 1 for c in rules['contractions']))
+        manifest = json.loads((MODEL/'manifest.json').read_text())
+        self.assertEqual(manifest['version'], 'open-3')
+
     def test_known_ambiguous_yo_preserved(self):
         import json
         from corrections import MODEL

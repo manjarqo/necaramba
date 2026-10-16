@@ -425,6 +425,18 @@ extension NativeInputControllerTests {
     XCTAssertEqual(asyncResult19, .aborted)
     XCTAssertEqual(editor.text, "unrelated")
     editor.text = "как"
+    // Target activation occurred before the rejected mutation; the captured
+    // source history must not silently survive that layout transition.
+    let staleRetry = await controller.manualCorrectionAsync()
+    XCTAssertEqual(staleRetry, .aborted)
+    XCTAssertEqual(editor.text, "как")
+    layouts.value = .init(rawValue: "RU")
+    controller.runtime.updateLayout(layouts.value)
+    for (code, character) in zip([15, 3, 15], Array("как")) {
+      controller.runtime.accept(.init(kind: .down, keyCode: UInt16(code), modifiers: [],
+        timestampNanos: 600, layout: layouts.value, context: context.token,
+        origin: .physical, text: String(character), isRepeat: false))
+    }
     let asyncResult20 = await controller.manualCorrectionAsync()
     XCTAssertEqual(asyncResult20, .committed)
     XCTAssertEqual(editor.text, "rfr")
@@ -666,6 +678,7 @@ extension NativeInputControllerTests {
       await fulfillment(of: [refreshed], timeout: 2)
       XCTAssertTrue(controller.automaticReady)
       let corrected = expectation(description: "automatic correction completed")
+      editor.onReplace = { XCTAssertEqual(layouts.current(), .init(rawValue: "RU")) }
       controller.onResult = { result in
         XCTAssertEqual(result, .committed)
         corrected.fulfill()
@@ -679,6 +692,7 @@ extension NativeInputControllerTests {
       }
       await fulfillment(of: [corrected], timeout: 2)
       controller.onResult = { _ in }
+      editor.onReplace = nil
       XCTAssertEqual(editor.text, expected)
       let asyncResult33 = await controller.manualCorrectionAsync()
       XCTAssertEqual(asyncResult33, .committed)
@@ -721,7 +735,7 @@ extension NativeInputControllerTests {
 }
 
 extension NativeInputControllerTests {
-  func testFocusChangeOnFinalLayoutRefreshCannotCommitSelectedConversion() async {
+  func testFocusChangeBeforeMutationLeavesSelectedTextUntouched() async {
     let context = FacadeContext()
     let editor = ManualEditor(context)
     editor.selectionLength = 6
@@ -736,8 +750,93 @@ extension NativeInputControllerTests {
       }
     }
     let result = await controller.manualCorrectionAsync()
-    XCTAssertEqual(result, .uncertain)
+    XCTAssertEqual(result, .aborted)
+    XCTAssertEqual(editor.text, "ghbdtn")
     XCTAssertEqual(commits, 0)
     XCTAssertNil(controller.runtime.manualRepeatCandidate())
+  }
+}
+
+extension NativeInputControllerTests {
+  func testSelectedConversionKeepsOwnDelayedLayoutNotificationFromInvalidatingMutation() async {
+    let context = FacadeContext()
+    let editor = ManualEditor(context)
+    editor.selectionLength = 6
+    let layouts = ManualLayouts()
+    let controller = NativeInputController(layouts: layouts, permissions: FacadePermissions(),
+      editingContext: context, selectionAccess: editor, layoutCapture: ManualCapture())
+    let generation = controller.runtime.inputGeneration()
+    editor.onReplace = {
+      XCTAssertEqual(layouts.current(), .init(rawValue: "RU"))
+      controller.context.onLayoutChanged?(.init(rawValue: "RU"))
+      XCTAssertEqual(controller.runtime.inputGeneration(), generation)
+    }
+    let result = await controller.manualCorrectionAsync()
+    XCTAssertEqual(result, .committed)
+    XCTAssertEqual(editor.text, "привет")
+    XCTAssertNotNil(controller.runtime.manualRepeatCandidate())
+  }
+}
+
+private final class YoFacadeCapture: LayoutTableCapturing {
+  func captureTables() -> CapturedLayoutTables {
+    let codes: [UInt16] = [12,13,14,15,17,16,32,34,31,35,33,30,0,1,2,3,5,4,38,40,37,41,39,6,7,8,9,11,45,46,43,47,44,42]
+    return .init(layouts: zip(["US", "RU"], ["qwertyuiop[]asdfghjkl;'zxcvbnm,./\\", "йцукенгшщзхъфывапролджэячсмитьбю.ё"]).map { id, chars in
+      .init(id: .init(rawValue: id), entries: zip(codes, chars).map { .init(keyCode: $0.0, modifiers: [], text: String($0.1)) })
+    })
+  }
+}
+extension NativeInputControllerTests {
+  func testOpenModelYoAmbiguityOverridesRulePackageTokensButNotUserExclusions() async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let rules = Data(#"{"schemaVersion":2,"version":"fixture-2","typos":[],"yo":[],"protectedWords":["ру"],"yoProtectedWords":["все","всё"],"contractions":[]}"#.utf8)
+    let files = ["en.words": Data("hello\n".utf8), "ru.words": Data("все\nвсё\n".utf8), "corrections.json": rules]
+    var entries: [String: Any] = [:]
+    for (name, data) in files {
+      try data.write(to: directory.appendingPathComponent(name))
+      entries[name] = ["bytes": data.count, "sha256": SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()]
+    }
+    try JSONSerialization.data(withJSONObject: ["schemaVersion": 1, "version": "fixture-2", "files": entries]).write(to: directory.appendingPathComponent("manifest.json"))
+    let context = FacadeContext(), layouts = ManualLayouts(), capture = YoFacadeCapture()
+    let editor = ManualEditor(context); editor.text = ""
+    let controller = NativeInputController(layouts: layouts, permissions: FacadePermissions(), conservativeAutomaticEnabled: true,
+      editingContext: context, selectionAccess: editor, layoutCapture: capture)
+    let installed = expectation(description: "open model installed")
+    controller.installOpenModel(directory: directory) { _ in installed.fulfill() }
+    await fulfillment(of: [installed], timeout: 3)
+    let refreshed = expectation(description: "rule package with legacy protected tokens")
+    controller.install(.init(modelVersion: 2, protectedTokens: ["все", "всё", "API"])) { _ in refreshed.fulfill() }
+    await fulfillment(of: [refreshed], timeout: 2)
+    let keys = capture.captureTables().layouts[0].entries
+    var timestamp: UInt64 = 0
+    func type(_ text: String) async -> ApplyResult? {
+      var outcome: ApplyResult?
+      let done = expectation(description: "boundary handled")
+      controller.onResult = { outcome = $0; done.fulfill() }
+      for character in text {
+        timestamp += 1
+        editor.text.append(character)
+        controller.runtime.accept(.init(kind: .down, keyCode: character == " " ? 49 : keys.first { $0.text == String(character) }!.keyCode,
+          modifiers: [], timestampNanos: timestamp, layout: layouts.value, context: context.token,
+          origin: .physical, text: String(character), isRepeat: false))
+      }
+      _ = await XCTWaiter().fulfillment(of: [done], timeout: 0.5)
+      controller.onResult = { _ in }
+      return outcome
+    }
+    let first = await type("dct ")
+    XCTAssertEqual(first, .committed)
+    XCTAssertEqual(editor.text, "все ")
+    _ = layouts.select(.init(rawValue: "US")); controller.runtime.updateLayout(.init(rawValue: "US"))
+    let second = await type("dc\\ ")
+    XCTAssertEqual(second, .committed)
+    XCTAssertEqual(editor.text, "все всё ")
+    _ = layouts.select(.init(rawValue: "US")); controller.runtime.updateLayout(.init(rawValue: "US"))
+    controller.updateWordPolicies(["все"])
+    editor.text += "\n"
+    _ = await type("dct ")
+    XCTAssertEqual(editor.text, "все всё \ndct ", "A user exclusion still wins")
   }
 }
