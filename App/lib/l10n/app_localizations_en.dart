@@ -517,4 +517,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shortcutCommandShift => 'Command + Shift';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeHelp => 'System follows the macOS appearance setting.';
+
+  @override
+  String get searchSettings => 'Search';
+
+  @override
+  String get general => 'General';
+
+  @override
+  String get exampleHelp =>
+      'A word typed in the wrong layout is corrected after you press Space. Double Shift right after that brings it back.';
+
+  @override
+  String get statusWorking => 'Working';
+
+  @override
+  String get headerAccent => 'Accent strip';
+
+  @override
+  String get system => 'System';
+
+  @override
+  String get autoCorrection => 'Auto-correction';
 }

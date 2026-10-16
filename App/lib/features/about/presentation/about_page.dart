@@ -21,9 +21,7 @@ class AboutPage extends SnapshotFeature {
         Text(l.helpText),
       ]),
       const SizedBox(height: 16),
-      ui.card([
-        Text(l.diagnostics, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 10),
+      ui.section(l.diagnostics, [
         ui.intro(l.privacy),
         Wrap(
           spacing: 10,

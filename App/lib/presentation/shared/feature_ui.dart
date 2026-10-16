@@ -29,6 +29,21 @@ class FeatureUI {
       ),
     ),
   );
+
+  /// A grouped block: a quiet heading above its rounded group, as in macOS.
+  Widget section(String title, List<Widget> children) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(left: 4, bottom: 7),
+        child: Semantics(
+          header: true,
+          child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+        ),
+      ),
+      card(children),
+    ],
+  );
   Widget button(
     String text,
     String method, [

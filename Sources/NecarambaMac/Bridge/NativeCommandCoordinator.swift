@@ -29,11 +29,12 @@ public struct NativeCommandReply {
     public var onStateChanged: (([String: Any]) -> Void)?
     private static let allowed: Set<String> = [
         "setPreferences", "addWord", "deleteWord", "clearWords", "chooseApp", "setAppMode", "deleteApp",
-        "requestPermission", "refreshCapabilities", "setLoginEnabled", "setHeaderColor", "importHeaderImage",
+        "requestPermission", "refreshCapabilities", "setLoginEnabled", "setThemeMode", "setHeaderColor", "importHeaderImage",
         "removeHeaderImage", "getThumbnail", "chooseSound", "resetSound", "resetCounters", "checkRules",
         "previewShare", "confirmShare", "cancelShare", "purchase", "restore", "manageSubscription",
         "exportDiagnostics", "exportArchive", "importArchive"
     ]
+    static func isAllowed(_ method: String) -> Bool { allowed.contains(method) }
     public init(snapshot: @escaping () -> [String: Any],
                 execute: @escaping (String, [String: Any]) async throws -> [String: Any]) {
         self.snapshot = snapshot; self.execute = execute

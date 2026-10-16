@@ -155,13 +155,23 @@ struct NecarambaMain {
   }
   @objc private func openSettings() {
     guard let services, let coordinator else { return }
+    // A Dock icon is shown only while the settings window is open.
+    NSApp.setActivationPolicy(.regular)
     if let settingsWindow { settingsWindow.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); return }
     let window = MainFlutterWindow(contentRect: NSRect(x: 0, y: 0, width: 1040, height: 740),
       styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-    window.title = "Necaramba"; window.minSize = NSSize(width: 700, height: 520)
+    window.title = "Necaramba"; window.minSize = NSSize(width: 760, height: 560)
     window.isReleasedWhenClosed = false
     window.attach(services: services, coordinator: coordinator)
-    window.onClose = { [weak self] in self?.delivery?.cancelPendingShare(); self?.settingsWindow = nil }
+    window.onClose = { [weak self] in
+      self?.delivery?.cancelPendingShare(); self?.settingsWindow = nil
+      // Leave the Dock after the close completes; changing the policy while the
+      // window is still closing is ignored by AppKit.
+      DispatchQueue.main.async { [weak self] in
+        guard self?.settingsWindow == nil else { return }
+        NSApp.setActivationPolicy(.accessory)
+      }
+    }
     settingsWindow = window
     window.center(); window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
   }

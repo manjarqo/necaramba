@@ -115,7 +115,7 @@ void main() {
       await tester.tap(find.text('Refresh status'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Checked. macOS'), findsOneWidget);
-      await tester.tap(find.text('Settings').first);
+      await tester.tap(find.text('General').first);
       await tester.pumpAndSettle();
       expect(find.textContaining('Checked. macOS'), findsNothing);
     },

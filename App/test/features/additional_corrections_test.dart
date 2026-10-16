@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:necaramba/presentation/shared/mac_switch.dart';
 import 'package:necaramba/data/native_state_decoder.dart';
 import 'package:necaramba/domain/repositories/native_repository.dart';
 import 'package:necaramba/main.dart';
@@ -70,7 +71,7 @@ void main() {
         await tester.ensureVisible(finder);
         await tester.pumpAndSettle();
         expect(
-          tester.widget<SwitchListTile>(finder).onChanged != null,
+          tester.widget<MacSwitchTile>(finder).onChanged != null,
           available,
         );
         if (available) {

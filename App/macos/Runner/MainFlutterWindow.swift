@@ -56,12 +56,21 @@ final class MainFlutterWindow: NSWindow, NSWindowDelegate, NSDraggingDestination
       reply(nil)
     }
     registerForDraggedTypes([.tiff, .fileURL])
+    applyTheme(from: coordinator.state())
+  }
+  /// The saved theme drives the native title bar too; `system` follows macOS.
+  private func applyTheme(from state: [String: Any]) {
+    let raw = (state["appearance"] as? [String: Any])?["themeMode"] as? String
+    let name = raw.flatMap(ThemeMode.init(rawValue:))?.appearanceName
+    guard appearance?.name != name else { return }
+    appearance = name.flatMap(NSAppearance.init(named:))
   }
   func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
     sink = events; if let state = coordinator?.state() { events(state) }; return nil
   }
   func onCancel(withArguments arguments: Any?) -> FlutterError? { sink = nil; publishWork?.cancel(); publishWork = nil; pendingState = nil; return nil }
   func publish(_ state: [String: Any]) {
+    applyTheme(from: state)
     guard sink != nil else { return }; pendingState = state
     guard publishWork == nil else { return }
     let work = DispatchWorkItem { [weak self] in

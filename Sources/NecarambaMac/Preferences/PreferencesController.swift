@@ -1,5 +1,13 @@
-import Foundation
+import AppKit
 import NecarambaCore
+
+/// Window appearance choice; `system` follows macOS and is the default.
+public enum ThemeMode: String, Codable, Sendable, CaseIterable {
+ case system, light, dark
+ public var appearanceName: NSAppearance.Name? {
+  switch self { case .system: return nil; case .light: return .aqua; case .dark: return .darkAqua }
+ }
+}
 
 public enum PreferencesError: Error { case unsupportedVersion, invalidColor }
 public struct StoredPreferencesV1: Codable, Equatable, Sendable {
@@ -8,9 +16,25 @@ public struct StoredPreferencesV1: Codable, Equatable, Sendable {
  public let selectedColor: Int
  public let loginPreferred: Bool
  public let diagnosticsOptIn: Bool
- public init(snapshot: PreferencesSnapshot = .defaults, selectedColor: Int = 0, loginPreferred: Bool = false, diagnosticsOptIn: Bool = false) {
+ public let themeMode: ThemeMode
+ public init(snapshot: PreferencesSnapshot = .defaults, selectedColor: Int = 0, loginPreferred: Bool = false, diagnosticsOptIn: Bool = false, themeMode: ThemeMode = .system) {
   version = 1; self.snapshot = snapshot; self.selectedColor = selectedColor
-  self.loginPreferred = loginPreferred; self.diagnosticsOptIn = diagnosticsOptIn
+  self.loginPreferred = loginPreferred; self.diagnosticsOptIn = diagnosticsOptIn; self.themeMode = themeMode
+ }
+ private enum CodingKeys: String, CodingKey { case version, snapshot, selectedColor, loginPreferred, diagnosticsOptIn, themeMode }
+ /// Settings saved before the theme choice existed follow the system appearance.
+ public init(from decoder: Decoder) throws {
+  let c = try decoder.container(keyedBy: CodingKeys.self)
+  version = try c.decode(Int.self, forKey: .version); snapshot = try c.decode(PreferencesSnapshot.self, forKey: .snapshot)
+  selectedColor = try c.decode(Int.self, forKey: .selectedColor); loginPreferred = try c.decode(Bool.self, forKey: .loginPreferred)
+  diagnosticsOptIn = try c.decode(Bool.self, forKey: .diagnosticsOptIn)
+  themeMode = try c.decodeIfPresent(ThemeMode.self, forKey: .themeMode) ?? .system
+ }
+ func with(snapshot: PreferencesSnapshot? = nil, selectedColor: Int? = nil, loginPreferred: Bool? = nil,
+           diagnosticsOptIn: Bool? = nil, themeMode: ThemeMode? = nil) -> StoredPreferencesV1 {
+  StoredPreferencesV1(snapshot: snapshot ?? self.snapshot, selectedColor: selectedColor ?? self.selectedColor,
+   loginPreferred: loginPreferred ?? self.loginPreferred, diagnosticsOptIn: diagnosticsOptIn ?? self.diagnosticsOptIn,
+   themeMode: themeMode ?? self.themeMode)
  }
  public func validate() throws {
   guard version == 1 else { throw PreferencesError.unsupportedVersion }
@@ -38,7 +62,7 @@ public struct StoredPreferencesV1: Codable, Equatable, Sendable {
   if storedData == nil { try persist(JSONEncoder().encode(settings)) }
  }
  public func replace(_ value: PreferencesSnapshot) throws {
-  try replaceSettings(StoredPreferencesV1(snapshot:value,selectedColor:settings.selectedColor,loginPreferred:settings.loginPreferred,diagnosticsOptIn:settings.diagnosticsOptIn))
+  try replaceSettings(settings.with(snapshot:value))
  }
  public func replaceSettings(_ value: StoredPreferencesV1) throws {
   try value.validate()
@@ -58,14 +82,15 @@ public struct StoredPreferencesV1: Codable, Equatable, Sendable {
   try replace(PreferencesSnapshot(autoEnabled:value,typoEnabled:s.typoEnabled,yoEnabled:s.yoEnabled,singleShiftEnabled:s.singleShiftEnabled,optionEnabled:s.optionEnabled,splitShiftEnabled:s.splitShiftEnabled,plainPasteEnabled:s.plainPasteEnabled,soundEnabled:s.soundEnabled,layoutSwitchShortcut:s.layoutSwitchShortcut))
  }
  public func setSelectedColor(_ value: Int) throws {
-  try replaceSettings(StoredPreferencesV1(snapshot:snapshot,selectedColor:value,loginPreferred:settings.loginPreferred,diagnosticsOptIn:settings.diagnosticsOptIn))
+  try replaceSettings(settings.with(selectedColor:value))
  }
  public func setLoginPreferred(_ value: Bool) throws {
-  try replaceSettings(StoredPreferencesV1(snapshot:snapshot,selectedColor:settings.selectedColor,loginPreferred:value,diagnosticsOptIn:settings.diagnosticsOptIn))
+  try replaceSettings(settings.with(loginPreferred:value))
  }
  public func setDiagnosticsOptIn(_ value: Bool) throws {
-  try replaceSettings(StoredPreferencesV1(snapshot:snapshot,selectedColor:settings.selectedColor,loginPreferred:settings.loginPreferred,diagnosticsOptIn:value))
+  try replaceSettings(settings.with(diagnosticsOptIn:value))
  }
+ public func setThemeMode(_ value: ThemeMode) throws { try replaceSettings(settings.with(themeMode:value)) }
  public func exportPreferences() throws -> Data { try JSONEncoder().encode(settings) }
  public func importPreferences(_ bytes: Data) throws { try replaceSettings(JSONDecoder().decode(StoredPreferencesV1.self,from:bytes)) }
 }

@@ -128,7 +128,7 @@ void main() {
     await tester.tap(find.text('Exceptions'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('wordDraft')), 'unfinished');
-    await tester.tap(find.text('Settings').first);
+    await tester.tap(find.text('General').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Exceptions'));
     await tester.pumpAndSettle();

@@ -166,7 +166,15 @@ class NativeStateDecoder {
       'unavailable',
     });
     final appearance = map(m['appearance']);
-    keys(appearance, {'colorIndex', 'hasCustomSound', 'hasHeaderImage'});
+    keys(appearance, {
+      'colorIndex',
+      'hasCustomSound',
+      'hasHeaderImage',
+      'themeMode',
+    });
+    if (!{'system', 'light', 'dark'}.contains(appearance['themeMode'])) {
+      invalid();
+    }
     if (integer(appearance['colorIndex']) > 24) invalid();
     boolean(appearance['hasCustomSound']);
     boolean(appearance['hasHeaderImage']);

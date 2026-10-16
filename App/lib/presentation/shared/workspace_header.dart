@@ -12,9 +12,11 @@ class WorkspaceHeader extends StatefulWidget {
   const WorkspaceHeader({
     super.key,
     required this.view,
+    required this.title,
     this.windowInteraction,
   });
   final NativeViewState view;
+  final String title;
   final WindowInteractionPort? windowInteraction;
   @override
   State<WorkspaceHeader> createState() => _WorkspaceHeaderState();
@@ -96,15 +98,18 @@ class _WorkspaceHeaderState extends State<WorkspaceHeader>
     };
     return Container(
       key: _headerKey,
-      height: 64,
+      height: 52,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          color.withValues(
-            alpha: theme.brightness == Brightness.dark ? .06 : .13,
-          ),
-          scheme.surface,
-        ),
+        // Index 0 keeps the plain window background; other colors tint it.
+        color: index == 0
+            ? theme.scaffoldBackgroundColor
+            : Color.alphaBlend(
+                color.withValues(
+                  alpha: theme.brightness == Brightness.dark ? .10 : .16,
+                ),
+                theme.scaffoldBackgroundColor,
+              ),
         border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
         image:
             view.confirmed?.appearance['hasHeaderImage'] == true &&
@@ -120,31 +125,19 @@ class _WorkspaceHeaderState extends State<WorkspaceHeader>
         label: l.headerImage,
         hint: l.dropHint,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Row(
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: scheme.primary,
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Icon(
-                  Icons.keyboard_alt_outlined,
-                  size: 20,
-                  color: scheme.onPrimary,
-                ),
-              ),
-              const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  'Necaramba',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontSize: 15,
-                    letterSpacing: -.3,
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontSize: 20,
+                    ),
                   ),
                 ),
               ),

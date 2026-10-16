@@ -15,6 +15,7 @@ import '../features/rules/presentation/rules_page.dart';
 import '../features/statistics/presentation/statistics_page.dart';
 import '../features/about/presentation/about_page.dart';
 import 'shared/workspace_header.dart';
+import 'shared/workspace_sidebar.dart';
 export '../features/appearance/presentation/header_palette.dart';
 
 class WorkspacePage extends StatefulWidget {
@@ -148,7 +149,7 @@ class _WorkspacePageState extends State<WorkspacePage>
   }
 
   List<String> get titles => [
-    l.settings,
+    l.general,
     l.exceptions,
     l.permissions,
     l.appearance,
@@ -157,13 +158,22 @@ class _WorkspacePageState extends State<WorkspacePage>
     l.about,
   ];
   static const icons = [
-    Icons.tune,
-    Icons.rule,
-    Icons.verified_user_outlined,
-    Icons.palette_outlined,
-    Icons.cloud_sync_outlined,
-    Icons.bar_chart,
-    Icons.info_outline,
+    Icons.tune_rounded,
+    Icons.block_rounded,
+    Icons.verified_user_rounded,
+    Icons.contrast_rounded,
+    Icons.sync_rounded,
+    Icons.bar_chart_rounded,
+    Icons.info_outline_rounded,
+  ];
+  static const tints = [
+    Color(0xff636366),
+    Color(0xffe8870a),
+    Color(0xff2e9c4f),
+    Color(0xffa04fd0),
+    Color(0xff5e5ce6),
+    Color(0xff0a74e8),
+    Color(0xff7c7c82),
   ];
   @override
   Widget build(
@@ -176,11 +186,13 @@ class _WorkspacePageState extends State<WorkspacePage>
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final wide = constraints.maxWidth >= 740;
-              return Column(
+              final wide = constraints.maxWidth >= 640;
+              final content = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   WorkspaceHeader(
                     view: view,
+                    title: titles[selected],
                     windowInteraction: widget.windowInteraction,
                   ),
                   if (s != null && !hasKeyboardPermissions(s))
@@ -189,11 +201,29 @@ class _WorkspacePageState extends State<WorkspacePage>
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
-                          vertical: 8,
+                          vertical: 6,
                         ),
                         child: Row(
                           children: [
-                            Expanded(child: Text(l.permissionsMissing)),
+                            Icon(
+                              Icons.lock_outline_rounded,
+                              size: 16,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSecondaryContainer,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                l.permissionsMissing,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer,
+                                ),
+                              ),
+                            ),
                             TextButton(
                               key: const Key('reviewPermissions'),
                               onPressed: _showPermissions,
@@ -208,153 +238,96 @@ class _WorkspacePageState extends State<WorkspacePage>
                   if (view.pending.isNotEmpty)
                     const LinearProgressIndicator(minHeight: 2),
                   Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (wide)
-                          SizedBox(
-                            width: 204,
-                            child: Material(
-                              color: Theme.of(context).colorScheme.surface
-                                  .withValues(alpha: .45),
-                              shape: Border(
-                                right: BorderSide(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outlineVariant,
+                    child: s == null
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (view.loading)
+                                  const CircularProgressIndicator()
+                                else
+                                  Text(l.unavailable),
+                                const SizedBox(height: 16),
+                                OutlinedButton(
+                                  onPressed: view.loading
+                                      ? null
+                                      : cubit.bootstrap,
+                                  child: Text(l.reconnect),
                                 ),
-                              ),
-                              child: ListView(
-                                padding: const EdgeInsets.fromLTRB(
-                                  12,
-                                  24,
-                                  12,
-                                  16,
-                                ),
-                                children: [
-                                  for (var i = 0; i < titles.length; i++)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 3),
-                                      child: ListTile(
-                                        dense: true,
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                            ),
-                                        selectedColor: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        selected: selected == i,
-                                        selectedTileColor: Theme.of(context)
-                                            .colorScheme
-                                            .secondaryContainer,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        leading: Icon(icons[i], size: 19),
-                                        title: Text(
-                                          titles[i],
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: selected == i
-                                                ? FontWeight.w600
-                                                : FontWeight.w400,
-                                          ),
-                                        ),
-                                        onTap: () =>
-                                            setState(() => selected = i),
-                                      ),
-                                    ),
-                                ],
-                              ),
+                              ],
                             ),
-                          ),
-                        Expanded(
-                          child: s == null
-                              ? Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (view.loading)
-                                        const CircularProgressIndicator()
-                                      else
-                                        Text(l.unavailable),
-                                      const SizedBox(height: 16),
-                                      OutlinedButton(
-                                        onPressed: view.loading
-                                            ? null
-                                            : cubit.bootstrap,
-                                        child: Text(l.reconnect),
-                                      ),
-                                    ],
+                          )
+                        : Column(
+                            children: [
+                              if (!wide)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    16,
+                                    0,
                                   ),
-                                )
-                              : Column(
-                                  children: [
-                                    if (!wide)
-                                      Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: DropdownButtonFormField<int>(
-                                          initialValue: selected,
-                                          items: [
-                                            for (
-                                              var i = 0;
-                                              i < titles.length;
-                                              i++
-                                            )
-                                              DropdownMenuItem(
-                                                value: i,
-                                                child: Text(titles[i]),
-                                              ),
-                                          ],
-                                          onChanged: (value) =>
-                                              setState(() => selected = value!),
+                                  child: DropdownButtonFormField<int>(
+                                    initialValue: selected,
+                                    items: [
+                                      for (var i = 0; i < titles.length; i++)
+                                        DropdownMenuItem(
+                                          value: i,
+                                          child: Text(titles[i]),
                                         ),
-                                      ),
-                                    Expanded(
-                                      child: IndexedStack(
-                                        index: selected,
+                                    ],
+                                    onChanged: (value) =>
+                                        setState(() => selected = value!),
+                                  ),
+                                ),
+                              Expanded(
+                                child: IndexedStack(
+                                  index: selected,
+                                  children: [
+                                    for (var i = 0; i < titles.length; i++)
+                                      ListView(
+                                        padding: EdgeInsets.fromLTRB(
+                                          wide ? 32 : 16,
+                                          wide ? 20 : 16,
+                                          wide ? 32 : 16,
+                                          28,
+                                        ),
                                         children: [
-                                          for (
-                                            var i = 0;
-                                            i < titles.length;
-                                            i++
-                                          )
-                                            ListView(
-                                              padding: EdgeInsets.all(
-                                                wide ? 32 : 20,
+                                          Align(
+                                            alignment: Alignment.topLeft,
+                                            child: ConstrainedBox(
+                                              constraints: const BoxConstraints(
+                                                maxWidth: 720,
                                               ),
-                                              children: [
-                                                Text(
-                                                  titles[i],
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .headlineLarge,
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Align(
-                                                  alignment: Alignment.topLeft,
-                                                  child: ConstrainedBox(
-                                                    constraints:
-                                                        const BoxConstraints(
-                                                          maxWidth: 760,
-                                                        ),
-                                                    child: _feature(s, i),
-                                                  ),
-                                                ),
-                                              ],
+                                              child: _feature(s, i),
                                             ),
+                                          ),
                                         ],
                                       ),
-                                    ),
                                   ],
                                 ),
-                        ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ],
+              );
+              if (!wide) return content;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    width: 220,
+                    child: WorkspaceSidebar(
+                      destinations: [
+                        for (var i = 0; i < titles.length; i++)
+                          SidebarDestination(titles[i], icons[i], tints[i]),
                       ],
+                      selected: selected,
+                      onSelected: (i) => setState(() => selected = i),
                     ),
                   ),
+                  Expanded(child: content),
                 ],
               );
             },

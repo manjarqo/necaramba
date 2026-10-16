@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:necaramba/presentation/shared/mac_switch.dart';
 import 'package:necaramba/main.dart';
 
 import '../support/native_fakes.dart';
@@ -23,13 +24,15 @@ void main() {
     );
     await tester.pumpAndSettle();
     final toggle = find.byKey(const Key('launchAtLogin'));
+    await tester.ensureVisible(toggle);
+    await tester.pumpAndSettle();
     await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(
       repository.calls.where((call) => call.method == 'setLoginEnabled').length,
       1,
     );
-    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    expect(tester.widget<MacSwitchTile>(toggle).value, isFalse);
   });
 
   testWidgets(
@@ -43,12 +46,13 @@ void main() {
       final toggle = find.byKey(const Key('launchAtLogin'));
       expect(toggle, findsOneWidget);
       await tester.ensureVisible(toggle);
+      await tester.pumpAndSettle();
       await tester.tap(toggle);
       await tester.pumpAndSettle();
       expect(repository.calls.last.method, 'setLoginEnabled');
       expect(repository.calls.last.arguments, {'enabled': true});
       // The native reply still reports disabled; no optimistic enabled state.
-      expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+      expect(tester.widget<MacSwitchTile>(toggle).value, isFalse);
     },
   );
 
@@ -88,7 +92,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       for (final key in ['typoEnabled', 'yoEnabled']) {
-        final toggle = tester.widget<SwitchListTile>(find.byKey(Key(key)));
+        final toggle = tester.widget<MacSwitchTile>(find.byKey(Key(key)));
         expect(toggle.value, isTrue);
         expect(toggle.onChanged, isNull);
       }
@@ -126,7 +130,7 @@ void main() {
         expect(find.text(status.value), findsOneWidget);
         expect(
           tester
-              .widget<SwitchListTile>(find.byKey(const Key('autoEnabled')))
+              .widget<MacSwitchTile>(find.byKey(const Key('autoEnabled')))
               .value,
           isTrue,
         );
@@ -161,7 +165,7 @@ void main() {
         'Rules',
         'Statistics',
         'About',
-        'Settings',
+        'General',
       ]) {
         await tester.tap(find.byType(DropdownButtonFormField<int>));
         await tester.pumpAndSettle();

@@ -39,9 +39,7 @@ class _RulesPageState extends State<RulesPage>
       ),
     ]),
     const SizedBox(height: 18),
-    ui.card([
-      Text(l.share, style: Theme.of(context).textTheme.titleLarge),
-      const SizedBox(height: 12),
+    ui.section(l.share, [
       ui.intro(l.shareIntro),
       TextField(
         key: const Key('shareWord'),

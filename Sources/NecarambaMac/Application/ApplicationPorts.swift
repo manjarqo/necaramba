@@ -16,6 +16,7 @@ public protocol ApplicationRuleStore: WordRuleStore, AppRuleStore {
     func replace(_ value: PreferencesSnapshot) throws
     func setLoginPreferred(_ value: Bool) throws
     func setSelectedColor(_ value: Int) throws
+    func setThemeMode(_ value: ThemeMode) throws
     func setAuto(_ value: Bool) throws
     func adoptCommittedSettings(_ value: StoredPreferencesV1) throws
 }

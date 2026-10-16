@@ -26,9 +26,7 @@ class _ExceptionsPageState extends State<ExceptionsPage>
     children: _exceptions(widget.snapshot),
   );
   List<Widget> _exceptions(NativeState s) => [
-    ui.card([
-      Text(l.words, style: Theme.of(context).textTheme.titleLarge),
-      const SizedBox(height: 14),
+    ui.section(l.words, [
       TextField(
         key: const Key('wordDraft'),
         enabled: !busy,

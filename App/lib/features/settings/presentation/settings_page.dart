@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../presentation/shared/feature_ui.dart';
+import '../../../presentation/shared/mac_switch.dart';
+import '../../../presentation/theme/workspace_theme.dart';
 
 class SettingsPage extends SnapshotFeature {
   const SettingsPage({super.key, required super.snapshot});
@@ -15,13 +17,10 @@ class SettingsPage extends SnapshotFeature {
       String label, {
       String? description,
       bool available = true,
-    }) => SwitchListTile(
+    }) => MacSwitchTile(
       key: Key(key),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      title: Text(label),
-      subtitle: description == null
-          ? null
-          : Text(description, style: theme.textTheme.bodySmall),
+      title: label,
+      subtitle: description,
       value: snapshot.preferences[key]!,
       onChanged: ui.busy || !available
           ? null
@@ -44,43 +43,27 @@ class SettingsPage extends SnapshotFeature {
       ),
     );
     Widget heading(String text) => Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 8, left: 2),
+      padding: const EdgeInsets.only(top: 22, bottom: 7, left: 4),
       child: Text(text, style: theme.textTheme.titleMedium),
     );
+    Widget note(String text) => Padding(
+      padding: const EdgeInsets.fromLTRB(4, 7, 4, 0),
+      child: Text(text, style: theme.textTheme.bodySmall),
+    );
     return [
-      ui.intro(l.settingsIntro),
+      const CorrectionExample(),
+      heading(l.autoCorrection),
       group([
-        SwitchListTile(
-          key: const Key('launchAtLogin'),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 2,
-          ),
-          title: Text(l.login),
-          subtitle: Text(switch (snapshot.login['status']) {
-            'enabled' => l.enabled,
-            'disabled' => l.disabled,
-            'requiresApproval' => l.requiresApproval,
-            _ => l.loginStatusUnknown,
-          }, style: theme.textTheme.bodySmall),
-          value:
-              snapshot.login['enabled'] == true ||
-              snapshot.login['status'] == 'requiresApproval',
-          onChanged: ui.busy
-              ? null
-              : (value) => ui.cubit.run('setLoginEnabled', {'enabled': value}),
-        ),
+        toggle('autoEnabled', l.autoEnabled, description: l.afterSpace),
+        toggle('typoEnabled', l.typo, available: additionalAvailable),
+        toggle('yoEnabled', l.yoEnabled, available: additionalAvailable),
       ]),
-      const SizedBox(height: 12),
-      group([toggle('autoEnabled', l.autoEnabled, description: l.afterSpace)]),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(2, 8, 2, 0),
-        child: Text(l.autoAvailability, style: theme.textTheme.bodySmall),
-      ),
+      note(l.autoAvailability),
+      if (!additionalAvailable) note(l.additionalUnavailable),
       heading(l.keyboardShortcuts),
       group([
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Expanded(
@@ -88,21 +71,13 @@ class SettingsPage extends SnapshotFeature {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(l.doubleShift, style: theme.textTheme.bodyLarge),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(l.doubleShiftHelp, style: theme.textTheme.bodySmall),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                  border: Border.all(color: theme.colorScheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: const Text('⇧ ⇧', style: TextStyle(fontSize: 16)),
-              ),
+              const Keycaps(['⇧', '⇧']),
             ],
           ),
         ),
@@ -111,23 +86,140 @@ class SettingsPage extends SnapshotFeature {
         toggle('splitShiftEnabled', l.splitShiftEnabled),
         toggle('plainPasteEnabled', l.plainPasteEnabled),
       ]),
-      heading(l.additionalCorrections),
+      heading(l.system),
       group([
-        toggle('typoEnabled', l.typo, available: additionalAvailable),
-        toggle('yoEnabled', l.yoEnabled, available: additionalAvailable),
-      ]),
-      if (!additionalAvailable)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(2, 8, 2, 0),
-          child: Text(
-            l.additionalUnavailable,
-            style: theme.textTheme.bodySmall,
-          ),
+        MacSwitchTile(
+          key: const Key('launchAtLogin'),
+          title: l.login,
+          subtitle: switch (snapshot.login['status']) {
+            'enabled' => l.enabled,
+            'disabled' => l.disabled,
+            'requiresApproval' => l.requiresApproval,
+            _ => l.loginStatusUnknown,
+          },
+          value:
+              snapshot.login['enabled'] == true ||
+              snapshot.login['status'] == 'requiresApproval',
+          onChanged: ui.busy
+              ? null
+              : (value) => ui.cubit.run('setLoginEnabled', {'enabled': value}),
         ),
-      heading(l.sound),
-      group([toggle('soundEnabled', l.soundEnabled)]),
-      const SizedBox(height: 20),
+        toggle('soundEnabled', l.soundEnabled),
+      ]),
+      note(l.settingsIntro),
     ];
+  }
+}
+
+/// The signature moment of the app: a wrong-layout word and its correction.
+class CorrectionExample extends StatelessWidget {
+  const CorrectionExample({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = FeatureUI(context).l;
+    final word = TextStyle(
+      fontSize: 24,
+      height: 1.2,
+      fontWeight: FontWeight.w600,
+      letterSpacing: .2,
+      color: theme.colorScheme.onSurface,
+    );
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+        child: Wrap(
+          spacing: 24,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Semantics(
+              label: 'ghbdtn → привет',
+              child: ExcludeSemantics(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'ghbdtn',
+                        style: word.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: .8,
+                          ),
+                          decoration: TextDecoration.lineThrough,
+                          decorationThickness: 2,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 22,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text('привет', style: word),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 340),
+              child: Text(l.exampleHelp, style: theme.textTheme.bodySmall),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Key glyphs drawn like the legends on a Mac keyboard.
+class Keycaps extends StatelessWidget {
+  const Keycaps(this.keys, {super.key});
+  final List<String> keys;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = MacTokens.of(context);
+    return ExcludeSemantics(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < keys.length; i++) ...[
+            if (i > 0) const SizedBox(width: 4),
+            Container(
+              constraints: const BoxConstraints(minWidth: 26),
+              height: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: tokens.hairline),
+                boxShadow: [
+                  BoxShadow(
+                    color: tokens.hairline,
+                    offset: const Offset(0, 1.5),
+                  ),
+                ],
+              ),
+              child: Text(
+                keys[i],
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.1,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

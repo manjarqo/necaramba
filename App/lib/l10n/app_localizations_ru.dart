@@ -520,4 +520,41 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get shortcutCommandShift => 'Command + Shift';
+
+  @override
+  String get theme => 'Тема';
+
+  @override
+  String get themeSystem => 'Системная';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get themeHelp => 'Системная тема следует настройке оформления macOS.';
+
+  @override
+  String get searchSettings => 'Поиск';
+
+  @override
+  String get general => 'Основные';
+
+  @override
+  String get exampleHelp =>
+      'Слово, набранное не в той раскладке, исправляется после пробела. Двойной Shift сразу после этого возвращает его обратно.';
+
+  @override
+  String get statusWorking => 'Работает';
+
+  @override
+  String get headerAccent => 'Цветная полоса';
+
+  @override
+  String get system => 'Система';
+
+  @override
+  String get autoCorrection => 'Автоисправление';
 }

@@ -10,6 +10,7 @@ NativeState fixture({
   String status = 'permissionRequired',
   Map<String, bool>? capabilities,
   Map<String, Object?>? login,
+  Map<String, Object?>? appearance,
 }) => NativeState(
   sessionID: sessionID,
   revision: revision,
@@ -35,11 +36,14 @@ NativeState fixture({
   model: {'version': '1', 'lastChecked': null, 'state': 'current'},
   license: {'state': 'trial', 'expiresAt': null},
   statistics: {'layout': 3, 'typo': 2},
-  appearance: {
-    'colorIndex': 0,
-    'hasCustomSound': false,
-    'hasHeaderImage': false,
-  },
+  appearance:
+      appearance ??
+      {
+        'colorIndex': 0,
+        'hasCustomSound': false,
+        'hasHeaderImage': false,
+        'themeMode': 'system',
+      },
   login: login ?? {'enabled': false, 'status': 'disabled'},
 );
 

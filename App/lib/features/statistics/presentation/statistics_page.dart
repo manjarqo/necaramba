@@ -25,9 +25,7 @@ class StatisticsPage extends SnapshotFeature {
     };
     return [
       ui.intro(l.statisticsIntro),
-      ui.card([
-        Text(l.estimate, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 12),
+      ui.section(l.estimate, [
         Text(
           '$estimate ${l.seconds}',
           style: Theme.of(context).textTheme.headlineLarge,

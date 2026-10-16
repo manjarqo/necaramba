@@ -56,8 +56,24 @@ class _NecarambaAppState extends State<NecarambaApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context) =>
+      BlocBuilder<NativeCubit, NativeViewState>(
+        bloc: _cubit,
+        buildWhen: (a, b) => themeModeOf(a) != themeModeOf(b),
+        builder: (context, view) => _app(themeModeOf(view)),
+      );
+
+  /// Native owns the saved choice; until it is confirmed the app follows macOS.
+  static ThemeMode themeModeOf(NativeViewState view) =>
+      switch (view.confirmed?.appearance['themeMode']) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      };
+
+  Widget _app(ThemeMode mode) => MaterialApp(
     title: 'Necaramba',
+    themeMode: mode,
     debugShowCheckedModeBanner: false,
     locale: widget.locale,
     localizationsDelegates: AppLocalizations.localizationsDelegates,

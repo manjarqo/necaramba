@@ -56,8 +56,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(window.region!.height, 64);
-      expect(window.region!.width, 800);
+      expect(window.region!.height, 52);
+      // The header spans the content pane to the right of the 220 pt sidebar.
+      expect(window.region!.x, 220);
+      expect(window.region!.width, 580);
       window.events.add('opaque-drop-handle');
       await tester.pumpAndSettle();
       expect(repository.calls.last.method, 'importHeaderImage');

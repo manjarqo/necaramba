@@ -1063,6 +1063,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Command + Shift'**
   String get shortcutCommandShift;
+
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get theme;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @themeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'System follows the macOS appearance setting.'**
+  String get themeHelp;
+
+  /// No description provided for @searchSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchSettings;
+
+  /// No description provided for @general.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get general;
+
+  /// No description provided for @exampleHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'A word typed in the wrong layout is corrected after you press Space. Double Shift right after that brings it back.'**
+  String get exampleHelp;
+
+  /// No description provided for @statusWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working'**
+  String get statusWorking;
+
+  /// No description provided for @headerAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent strip'**
+  String get headerAccent;
+
+  /// No description provided for @system.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get system;
+
+  /// No description provided for @autoCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-correction'**
+  String get autoCorrection;
 }
 
 class _AppLocalizationsDelegate

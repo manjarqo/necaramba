@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:necaramba/presentation/shared/mac_switch.dart';
 import 'package:necaramba/main.dart';
 import 'package:necaramba/domain/repositories/native_repository.dart';
 
@@ -17,8 +18,7 @@ void main() {
     expect(
       find.byWidgetPredicate(
         (widget) =>
-            widget is SwitchListTile &&
-            widget.key != const Key('launchAtLogin'),
+            widget is MacSwitchTile && widget.key != const Key('launchAtLogin'),
       ),
       findsNWidgets(7),
     );
@@ -26,7 +26,7 @@ void main() {
     await tester.tap(find.byKey(const Key('autoEnabled')));
     await tester.pumpAndSettle();
     expect(
-      tester.widget<SwitchListTile>(find.byKey(const Key('autoEnabled'))).value,
+      tester.widget<MacSwitchTile>(find.byKey(const Key('autoEnabled'))).value,
       true,
     );
     expect(
@@ -133,7 +133,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester
-          .widget<SwitchListTile>(find.byKey(const Key('autoEnabled')))
+          .widget<MacSwitchTile>(find.byKey(const Key('autoEnabled')))
           .onChanged,
       isNull,
     );
@@ -141,7 +141,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester
-          .widget<SwitchListTile>(find.byKey(const Key('autoEnabled')))
+          .widget<MacSwitchTile>(find.byKey(const Key('autoEnabled')))
           .onChanged,
       isNotNull,
     );
@@ -158,7 +158,7 @@ void main() {
       NecarambaApp(repository: repo, locale: const Locale('ru')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Настройки'), findsWidgets);
+    expect(find.text('Основные'), findsWidgets);
     expect(tester.takeException(), isNull);
     await tester.tap(find.byType(DropdownButtonFormField<int>));
     await tester.pumpAndSettle();

@@ -37,6 +37,7 @@ Map<String, Object?> fixture({
     'colorIndex': 0,
     'hasCustomSound': false,
     'hasHeaderImage': false,
+    'themeMode': 'system',
   },
   'login': {'enabled': false, 'status': 'disabled'},
 };
@@ -66,6 +67,25 @@ void main() {
       final wire = {...fixture(), 'status': status};
       expect(NativeStateDecoder.decode(wire).status, status);
       expect(NativeStateDecoder.encode(NativeStateDecoder.decode(wire)), wire);
+    }
+  });
+  test('decoder accepts the three theme modes only', () {
+    for (final mode in ['system', 'light', 'dark']) {
+      final wire = {
+        ...fixture(),
+        'appearance': {...fixture()['appearance'] as Map, 'themeMode': mode},
+      };
+      expect(NativeStateDecoder.decode(wire).appearance['themeMode'], mode);
+    }
+    for (final appearance in [
+      {...fixture()['appearance'] as Map, 'themeMode': 'sepia'},
+      {...fixture()['appearance'] as Map}..remove('themeMode'),
+    ]) {
+      expect(
+        () =>
+            NativeStateDecoder.decode({...fixture(), 'appearance': appearance}),
+        throwsA(isA<NativeFailure>()),
+      );
     }
   });
   test('decoder rejects unsupported schema and malformed nested state', () {

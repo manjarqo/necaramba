@@ -160,5 +160,17 @@
   "shortcutAltShift": "Alt (Option) + Shift",
   "shortcutControlShift": "Ctrl + Shift",
   "shortcutOff": "Выключено",
-  "shortcutCommandShift": "Command + Shift"
+  "shortcutCommandShift": "Command + Shift",
+  "theme": "Тема",
+  "themeSystem": "Системная",
+  "themeLight": "Светлая",
+  "themeDark": "Тёмная",
+  "themeHelp": "Системная тема следует настройке оформления macOS.",
+  "searchSettings": "Поиск",
+  "general": "Основные",
+  "exampleHelp": "Слово, набранное не в той раскладке, исправляется после пробела. Двойной Shift сразу после этого возвращает его обратно.",
+  "statusWorking": "Работает",
+  "headerAccent": "Цветная полоса",
+  "system": "Система",
+  "autoCorrection": "Автоисправление"
 }

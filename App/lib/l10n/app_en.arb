@@ -160,5 +160,17 @@
   "shortcutAltShift": "Alt (Option) + Shift",
   "shortcutControlShift": "Ctrl + Shift",
   "shortcutOff": "Off",
-  "shortcutCommandShift": "Command + Shift"
+  "shortcutCommandShift": "Command + Shift",
+  "theme": "Theme",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeHelp": "System follows the macOS appearance setting.",
+  "searchSettings": "Search",
+  "general": "General",
+  "exampleHelp": "A word typed in the wrong layout is corrected after you press Space. Double Shift right after that brings it back.",
+  "statusWorking": "Working",
+  "headerAccent": "Accent strip",
+  "system": "System",
+  "autoCorrection": "Auto-correction"
 }

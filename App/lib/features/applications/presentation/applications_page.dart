@@ -7,14 +7,11 @@ class ApplicationsPage extends SnapshotFeature {
   @override
   List<Widget> content(FeatureUI ui) {
     final s = snapshot;
-    final context = ui.context;
     final l = ui.l;
     final cubit = ui.cubit;
     final busy = ui.busy;
     return [
-      ui.card([
-        Text(l.applications, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 12),
+      ui.section(l.applications, [
         ui.intro(l.appHint),
         Align(
           alignment: Alignment.centerLeft,

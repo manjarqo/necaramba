@@ -74,7 +74,7 @@ import NecarambaCore
                 "model":["additionalCorrectionsAvailable":additionalCorrectionsAvailable,"version":modelVersion,"state":modelState,"lastChecked":modelLastChecked as Any? ?? NSNull()],
                 "license":["state":licenseState,"expiresAt":licenseExpiresAt as Any? ?? NSNull()],
                 "statistics":stats,
-                "appearance":["colorIndex":preferences.settings.selectedColor,"hasCustomSound":sound.customSoundURL != nil,"hasHeaderImage":hasHeaderImage],
+                "appearance":["colorIndex":preferences.settings.selectedColor,"hasCustomSound":sound.customSoundURL != nil,"hasHeaderImage":hasHeaderImage,"themeMode":preferences.settings.themeMode.rawValue],
                 "login":["enabled":login.status == .enabled,"status":loginStatus]]
     }
     public func execute(_ method:String, arguments a:[String:Any]) async throws -> [String:Any] {
@@ -142,6 +142,9 @@ import NecarambaCore
                 }
                 throw error
             }
+        case "setThemeMode":
+            guard let mode = ThemeMode(rawValue: try string(a,"mode")) else { throw invalid() }
+            try preferences.setThemeMode(mode)
         case "setHeaderColor":
             guard let index=a["index"] as? Int else { throw invalid() }; try preferences.setSelectedColor(index)
         case "importHeaderImage":
