@@ -305,6 +305,10 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     guard let adapter = currentTap() else { return .aborted }
     return await adapter.replacePhysicalAsync(mutation, with: text, lease: lease, physicalKeys: physicalKeys, phaseAuthorization: phaseAuthorization, preflight: preflight)
   }
+  @MainActor public func postCommandShortcut(_ shortcut: CommandShortcut, context: ContextToken,
+                                             generation: UInt64) -> Bool {
+    currentTap()?.postCommandShortcut(shortcut, context: context, generation: generation) ?? false
+  }
   /// Distinguishes a transient authoritative read from an invalidated context.
   public func contextReconciling() -> Bool { (context as? ContextState)?.isReconciling ?? false }
   public func cachedInputContext() -> (ContextToken, LayoutID)? {

@@ -180,8 +180,12 @@ public struct OpaqueFocusProof: Equatable, Sendable {
   public let context: ContextToken
   public let identity: UUID
   public let selection: OpaqueSelectionState
-  public init(context: ContextToken, identity: UUID, selection: OpaqueSelectionState = .unavailable) {
+  /// A terminal input transport: its selection is terminal output, not editable text.
+  public let terminalProxy: Bool
+  public init(context: ContextToken, identity: UUID, selection: OpaqueSelectionState = .unavailable,
+              terminalProxy: Bool = false) {
     self.context = context; self.identity = identity; self.selection = selection
+    self.terminalProxy = terminalProxy
   }
 }
 public protocol OpaqueFocusReading: AnyObject {

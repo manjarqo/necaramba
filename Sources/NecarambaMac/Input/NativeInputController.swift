@@ -22,6 +22,14 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
   private let engineBuilder: RuleEngineBuilding
   private let compiler = DispatchQueue(label: "Necaramba rules compiler")
   @MainActor private lazy var transactions = EditTransactionCoordinator()
+  private let injectedClipboardSelection: ClipboardSelectionConverting?
+  @MainActor private lazy var clipboardSelection: ClipboardSelectionConverting = injectedClipboardSelection
+    ?? ClipboardSelectionConverter(clipboard: SystemClipboard(), shortcuts: RuntimeCommandShortcuts(runtime: runtime))
+  /// Native terminals copy terminal output; pasting there would not replace a selection.
+  static let terminalApplications: Set<String> = [
+    "com.apple.Terminal", "com.googlecode.iterm2", "dev.warp.Warp-Stable", "com.mitchellh.ghostty",
+    "net.kovidgoyal.kitty", "org.alacritty", "com.github.wez.wezterm", "co.zeit.hyper",
+  ]
   private var quarantined: ContextToken?
   private var pendingLayoutTransition: (target: LayoutID, generation: UInt64)?
   private var replacementLayout: LayoutID?
@@ -59,8 +67,10 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     preferences: PreferencesSnapshot = .defaults, snapshot: RuleSnapshot = .init(modelVersion: 0),
     corpusQualified: Bool = false, conservativeAutomaticEnabled: Bool = false, editingContext: ContextRefreshing? = nil,
     selectionAccess: SelectionAccess? = nil, layoutCapture: LayoutTableCapturing? = nil,
-    engineBuilder: RuleEngineBuilding = RuleEngineBuilder()
+    engineBuilder: RuleEngineBuilding = RuleEngineBuilder(),
+    clipboardSelection: ClipboardSelectionConverting? = nil
   ) {
+    injectedClipboardSelection = clipboardSelection
     precondition(Thread.isMainThread)
     let manualScope = ManualActionScope()
     manualActionScope = manualScope
@@ -853,6 +863,11 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
     }
     InputDiagnostics.event("manual.cachedLayoutMatchesCurrent", detail: runtime.cachedInputContext()?.1 == current ? 1 : 0)
     guard let capturedWord = runtime.manualWord() else {
+      if selected == nil, let manualMapping,
+        let result = await clipboardSelectionConversion(token: token, layout: current,
+          preferred: manualMapping, generation: manualGeneration) {
+        return result
+      }
       InputDiagnostics.event("manual.wordMissing")
       return .aborted
     }
@@ -925,6 +940,43 @@ public final class NativeInputController: InputRuntimeControl, RuleSnapshotConsu
       if let id = replacement.lastCommittedID { onCommitted(id, .manual) }
     } else if let layout = layouts.current() { runtime.updateLayout(layout) }
     return result
+  }
+  /// A selection in a focused field that Accessibility cannot read, outside terminals.
+  /// Returns nil when this path does not apply or the field has no selection.
+  @MainActor private func clipboardSelectionConversion(token: ContextToken, layout: LayoutID,
+    preferred: LayoutMapping, generation: UInt64) async -> ApplyResult? {
+    guard let opaque = (selectionAccess as? OpaqueFocusReading)?.opaqueFocus(in: token),
+      !opaque.terminalProxy, !Self.terminalApplications.contains(token.bundleID) else { return nil }
+    InputDiagnostics.event("manual.clipboardSelection.begin")
+    // Our own layout selection changes only the layout epoch of the same field.
+    let valid = { [weak self] () -> Bool in
+      guard let self, self.runtime.inputGeneration() == generation, let current = self.editContext.current()
+      else { return false }
+      return current.pid == token.pid && current.bundleID == token.bundleID && current.focusEpoch == token.focusEpoch
+    }
+    let outcome = await clipboardSelection.convert(in: token, generation: generation, valid: valid) { copied in
+      let mapping = LayoutConverter.selectionMapping(copied, preferred: preferred,
+        alternative: self.manualMapping(from: preferred.target))
+      let text = LayoutConverter.convert(copied, mapping: mapping)
+      guard text != copied,
+        let context = await self.prepareMutation(mapping.target, token: token, generation: generation)
+      else { return nil }
+      return (text, context)
+    }
+    let result: ApplyResult
+    switch outcome {
+    case .noSelection: result = .aborted
+    case .rejected, .aborted: result = .aborted
+    case .dispatched: result = .dispatched
+    case .uncertain: result = .uncertain
+    }
+    InputDiagnostics.event("manual.clipboardSelection.result", detail: [.noSelection: 0, .rejected: 1,
+      .aborted: 2, .dispatched: 3, .uncertain: 4][outcome] ?? -1)
+    runtime.discardManualCandidate()
+    replacement.invalidate(.unknownInput)
+    if result == .aborted { await restoreUnchangedLayout(layout, token: token, generation: generation) }
+    if result == .uncertain { quarantine(result, token: token) }
+    return outcome == .noSelection ? nil : result
   }
   @MainActor private func plainPasteOperation(in token: ContextToken, clipboard: ClipboardAccess) async -> ApplyResult {
     precondition(Thread.isMainThread)

@@ -17,3 +17,13 @@ public protocol ClipboardAccess: AnyObject {
     func snapshot(maxBytes: Int) throws -> PasteboardSnapshot
     func write(_ items: [PasteboardItem]) throws -> Int
 }
+/// Writes text that the pasteboard materializes only when a reader asks for it.
+/// `onProvided` runs on the providing thread each time data is requested.
+public protocol PromisedTextWriting: AnyObject {
+    func writePromisedText(_ text: String, onProvided: @escaping () -> Void) throws -> Int
+}
+public enum CommandShortcut: Sendable, Equatable { case copy, paste }
+/// Posts an application command shortcut to the field proven by `context`.
+public protocol CommandShortcutPosting: AnyObject {
+    @MainActor func post(_ shortcut: CommandShortcut, in context: ContextToken, generation: UInt64) async -> Bool
+}

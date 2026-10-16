@@ -20,6 +20,15 @@ public final class ClipboardTransaction {
         } }
         ownedCount = try access.write(items)
     }
+    /// Adopts a generation written by the target application on our request (Copy),
+    /// so the original contents are restored unless someone writes after it.
+    public func observeExternalWrite(_ count: Int) { ownedCount = count }
+    public func replacePromised(text: String, onProvided: @escaping () -> Void) throws {
+        guard access.changeCount == (ownedCount ?? original.changeCount) else { throw ClipboardError.contextChanged }
+        guard text.utf8.count <= maxBytes else { throw ClipboardError.tooLarge }
+        guard let promised = access as? PromisedTextWriting else { throw ClipboardError.writeFailed }
+        ownedCount = try promised.writePromisedText(text, onProvided: onProvided)
+    }
     @discardableResult public func restoreIfOwned() -> Bool {
         guard let count = ownedCount else { return false }
         ownedCount = nil

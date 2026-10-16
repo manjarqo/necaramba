@@ -41,6 +41,8 @@ enum InputDiagnostics {
     "tap.phased.finished",
     "tap.post.aborted",
     "tap.post.contextMismatch",
+    "manual.clipboardSelection.begin",
+    "manual.clipboardSelection.result",
     "tap.post.reconcileRetry",
     "auto.eligibility.rejected",
     "auto.decision.correct",

@@ -224,7 +224,7 @@ public final class SystemAXSelectionReader: AXSelectionReading {
     // of this posted batch; only read() and a final exact proof treat them as one state.
     if opaque {
       return .opaque(.init(context: token, identity: identity,
-        selection: rangeUnavailable ? .unavailable : .collapsed))
+        selection: rangeUnavailable ? .unavailable : .collapsed, terminalProxy: terminalProxy))
     }
     return .snapshot(AXTextSnapshot(identity: identity, value: text!,
       range: NSRange(location: range.location, length: range.length)))

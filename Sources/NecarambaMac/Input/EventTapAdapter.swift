@@ -398,6 +398,25 @@ public final class EventTapAdapter {
     }
     runtime?.advance(to: now)
   }
+  /// Posts Command-C or Command-V as our own events. Main thread only; the proven
+  /// context, input generation and secure-input state are checked immediately before.
+  @MainActor public func postCommandShortcut(_ shortcut: CommandShortcut, context: ContextToken,
+                                             generation: UInt64) -> Bool {
+    precondition(Thread.isMainThread)
+    guard canSuppress, CGPreflightPostEventAccess(), let runtime, !IsSecureEventInputEnabled(),
+      runtime.inputGeneration() == generation, runtime.cachedInputContext()?.0 == context,
+      let source = CGEventSource(stateID: .privateState) else { return false }
+    let code: CGKeyCode = shortcut == .copy ? 8 : 9
+    guard let down = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: true),
+      let up = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: false) else { return false }
+    for event in [down, up] {
+      event.flags = .maskCommand
+      event.setIntegerValueField(.eventSourceUserData, value: Self.ownMarker)
+    }
+    down.post(tap: .cgSessionEventTap)
+    up.post(tap: .cgSessionEventTap)
+    return true
+  }
   enum PostingAdmission: Equatable { case admit, retry, reject(Int) }
   /// Fixed codes: 7 cancelled/stopped, 8 deadline, 9 secure input, 10 context mismatch.
   /// Only a missing token during authoritative reconciliation is transient.
