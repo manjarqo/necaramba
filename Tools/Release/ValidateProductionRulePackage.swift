@@ -21,7 +21,10 @@ import Foundation
 
     static func validate(directory: URL, appVersion: String, developmentKeys: URL) throws {
         let manager = FileManager.default
-        guard try isDirectory(directory), Set(try manager.contentsOfDirectory(atPath: directory.path)) == files else { throw Failure.invalid }
+        let present = Set(try manager.contentsOfDirectory(atPath: directory.path))
+        let profileFiles: Set<String> = ["profiles.json", "profiles.signature.ed25519"]
+        // Application profiles are optional, but only as a complete signed pair.
+        guard try isDirectory(directory), present == files || present == files.union(profileFiles) else { throw Failure.invalid }
         let licenses = directory.appendingPathComponent("Licenses", isDirectory: true)
         guard try isDirectory(licenses) else { throw Failure.invalid }
         let licenseNames = try manager.contentsOfDirectory(atPath: licenses.path)
@@ -50,8 +53,13 @@ import Foundation
         let manifest = try boundedRead(directory.appendingPathComponent("manifest.json"), limit: 65536)
         let signature = try boundedRead(directory.appendingPathComponent("signature.ed25519"), limit: 64)
         let payload = try boundedRead(directory.appendingPathComponent("payload.json"), limit: RulePackageVerifier.maximumPayloadSize)
-        _ = try RulePackageVerifier(trustedKeys: keys, appVersion: appVersion)
-            .verify(manifest: manifest, signature: signature, payload: payload, installedVersion: 0)
+        let verifier = RulePackageVerifier(trustedKeys: keys, appVersion: appVersion)
+        _ = try verifier.verify(manifest: manifest, signature: signature, payload: payload, installedVersion: 0)
+        if present.isSuperset(of: profileFiles) {
+            _ = try verifier.verifyProfiles(manifest: manifest,
+                profiles: boundedRead(directory.appendingPathComponent("profiles.json"), limit: ApplicationProfiles.maximumSize),
+                signature: boundedRead(directory.appendingPathComponent("profiles.signature.ed25519"), limit: 64))
+        }
     }
 
     static func isDirectory(_ url: URL) throws -> Bool {

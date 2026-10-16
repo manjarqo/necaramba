@@ -55,6 +55,7 @@ if [[ "${NECARAMBA_DEVELOPMENT_RULES:-NO}" == NO ]]; then
     "$root/Sources/NecarambaCore/Types/RuleTypes.swift" \
     "$root/Sources/NecarambaCore/Delivery/RuleManifest.swift" \
     "$root/Sources/NecarambaCore/Delivery/RulePackageVerifier.swift" \
+    "$root/Sources/NecarambaCore/Policy/ApplicationProfiles.swift" \
     "$root/Tools/Release/ValidateProductionRulePackage.swift" \
     -o "$validator"
 fi

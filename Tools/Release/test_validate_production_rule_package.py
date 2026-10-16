@@ -9,7 +9,7 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 CORE = ROOT / 'Sources/NecarambaCore'
 FORMAT = [CORE / 'Types/InputTypes.swift', CORE / 'Types/RuleTypes.swift', CORE / 'Delivery/RuleManifest.swift']
-VERIFIER = CORE / 'Delivery/RulePackageVerifier.swift'
+VERIFIER = [CORE / 'Delivery/RulePackageVerifier.swift', CORE / 'Policy/ApplicationProfiles.swift']
 TOOL = ROOT / 'Tools/Release/ValidateProductionRulePackage.swift'
 FIXTURE = r'''
 import Foundation
@@ -38,6 +38,12 @@ import CryptoKit
         let licenses = folder.appendingPathComponent("Licenses", isDirectory: true)
         try FileManager.default.createDirectory(at: licenses, withIntermediateDirectories: true)
         try Data("Synthetic test attribution\n".utf8).write(to: licenses.appendingPathComponent("attribution.txt"))
+        if CommandLine.arguments.count == 4 {
+            let profiles = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[3]))
+            try profiles.write(to: folder.appendingPathComponent("profiles.json"))
+            try key.signature(for: Data("NecarambaAppProfiles-v1\0".utf8) + Data(SHA256.hash(data: profiles)))
+                .write(to: folder.appendingPathComponent("profiles.signature.ed25519"))
+        }
     }
 }
 '''
@@ -55,12 +61,24 @@ with tempfile.TemporaryDirectory(prefix='necaramba-release-test-') as tmp:
     fixture = temp / 'fixture'
     validator = temp / 'validator'
     run(['swiftc', *map(str, FORMAT), str(fixture_source), '-o', str(fixture)], True)
-    run(['swiftc', *map(str, FORMAT), str(VERIFIER), str(TOOL), '-o', str(validator)], True)
+    run(['swiftc', *map(str, FORMAT), *map(str, VERIFIER), str(TOOL), '-o', str(validator)], True)
     package = temp / 'package'
     package.mkdir()
     run([str(validator), str(package), '1.0.0', str(ROOT / 'App/macos/Runner/Release/BundledRules/Development/DevelopmentTrustedRuleKeys.json')], False)
     run([str(fixture), str(package), 'owner-key'], True)
     run([str(validator), str(package), '1.0.0', str(ROOT / 'App/macos/Runner/Release/BundledRules/Development/DevelopmentTrustedRuleKeys.json')], True)
+    dev_keys = str(ROOT / 'App/macos/Runner/Release/BundledRules/Development/DevelopmentTrustedRuleKeys.json')
+    run([str(fixture), str(package), 'owner-key', str(ROOT / 'Resources/Rules/application-profiles-v1.json')], True)
+    run([str(validator), str(package), '1.0.0', dev_keys], True)
+    signature = (package / 'profiles.signature.ed25519').read_bytes()
+    (package / 'profiles.signature.ed25519').unlink()
+    run([str(validator), str(package), '1.0.0', dev_keys], False)
+    (package / 'profiles.signature.ed25519').write_bytes(signature)
+    (package / 'profiles.json').write_bytes((package / 'profiles.json').read_bytes() + b' ')
+    run([str(validator), str(package), '1.0.0', dev_keys], False)
+    (package / 'profiles.json').unlink()
+    (package / 'profiles.signature.ed25519').unlink()
+    run([str(fixture), str(package), 'owner-key'], True)
     resources = temp / 'Resources'
     (resources / 'Rules/Development').mkdir(parents=True)
     (resources / 'Rules/Development/DevelopmentOnly.json').write_text('{}')
