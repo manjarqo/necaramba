@@ -551,6 +551,29 @@ import XCTest
     }
   }
 
+  func testRecoveredPrefixNeedsReadableWholeWordAndNeverUsesEmptyProxy() async {
+    for (value, expected) in [("", ApplyResult.aborted), ("say word ", .committed), ("sayword ", .aborted)] {
+      let (adapter, reader, token) = fixture(automatic: true)
+      reader.value = value
+      reader.range = NSRange(location: value.utf16.count, length: 0)
+      let original = autoCandidate(token)
+      let candidate = AutomaticBoundaryCandidate(word: original.word, boundary: original.boundary,
+        inputGeneration: 1, requiresWordStartProof: true, allowsOpaqueWordStart: false)
+      adapter.executeAsync = { _, replacement, _, preflight in
+        guard preflight() else { return .aborted }
+        reader.value = String(value.dropLast("word ".count)) + replacement
+        reader.range = NSRange(location: reader.value.utf16.count, length: 0)
+        return .committed
+      }
+      adapter.executePhysicalAsync = { _, _, _ in
+        XCTFail("A recovered prefix must not use opaque physical replacement")
+        return .aborted
+      }
+      let result = await adapter.replaceAutomaticBoundaryAsync(candidate, with: "WORD ")
+      XCTAssertEqual(result, expected, value)
+    }
+  }
+
   private func autoCandidate(_ token: ContextToken) -> AutomaticBoundaryCandidate {
     .init(word: word(token), boundary: .init(kind: .down, keyCode: 49, modifiers: [],
       timestampNanos: 2, layout: .init(rawValue: "US"), context: token,

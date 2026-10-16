@@ -32,6 +32,9 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   private var captureHasMissingInput = false
   private var missingInputOwner: ContextToken?
   private var automaticCaptureContext: ContextToken?
+  // Printable keys typed while the application is known but its field is not yet
+  // confirmed. They may only prefix a word whose whole text a readable field proves.
+  private var pendingEvents: [InputEvent] = []
   private var buffer = WordBuffer()
   private var tracked: [InputEvent] = []
   private var recentWord: BufferedWord?
@@ -193,6 +196,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     repeatedManual = nil
     automaticPrefixBlocked = automaticPrefixBlocked || !automaticEvents.isEmpty
     automaticEvents.removeAll()
+    pendingEvents.removeAll()
     automaticTokenUnsafe = true
     notifyInvalidation()
     buffer.invalidate(reason)
@@ -324,6 +328,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
     if event.kind == .down && ![56, 60, 58, 61].contains(event.keyCode) { notifyInvalidation() }
     guard event.origin == .physical else {
       automaticCaptureContext = event.context
+      pendingEvents.removeAll()
       tracked.removeAll()
       recentWord = nil
       repeatedManual = nil
@@ -340,6 +345,7 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       if event.kind == .down, !(event.keyCode == 48 && event.modifiers.contains(.command)) {
         recordMissingInput(in: event.context)
       }
+      if conservativeAutomaticEnabled { holdPendingCapture(event) }
       automaticCaptureContext = event.context
       tracked.removeAll()
       recentWord = nil
@@ -445,6 +451,19 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
   private func consumeAutomaticBoundary(_ event: InputEvent) {
     guard event.kind == .down else { return }
     if [56, 60].contains(event.keyCode) { return }
+    if !pendingEvents.isEmpty {
+      // The first confirmed key decides once: same application and layout may
+      // continue the held word, but only behind a readable whole-word proof.
+      let recovered = pendingEvents.allSatisfy {
+        $0.context.pid == event.context.pid && $0.context.bundleID == event.context.bundleID
+          && $0.layout == event.layout
+      }
+      automaticEvents = recovered ? pendingEvents.map { rebased($0, in: event.context) } : []
+      automaticTokenUnsafe = true
+      automaticPrefixBlocked = recovered || captureHasMissingInput
+      automaticCaptureContext = event.context
+      pendingEvents.removeAll()
+    }
     if let previous = automaticCaptureContext,
       previous.pid != event.context.pid || previous.bundleID != event.context.bundleID ||
         previous.focusEpoch != event.context.focusEpoch {
@@ -494,6 +513,27 @@ public final class InputRuntime: InputRuntimeControl, RuleSnapshotConsumer {
       automaticPrefixBlocked = true
     }
     automaticEvents.append(event)
+  }
+  private func holdPendingCapture(_ event: InputEvent) {
+    guard event.kind == .down else { return }
+    let printable = event.modifiers.isSubset(of: [.shift, .capsLock]) && event.text?.count == 1
+      && event.text != " " && ![36, 48, 76].contains(event.keyCode)
+      && event.text?.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) == false
+    guard printable, pendingEvents.count < 128 else { pendingEvents.removeAll(); return }
+    let sameApplication = { (other: InputEvent) in
+      other.context.pid == event.context.pid && other.context.bundleID == event.context.bundleID
+        && other.layout == event.layout
+    }
+    if let first = pendingEvents.first, !sameApplication(first) { pendingEvents.removeAll() }
+    if pendingEvents.isEmpty, !automaticEvents.isEmpty, automaticEvents.allSatisfy(sameApplication) {
+      pendingEvents = automaticEvents
+    }
+    pendingEvents.append(event)
+  }
+  private func rebased(_ event: InputEvent, in token: ContextToken) -> InputEvent {
+    .init(kind: event.kind, keyCode: event.keyCode, modifiers: event.modifiers,
+      timestampNanos: event.timestampNanos, layout: event.layout, context: token,
+      origin: event.origin, text: event.text, isRepeat: event.isRepeat)
   }
   public var nextDeadlineNanos: UInt64? {
     lock.lock()
