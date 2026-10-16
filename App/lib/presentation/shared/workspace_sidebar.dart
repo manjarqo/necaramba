@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../theme/workspace_theme.dart';
+import 'brand_mark.dart';
 
 /// One destination: a System Settings style tile with a colored glyph.
 class SidebarDestination {
@@ -63,21 +64,7 @@ class _WorkspaceSidebarState extends State<WorkspaceSidebar> {
               padding: const EdgeInsets.fromLTRB(6, 0, 6, 12),
               child: Row(
                 children: [
-                  ExcludeSemantics(
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: tokens.selection,
-                        borderRadius: BorderRadius.circular(7),
-                      ),
-                      child: const Icon(
-                        Icons.keyboard_alt_outlined,
-                        size: 17,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                  const BrandMarkView(size: 26),
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(

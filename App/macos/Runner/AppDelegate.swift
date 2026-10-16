@@ -118,7 +118,7 @@ struct NecarambaMain {
         self?.updateMenu()
       }
       item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-      item?.button?.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "Necaramba")
+      item?.button?.image = BrandMark.statusImage()
       updateMenu()
       let appMenu = NSMenu()
       let root = NSMenuItem(); let menu = NSMenu()
@@ -189,6 +189,8 @@ struct NecarambaMain {
     menu.addItem(open)
     let auto = NSMenuItem(title: text("Automatic correction","Автоматическая коррекция"), action: #selector(toggleAuto), keyEquivalent: ""); auto.target = self
     auto.state = services.preferences.snapshot.autoEnabled ? .on : .off; menu.addItem(auto)
+    // A dimmed mark tells at a glance that automatic correction is off.
+    item?.button?.appearsDisabled = !services.preferences.snapshot.autoEnabled
     let permissions = services.permissions.current()
     if permissions.secureInput || !permissions.listen || !permissions.post || !permissions.ax {
       let warning = NSMenuItem(title: permissions.secureInput ? text("Secure Input is active","Защищённый ввод активен") : text("Permissions required","Требуются разрешения"), action: #selector(openSettings), keyEquivalent: "")
