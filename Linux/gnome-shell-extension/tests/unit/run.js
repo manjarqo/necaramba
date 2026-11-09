@@ -1,0 +1,10 @@
+import {run} from './harness.js';
+import './layoutShortcut.test.js';
+import './modifierReleaseGesture.test.js';
+import './layoutTables.test.js';
+import './conversionRange.test.js';
+import './typedWordBuffer.test.js';
+import './convertLastWord.test.js';
+import './shortcutController.test.js';
+import System from 'system';
+System.exit(run() === 0 ? 0 : 1);

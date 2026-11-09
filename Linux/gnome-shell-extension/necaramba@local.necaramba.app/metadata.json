@@ -1,0 +1,9 @@
+{
+  "uuid": "necaramba@local.necaramba.app",
+  "name": "Necaramba",
+  "description": "Keyboard-layout switching with Shift, Alt+Shift, Ctrl+Shift or Super+Shift. The shortcut fires after the keys are released, only if nothing was typed while holding them.",
+  "shell-version": ["51"],
+  "settings-schema": "org.gnome.shell.extensions.necaramba",
+  "url": "https://github.com/manjarqo/necaramba",
+  "version-name": "1.0.0-beta.5"
+}

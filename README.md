@@ -89,7 +89,7 @@ The project includes a legacy helper path for macOS 12, but its registration sta
 
 | Item | Status |
 | --- | --- |
-| Platform | macOS; no Windows or Linux application is provided |
+| Platform | macOS. On Fedora/GNOME 51 double-Shift word conversion and the layout-switch shortcut are available, as a GNOME Shell extension ([Linux/gnome-shell-extension](Linux/gnome-shell-extension/README.md)); no Windows application |
 | Deployment target | macOS 12+ |
 | Architectures | Universal build targeting Apple Silicon (`arm64`) and Intel (`x86_64`) |
 | Primary layout pair | English ↔ Russian |
@@ -259,7 +259,7 @@ Some specifications and historical reports describe an earlier commercial design
 
 | Параметр | Состояние |
 | --- | --- |
-| Платформа | macOS; приложения для Windows и Linux нет |
+| Платформа | macOS. На Fedora/GNOME 51 доступны конвертация слова по двойному Shift и переключение раскладки — расширением GNOME Shell ([Linux/gnome-shell-extension](Linux/gnome-shell-extension/README.md)); приложения для Windows нет |
 | Минимальная целевая версия | macOS 12+ |
 | Архитектуры | Universal-сборка для Apple Silicon (`arm64`) и Intel (`x86_64`) |
 | Основная пара раскладок | Английская ↔ русская |

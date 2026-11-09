@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.necaramba" path="/org/gnome/shell/extensions/necaramba/">
+    <!-- Values match NecarambaCore LayoutSwitchShortcut raw values. -->
+    <key name="layout-switch-shortcut" type="s">
+      <choices>
+        <choice value="singleShift"/>
+        <choice value="altShift"/>
+        <choice value="controlShift"/>
+        <choice value="commandShift"/>
+        <choice value="disabled"/>
+      </choices>
+      <default>'singleShift'</default>
+      <summary>Layout switch shortcut</summary>
+      <description>Fires once after the keys are released, provided nothing else was typed while holding them. commandShift means Super+Shift.</description>
+    </key>
+    <key name="double-shift-conversion" type="b">
+      <default>true</default>
+      <summary>Convert the last word with double Shift</summary>
+      <description>Pressing Shift twice converts the last word (or the selection) to the other layout and selects that layout.</description>
+    </key>
+  </schema>
+  <schema id="org.gnome.shell.extensions.necaramba.runtime" path="/org/gnome/shell/extensions/necaramba/runtime/">
+    <!-- Internal, derived from the preferences; used with a memory backend. -->
+    <key name="tap-accelerators" type="as">
+      <default>[]</default>
+      <summary>Internal Shift tap accelerators</summary>
+    </key>
+    <key name="chord-accelerators" type="as">
+      <default>[]</default>
+      <summary>Internal chord accelerators</summary>
+    </key>
+  </schema>
+</schemalist>

@@ -7,6 +7,7 @@ User approved Flutter/Swift plan and explicitly requested Clean Architecture.
 - Flutter `lib/domain`: entities, repository interfaces, use cases; pure Dart.
 - Flutter `lib/data`: channel DTO codecs and repository implementations.
 - Flutter `lib/presentation`: widgets/Cubit, depends on domain use cases/interfaces.
+- `Linux/gnome-shell-extension`: GNOME Shell (Fedora) port of the layout-switch shortcut and double-Shift word conversion: via the shell input method (surrounding text, delete_surrounding + commit) where the app reports text, otherwise by buffering the physical keys of the word and retyping them through a compositor virtual keyboard. Same layering in JavaScript: `domain/` (pure gesture/shortcut policy, raw values of `LayoutSwitchShortcut`), `application/` (use case on ports), `data/` (mutter keybinding + idle monitor, GNOME input sources, GSettings), `presentation/` (preferences page); `extension.js`/`prefs.js` are composition roots. It runs inside the compositor because Wayland exposes no global keyboard access to applications; no keyboard data leaves the shell process.
 - Runner AppDelegate/native composition root and Dart bootstrap construct dependencies. UI never owns native input state and never receives captured keystrokes.
 
 Plan path refinements follow these boundaries. Swift permission UI DTO uses PermissionState, native editing result uses InputCapabilities, avoiding the two different CapabilityState definitions in B/C prose. Source of truth remains native.

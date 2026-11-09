@@ -1,0 +1,1 @@
+{"uuid": "hide-overview@necaramba.test", "name": "Test helper", "description": "Leaves the startup overview so the test client keeps focus.", "shell-version": ["51"]}
