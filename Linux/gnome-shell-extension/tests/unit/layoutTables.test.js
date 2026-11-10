@@ -3,6 +3,7 @@ import {
     hasLayoutTable,
     layoutForSource,
     convertText,
+    keysForText,
     detectSourceLayout,
 } from '../../necaramba@local.necaramba.app/domain/layoutTables.js';
 
@@ -52,4 +53,12 @@ test('source layout is detected from letters, punctuation-only uses the fallback
     assertEqual(detectSourceLayout(';,.', ['us', 'ru'], 'us'), 'us');
     assertEqual(detectSourceLayout(';,.', ['us', 'ru'], 'ru'), 'ru');
     assertEqual(detectSourceLayout(';,.', ['us', 'ru'], 'de'), 'us');
+});
+
+test('keys for text: the physical keys that type it in a layout', () => {
+    assertEqual(keysForText('пР', 'ru'), [{keycode: 34, shift: false}, {keycode: 35, shift: true}]);
+    assertEqual(keysForText('a b', 'us'), [{keycode: 30, shift: false}, {keycode: 57, shift: false}, {keycode: 48, shift: false}]);
+    assertEqual(keysForText('"№', 'ru'), [{keycode: 3, shift: true}, {keycode: 4, shift: true}]);
+    assertEqual(keysForText('a€', 'us'), null);
+    assertEqual(keysForText('a\nb', 'us'), null);
 });

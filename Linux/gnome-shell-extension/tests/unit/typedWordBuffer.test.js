@@ -1,5 +1,5 @@
 import {test, assertEqual} from './harness.js';
-import {TypedWordBuffer} from '../../necaramba@local.necaramba.app/domain/typedWordBuffer.js';
+import {TypedWordBuffer, isModifierKey} from '../../necaramba@local.necaramba.app/domain/typedWordBuffer.js';
 
 // evdev codes: g34 h35 b48 d32 t20 n49, space 57, BackSpace 14, Enter 28, Left 105, 7 = 8
 const press = (buffer, keycode, {shift = false, layout = 'us', modifiers} = {}) =>
@@ -98,4 +98,17 @@ test('after a conversion the same keys belong to the target layout', () => {
     assertEqual(buffer.snapshot().layout, 'ru');
     press(buffer, 47, {layout: 'ru'});
     assertEqual(buffer.snapshot().keys.length, 7);
+});
+
+test('replace() seeds a converted word so double Shift can toggle it back', () => {
+    const buffer = new TypedWordBuffer();
+    buffer.replace('ru', [{keycode: 34, shift: false}, {keycode: 35, shift: true}]);
+    assertEqual(buffer.snapshot(), {layout: 'ru', keys: [{keycode: 34, shift: false}, {keycode: 35, shift: true}], trailingSpaces: 0});
+    buffer.replace('ru', [{keycode: 34, shift: false}, {keycode: 57, shift: false}]);
+    assertEqual(buffer.snapshot(), null);
+});
+
+test('modifier keys are recognised', () => {
+    assertEqual([42, 54, 29, 56, 125, 100].every(isModifierKey), true);
+    assertEqual(isModifierKey(30), false);
 });

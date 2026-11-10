@@ -178,12 +178,27 @@ term_scenario "terminal: only the last word"              "$VBH 57:1 57:0 $GHBDT
 # layout is us here
 XAUTH="$(comm -13 <(echo "$XAUTH_BEFORE") <(ls "$XDG_RUNTIME_DIR"/.mutter-Xwaylandauth.* 2>/dev/null) | head -1)"
 XDISPLAY="$(grep -oE 'public X11 display :[0-9]+' "$LOG/shell.log" | head -1 | grep -oE ':[0-9]+')"
-start_client "GTK through XWayland" env GDK_BACKEND=x11 DISPLAY="$XDISPLAY" XAUTHORITY="$XAUTH" gjs "$HERE/client.js"
+start_client "GTK 3 through XWayland" env GDK_BACKEND=x11 DISPLAY="$XDISPLAY" XAUTHORITY="$XAUTH" gjs "$HERE/gtk3-client.js"
 full_scenario "XWayland: ghbdtn -> привет"                "$GHBDTN $DOUBLE_SHIFT $A" "приветф"
 full_scenario "XWayland: привет -> ghbdtn"                "$GHBDTN $DOUBLE_SHIFT $A" "ghbdtna"
 full_scenario "XWayland: keeps a capital letter"          "$SHIFT_G $HBDTN $DOUBLE_SHIFT $A" "Приветф"
 # the word is forgotten: the first tap switches ru->us, the second finds nothing to convert
 full_scenario "XWayland: arrow key forgets the word"      "$GHBDTN 105:1 105:0 $DOUBLE_SHIFT $A" "привеaт"
+# selections (PRIMARY) — layout is us here
+SELECT_TO_START="42:1 102:1 102:0 42:0"
+SELECT_LAST_WORD="29:1 42:1 105:1 105:0 42:0 29:0"
+full_scenario "XWayland: Shift+Home selection is converted"    "$VBH 57:1 57:0 $GHBDTN sleep:100 $SELECT_TO_START $DOUBLE_SHIFT $A" "мир приветф"
+full_scenario "XWayland: Ctrl+Shift+Left selects the last word" "$VBH 57:1 57:0 $GHBDTN sleep:100 $SELECT_LAST_WORD $DOUBLE_SHIFT $A" "мир ghbdtna"
+# a selection that was removed (End) is stale: only the first tap's switch happens
+full_scenario "XWayland: removed selection is not converted"   "$GHBDTN sleep:100 $SELECT_TO_START 107:1 107:0 $DOUBLE_SHIFT $A" "ghbdtnф"
+full_scenario "XWayland: converted selection toggles back"     "$GHBDTN sleep:100 $SELECT_TO_START $DOUBLE_SHIFT sleep:200 $DOUBLE_SHIFT $A" "приветф"
+
+# Wayland client without text input (Chromium/Electron on Wayland without IME):
+# selections come from the Wayland primary selection. Layout is ru here.
+start_client "GTK 3 Wayland without input method" env GDK_BACKEND=wayland GTK_IM_MODULE=gtk-im-context-simple gjs "$HERE/gtk3-client.js"
+full_scenario "Wayland, no IM: typed word is retyped"          "$GHBDTN $DOUBLE_SHIFT $A" "ghbdtna"
+full_scenario "Wayland, no IM: Shift+Home selection"           "$VBH 57:1 57:0 $GHBDTN sleep:100 $SELECT_TO_START $DOUBLE_SHIFT $A" "мир приветф"
+full_scenario "Wayland, no IM: Ctrl+Shift+Left last word"      "$VBH 57:1 57:0 $GHBDTN sleep:100 $SELECT_LAST_WORD $DOUBLE_SHIFT $A" "мир ghbdtna"
 
 GTK_A11Y=none WAYLAND_DISPLAY=necaramba-headless GDK_BACKEND=wayland \
     gjs -m "$HERE/prefs-smoke.js" "$SCHEMAS" 2>"$LOG/prefs.log" || failures=$((failures + 1))

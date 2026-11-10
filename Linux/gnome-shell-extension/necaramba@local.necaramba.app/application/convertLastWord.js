@@ -1,34 +1,41 @@
 // Application: convert the last word (or the selection) to the other layout.
 import {findConversionRange} from '../domain/conversionRange.js';
-import {convertText, detectSourceLayout, layoutForSource} from '../domain/layoutTables.js';
+import {convertText, detectSourceLayout, keysForText, layoutForSource} from '../domain/layoutTables.js';
 
 const SPACE = 57;
 
 /**
- * Two methods:
+ * Three methods:
  * - surrounding: the field reports its text (GTK, Qt, Firefox). The word is
  *   read, converted by key position and replaced through the input method.
  * - retype: no surrounding text (terminals, XWayland/Electron). The word is
  *   erased with BackSpace, the target layout selected and the same physical
  *   keys typed again, as on macOS.
+ * - selection: no surrounding text and nothing typed since the caret moved, but
+ *   a fresh selection (PRIMARY). The target layout is selected and the keys
+ *   that type the selected text are pressed; typing replaces the selection.
  *
  * Ports:
- * - textInput: { snapshot(): null | {focused, sensitive, text, cursor, anchor},
+ * - textInput: { snapshot(): null | {focused, sensitive, terminal, text, cursor, anchor},
  *                replace({deleteBefore, text}) }
  * - inputSources: { sources(): [{type, id}], currentIndex(): number, activate(index) }
  * - typedWord: { snapshot(): null | {layout, keys: [{keycode, shift}], trailingSpaces},
- *                relayout(layout) }
+ *                relayout(layout),
+ *                replace(layout, keys), reset() }
  * - keyboard: { backspace(count), type(keys) }
+ * - selection: { isFresh(): boolean, read(): Promise<string|null>, consume() }
+ *   Fresh means it changed after the last user key press or click.
  */
 export class ConvertLastWord {
-    constructor({textInput, inputSources, typedWord, keyboard}) {
+    constructor({textInput, inputSources, typedWord, keyboard, selection}) {
         this._textInput = textInput;
         this._inputSources = inputSources;
         this._typedWord = typedWord;
         this._keyboard = keyboard;
+        this._selection = selection;
     }
 
-    execute() {
+    async execute() {
         const snapshot = this._textInput.snapshot();
         if (snapshot?.sensitive)
             return {status: 'unavailable'};
@@ -46,7 +53,13 @@ export class ConvertLastWord {
 
         if (typeof snapshot?.text === 'string')
             return this._convertSurrounding(snapshot, sources, layouts, indexOf);
-        return this._retype(layouts, indexOf);
+        const typed = this._typedWord.snapshot();
+        if (typed && layouts.includes(typed.layout))
+            return this._retype(typed, layouts, indexOf);
+        // In a terminal typing goes to the cursor, it does not replace a selection.
+        if (!snapshot?.terminal && this._selection.isFresh())
+            return this._retypeSelection(sources, layouts, indexOf);
+        return {status: 'nothing'};
     }
 
     _convertSurrounding(snapshot, sources, layouts, indexOf) {
@@ -71,10 +84,7 @@ export class ConvertLastWord {
         return {status: 'converted', from, to, method: 'surrounding'};
     }
 
-    _retype(layouts, indexOf) {
-        const typed = this._typedWord.snapshot();
-        if (!typed || !layouts.includes(typed.layout))
-            return {status: 'nothing'};
+    _retype(typed, layouts, indexOf) {
         const from = typed.layout;
         const to = layouts.find(layout => layout !== from);
 
@@ -84,6 +94,28 @@ export class ConvertLastWord {
         this._keyboard.type([...typed.keys, ...spaces]);
         this._typedWord.relayout(to);
         return {status: 'converted', from, to, method: 'retype'};
+    }
+
+    async _retypeSelection(sources, layouts, indexOf) {
+        const text = await this._selection.read();
+        this._selection.consume();
+        if (!text)
+            return {status: 'nothing'};
+
+        const current = layoutForSource(sources[this._inputSources.currentIndex()]);
+        const from = detectSourceLayout(text, layouts, current);
+        const to = layouts.find(layout => layout !== from);
+        const keys = keysForText(text, from);
+        if (!keys || convertText(text, from, to) === text)
+            return {status: 'unchanged'};
+
+        this._select(indexOf.get(to));
+        this._keyboard.type(keys);
+        if (keys.some(key => key.keycode === SPACE))
+            this._typedWord.reset();
+        else
+            this._typedWord.replace(to, keys);
+        return {status: 'converted', from, to, method: 'selection'};
     }
 
     _select(index) {

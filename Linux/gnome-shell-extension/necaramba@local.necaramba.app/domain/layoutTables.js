@@ -59,6 +59,34 @@ export function convertText(text, from, to) {
     return Array.from(text).map(character => map.get(character) ?? character).join('');
 }
 
+const SPACE_KEYCODE = 57;
+
+/**
+ * The physical keys that type `text` in `layout`, or null when some character
+ * has no key in the table (only spaces and the 47 table keys are supported).
+ */
+export function keysForText(text, layout) {
+    const lower = Array.from(TABLES[layout].lower);
+    const upper = Array.from(TABLES[layout].upper);
+    const keys = [];
+    for (const character of Array.from(text)) {
+        if (character === ' ') {
+            keys.push({keycode: SPACE_KEYCODE, shift: false});
+            continue;
+        }
+        let index = lower.indexOf(character);
+        let shift = false;
+        if (index < 0) {
+            index = upper.indexOf(character);
+            shift = true;
+        }
+        if (index < 0)
+            return null;
+        keys.push({keycode: CONVERTIBLE_KEYCODES[index], shift});
+    }
+    return keys;
+}
+
 /**
  * Letters decide which layout the text was typed in; text without letters or
  * with a tie keeps the fallback (normally the active layout).

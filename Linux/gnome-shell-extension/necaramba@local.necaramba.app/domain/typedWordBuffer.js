@@ -12,6 +12,11 @@ const SPACE = 57;
 const BACKSPACE = 14;
 const SHORTCUT_MODIFIERS = ['control', 'alt', 'super', 'level3'];
 
+/** Modifier keys alone neither type nor move the caret. */
+export function isModifierKey(keycode) {
+    return MODIFIER_KEYS.has(keycode);
+}
+
 export class TypedWordBuffer {
     constructor({maxKeys = 128} = {}) {
         this._maxKeys = maxKeys;
@@ -65,6 +70,15 @@ export class TypedWordBuffer {
     relayout(layout) {
         if (this._keys.length > 0)
             this._layout = layout;
+    }
+
+    /** The word on screen is now `keys` in `layout` (a selection was retyped). */
+    replace(layout, keys) {
+        this.reset();
+        if (keys.length === 0 || keys.length > this._maxKeys || !keys.every(key => CONVERTIBLE.has(key.keycode)))
+            return;
+        this._layout = layout;
+        this._keys = keys.map(key => ({...key}));
     }
 
     snapshot() {

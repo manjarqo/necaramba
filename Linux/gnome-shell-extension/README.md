@@ -29,8 +29,11 @@ Each switch moves to the next source from *Settings → Keyboard → Input Sourc
 - Two methods, chosen automatically:
   - **Surrounding text** — apps that report the text around the caret (GTK 3/4, Qt, Firefox): the word is read and replaced through GNOME Shell's input method. Works even after moving the caret with the mouse. Password fields are skipped.
   - **Retype** — terminals (Ptyxis, GNOME Terminal, Console), XWayland apps and Chromium/Electron apps (VS Code, Chrome, Telegram Desktop, …): Necaramba remembers the physical keys of the word being typed, erases it with BackSpace, selects the other layout and types the same keys again — as the macOS app does. No clipboard is used.
+  - **Selection** — in the same apps, when nothing was typed since the caret moved: the selected text is read from the PRIMARY selection, the other layout is selected and the keys that type the converted text are pressed, which replaces the selection. PRIMARY often keeps old text after a selection disappears, so it is used only if it changed after your last key press or click. Not used in terminals, where typing does not replace a selection.
 - Retype knows only what was typed since the caret last moved: a click, an arrow key, Enter, Tab or a shortcut forgets the word. Editors that insert text by themselves (auto-closing brackets, autocomplete) can make the erase count wrong.
-- Retype cannot see whether an XWayland/Electron field is a password field.
+- Retype and selection cannot see whether an XWayland/Electron field is a password field.
+- Chromium/Electron with Wayland IME (the VSCodium flatpak enables it) reports its text like GTK, but does not report it again after the first Shift tap switches the layout. Necaramba keeps the field's last report until the next key press, click or focus change.
+- Each double Shift writes one line to the journal with the method and result (never the text): `journalctl --user -b -g necaramba`.
 
 Automatic correction and the Flutter settings UI remain macOS-only.
 
@@ -75,7 +78,8 @@ GNOME on Wayland gives applications no global keyboard access. The extension run
 2. The core idle monitor reports the next input event; the live modifier mask tells whether that event released a chord key (continue / fire) or was anything else — a key, button or extra modifier (cancel).
 3. When every chord key is released, the next input source is activated through GNOME Shell's input-source manager.
 4. For double Shift, the word is taken from the surrounding text that the focused application reports to the input method, converted by physical key position, then replaced with `delete_surrounding` + `commit`.
-5. Without surrounding text, the idle-monitor notification also exposes the key event being processed (`Clutter.get_current_event()`), so the physical keys of the current word are buffered for any window. Conversion erases them through a compositor virtual keyboard, selects the target layout and sends the same key codes; synthetic events are recognized from an exact queue and never re-enter the buffer.
+5. Selections in apps without surrounding text are read from PRIMARY (`St.Clipboard`); `Meta.Selection` owner changes tell whether it is newer than the last key press or click.
+6. Without surrounding text, the idle-monitor notification also exposes the key event being processed (`Clutter.get_current_event()`), so the physical keys of the current word are buffered for any window. Conversion erases them through a compositor virtual keyboard, selects the target layout and sends the same key codes; synthetic events are recognized from an exact queue and never re-enter the buffer.
 
 ### Architecture
 
@@ -102,7 +106,7 @@ gjs -m tests/unit/run.js     # domain + use case, no GNOME session needed
 tests/headless/run.sh        # end-to-end in an isolated headless gnome-shell
 ```
 
-The end-to-end test builds and installs the zip into a temporary `HOME` under `$XDG_RUNTIME_DIR`, uses `GSETTINGS_BACKEND=keyfile` and a private D-Bus session, starts `gnome-shell --headless`, and injects keys through mutter's RemoteDesktop API into three clients: a Wayland GTK4 text field, a VTE terminal and a GTK4 text field through XWayland (no surrounding text, like Electron). The typed text proves the result. It covers layout switching, double-Shift conversion on both paths (both directions, trailing space, capitals, BackSpace while typing, selection, toggling back, only the last word, caret moved, feature off, chord shortcut), and smoke-tests the preferences page. Your own dconf settings, extensions and input sources are not touched.
+The end-to-end test builds and installs the zip into a temporary `HOME` under `$XDG_RUNTIME_DIR`, uses `GSETTINGS_BACKEND=keyfile` and a private D-Bus session, starts `gnome-shell --headless`, and injects keys through mutter's RemoteDesktop API into four clients: a Wayland GTK4 text field, a VTE terminal, a GTK3 text field through XWayland and a GTK3 text field on Wayland without an input method (the last two report no surrounding text, like Chromium/Electron without Wayland IME). The typed text proves the result. It covers layout switching, double-Shift conversion on every path (both directions, trailing space, capitals, BackSpace while typing, selections, stale selections, toggling back, only the last word, caret moved, feature off, chord shortcut), and smoke-tests the preferences page. GTK4 clients are not used for PRIMARY tests: in this headless setup GTK4 serves an empty PRIMARY selection. Your own dconf settings, extensions and input sources are not touched.
 
 Not covered by automated tests: a physical keyboard in a real logged-in session, GNOME versions other than 51, X11 sessions, and IBus input-method engines other than plain XKB layouts.
 
@@ -132,8 +136,11 @@ Not covered by automated tests: a physical keyboard in a real logged-in session,
 - Способ выбирается автоматически:
   - **по тексту вокруг курсора** — приложения, которые его сообщают (GTK 3/4, Qt, Firefox): слово читается и заменяется через метод ввода GNOME Shell. Работает и после перемещения курсора мышью. Поля паролей пропускаются.
   - **перенабором** — терминалы (Ptyxis, GNOME Terminal, Console), приложения XWayland и Chromium/Electron (VS Code, Chrome, Telegram Desktop…): Necaramba запоминает физические клавиши набираемого слова, стирает его Backspace, включает другую раскладку и набирает те же клавиши заново — как в macOS-версии. Буфер обмена не используется.
+  - **по выделению** — в тех же приложениях, если после перемещения курсора ничего не набиралось: выделенный текст читается из PRIMARY, включается другая раскладка и нажимаются клавиши, которые печатают сконвертированный текст, — набор заменяет выделение. Используется, только если выделение изменилось после последнего нажатия клавиши или клика. В терминалах не используется.
 - Перенабор знает только то, что набрано после последнего перемещения курсора: клик, стрелка, Enter, Tab или сочетание клавиш сбрасывают слово. Редакторы, которые сами вставляют текст (автозакрытие скобок, автодополнение), могут сбить число стираемых символов.
-- При перенаборе нельзя узнать, что поле в XWayland/Electron — поле пароля.
+- При перенаборе и по выделению нельзя узнать, что поле в XWayland/Electron — поле пароля.
+- Chromium/Electron с Wayland IME (flatpak VSCodium включает его) сообщает текст как GTK, но не повторяет его после того, как первый тап Shift переключил раскладку. Necaramba помнит последний отчёт поля до следующего нажатия клавиши, клика или смены фокуса.
+- Каждый двойной Shift пишет в журнал одну строку со способом и результатом (без текста): `journalctl --user -b -g necaramba`.
 
 Автокоррекция и интерфейс на Flutter остаются только в macOS-версии.
 
