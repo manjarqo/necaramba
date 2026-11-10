@@ -45,6 +45,14 @@ Automatic correction and the Flutter settings UI remain macOS-only.
 
 ### Install
 
+From a release: download `necaramba@local.necaramba.app.shell-extension.zip` from [GitHub Releases](https://github.com/manjarqo/necaramba/releases) and run
+
+```bash
+gnome-extensions install --force necaramba@local.necaramba.app.shell-extension.zip
+```
+
+From source:
+
 ```bash
 Linux/gnome-shell-extension/install.sh --install
 ```
@@ -145,6 +153,14 @@ Not covered by automated tests: a physical keyboard in a real logged-in session,
 Автокоррекция и интерфейс на Flutter остаются только в macOS-версии.
 
 ### Установка
+
+Из релиза: скачайте `necaramba@local.necaramba.app.shell-extension.zip` со страницы [GitHub Releases](https://github.com/manjarqo/necaramba/releases) и выполните
+
+```bash
+gnome-extensions install --force necaramba@local.necaramba.app.shell-extension.zip
+```
+
+Из исходников:
 
 ```bash
 Linux/gnome-shell-extension/install.sh --install

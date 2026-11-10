@@ -99,6 +99,16 @@ The project includes a legacy helper path for macOS 12, but its registration sta
 
 Not every field can be edited through macOS accessibility APIs. Secure fields, active composition and unsupported custom editors may be skipped. IME and additional keyboard variants are not covered by the current compatibility claim.
 
+### Fedora / GNOME
+
+On Fedora 45 (GNOME Shell 51, Wayland) Necaramba runs as a GNOME Shell extension: double Shift converts the last typed word or the selection between `us` and `ru`, and Shift, Alt+Shift, Ctrl+Shift or Super+Shift switches the layout on release. It works in GTK, Qt and Firefox apps, terminals, XWayland and Chromium/Electron apps. Download `necaramba@local.necaramba.app.shell-extension.zip` from the release and run:
+
+```sh
+gnome-extensions install --force necaramba@local.necaramba.app.shell-extension.zip
+```
+
+Log out and back in, then `gnome-extensions enable necaramba@local.necaramba.app`. Details, limitations and tests: [Linux/gnome-shell-extension](Linux/gnome-shell-extension/README.md).
+
 ### Build from source
 
 Use macOS with Xcode and its command-line tools installed. Install the Flutter version recorded in [`App/.flutter-version`](App/.flutter-version); Dart is bundled with Flutter. See the [toolchain notes](docs/release/flutter-toolchain.md) for the qualified SDK revision.
@@ -268,6 +278,16 @@ Some specifications and historical reports describe an earlier commercial design
 | Ещё требуется проверить | Реальную работу на Intel/macOS 12, дополнительные редакторы, подпись и notarization публичного выпуска, показатели производительности |
 
 Accessibility не предоставляет одинаковых возможностей во всех приложениях. Защищённые поля, активный составной ввод и нестандартные редакторы могут пропускаться. IME и дополнительные варианты раскладок не входят в текущие заявления о совместимости.
+
+### Fedora / GNOME
+
+На Fedora 45 (GNOME Shell 51, Wayland) Necaramba работает как расширение GNOME Shell: двойной Shift конвертирует последнее набранное слово или выделение между `us` и `ru`, а Shift, Alt+Shift, Ctrl+Shift или Super+Shift переключают раскладку по отпусканию. Работает в приложениях GTK, Qt и Firefox, терминалах, XWayland и Chromium/Electron. Скачайте из релиза `necaramba@local.necaramba.app.shell-extension.zip` и выполните:
+
+```sh
+gnome-extensions install --force necaramba@local.necaramba.app.shell-extension.zip
+```
+
+Выйдите из сеанса, войдите снова и выполните `gnome-extensions enable necaramba@local.necaramba.app`. Подробности, ограничения и тесты: [Linux/gnome-shell-extension](Linux/gnome-shell-extension/README.md).
 
 ### Сборка из исходников
 
